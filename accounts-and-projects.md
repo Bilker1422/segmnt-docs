@@ -9,11 +9,9 @@ This page covers sign-in, your session, and how to set up **projects**,
 
 You sign in with SSO only. **We never store a password.**
 
-> العربية: سجّل الدخول عبر Google أو GitHub، بدون كلمة مرور. الجلسة تدوم 30 يوماً.
-> أنشئ مشروعاً، ثم مفتاح API للمشروع، ثم أضف نطاقاً واحداً مجاناً.
-
-This guide is written in simple English so it is easy to translate to Arabic.
-The Arabic version is on this site: use the language picker at the top right.
+This guide is written in simple English. It is in English only; the Arabic
+version is on the older site at
+[test-docs.segmnt.cloud](https://test-docs.segmnt.cloud/ar/accounts-and-projects/).
 
 ## Before you start
 

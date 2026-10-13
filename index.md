@@ -9,7 +9,8 @@ from **your** domain. Every playback link is signed, so a copied link does not
 work anywhere else.
 
 This site is for developers who build with segmnt: agencies, course platforms
-and training companies. It is available in English and Arabic.
+and training companies. These guides are in **English**. The Arabic guides are
+on the older site at [test-docs.segmnt.cloud](https://test-docs.segmnt.cloud/ar/).
 
 ## Start here
 
