@@ -1,55 +1,42 @@
-# Mintlify Starter Kit
+# segmnt developer docs
 
-Use the starter kit to get your docs deployed and ready to customize.
+Public developer documentation for segmnt, built and hosted on
+[Mintlify](https://mintlify.com). Live at <https://segmnt.mintlify.site>.
 
-Click the green **Use this template** button at the top of this repo to copy the Mintlify starter kit. The starter kit contains examples with
+**This repository is synced automatically.** The source of truth is the private
+`Bilker1422/segmnt` repository, folder `mintlify-docs/`. The
+`Sync docs to segmnt-docs` workflow there mirrors that folder into this repo on
+every push to `main`. Do not edit files here by hand; the next sync overwrites
+them. Make changes in `mintlify-docs/` in the private repo instead.
 
-- Guide pages
-- Navigation
-- Customizations
-- API reference pages
-- Use of popular components
+Mintlify builds this repo and serves the site, including the agent tools
+(`/llms.txt`, `*.md` pages, `/mcp`, `/.well-known/mcp`).
 
-**[Follow the full quickstart guide](https://starter.mintlify.com/quickstart)**
+## Files
 
-## AI-assisted writing
+| Path | What it is |
+|---|---|
+| `docs.json` | Mintlify site config: theme, colours, logo, favicon, fonts, navigation, `noindex` for TEST, and the API reference (`api/openapi.yaml`). |
+| `index.md`, `accounts-and-projects.md`, `direct-upload.md` | English guide pages. |
+| `logo/` | segmnt logos (`segmnt-logo.svg` light, `segmnt-logo-dark.svg` dark). |
+| `favicon.svg` | segmnt symbol mark. |
+| `api/openapi.yaml` | Copy of the segmnt API contract (`api/openapi.yaml` in the private repo). |
 
-Set up your AI coding tool to work with Mintlify:
+English only. Arabic is out of scope for the Mintlify docs; the product stays
+Arabic-first.
+
+## Run it locally
+
+You need Node.js 24. From this folder:
 
 ```bash
-npx skills add https://mintlify.com/docs
+npx mintlify@latest dev --no-open   # http://localhost:3000
+npx mintlify@latest validate        # strict build check (exits on warnings/errors)
+npx mintlify@latest broken-links    # checks internal links
 ```
 
-This command installs Mintlify's documentation skill for your configured AI tools like Claude Code, Cursor, Windsurf, and others. The skill includes component reference, writing standards, and workflow guidance.
+`dev`, `validate` and `broken-links` work offline and do not need a Mintlify
+login. The agent tools only exist on the hosted site, so they return 404 from
+the local preview.
 
-See the [AI tools guides](/ai-tools) for tool-specific setup.
-
-## Development
-
-Install the [Mintlify CLI](https://www.npmjs.com/package/mint) to preview your documentation changes locally. To install, use the following command:
-
-```
-npm i -g mint
-```
-
-Run the following command at the root of your documentation, where your `docs.json` is located:
-
-```
-mint dev
-```
-
-View your local preview at `http://localhost:3000`.
-
-## Publishing changes
-
-Install our GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app) to propagate changes from your repo to your deployment. Changes are deployed to production automatically after pushing to the default branch.
-
-## Need help?
-
-### Troubleshooting
-
-- If your dev environment isn't running: Run `mint update` to ensure you have the most recent version of the CLI.
-- If a page loads as a 404: Make sure you are running in a folder with a valid `docs.json`.
-
-### Resources
-- [Mintlify documentation](https://mintlify.com/docs)
+The JSON schema for `docs.json` is at <https://mintlify.com/docs.json>.

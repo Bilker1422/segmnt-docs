@@ -1,0 +1,1837 @@
+openapi: 3.1.0
+info:
+  title: segmnt API
+  version: 0.1.0-draft
+  summary: Video hosting and signed HLS playback for course platforms, agencies and training companies.
+  description: |
+    First draft of the segmnt API contract (task A2). It is a contract for the MVP
+    and will change while we build it.
+
+    ## Authentication
+    - **API key** (`apiKey`): `Authorization: Bearer <key>`. A key belongs to one
+      project. It can only call routes under `/v1/projects/{projectId}` for that
+      project. Send it only from your server, never from a browser.
+    - **Dashboard session** (`session`): cookie set after SSO sign-in (Google, GitHub,
+      Reddit, Apple). It can call every route for projects in the signed-in account.
+      Account routes (projects, API keys, billing) accept only the session.
+      The cookie is `HttpOnly; Secure; SameSite=Lax`. Requests with a body must be
+      `application/json`; other content types get `415`.
+
+    The SSO sign-in routes live under `/auth/*` (task A8): the browser is
+    redirected to the provider and back, then the `segmnt_session` cookie
+    authenticates the account routes.
+
+    ## Video lifecycle
+    `uploading` → `processing` → `ready`, or `failed`. Our team can move a video to
+    `held` (it does not play) or back to `ready`. Moving to `ready`, `failed`
+    or `held` sends a webhook.
+    A held or deleted video stops playing within 5 minutes, also for tokens
+    issued before.
+
+    ## Playback
+    Videos never have a public URL. Your server asks for a playback token for one
+    video and one verified domain. The token goes in the `token` query parameter
+    of the master playlist URL:
+    `https://test-cdn.segmnt.cloud/v/{videoId}/master.m3u8?token={token}`.
+    The CDN rewrites every playlist it returns and adds the same `?token=` to
+    each link inside, so a player only needs the master playlist URL.
+
+    Free plans must play with `embedUrl` (our player, with our logo).
+    `playlistUrl` is returned only on plans with `whiteLabel`.
+
+    **Domain check.** The CDN takes the `Origin` header, or the origin of
+    `Referer` when there is no `Origin`. It must be exactly `https://{domain}`,
+    where `{domain}` is the token's domain:
+    - scheme `https` only; no port;
+    - host compared without case (`Courses.Example.com` = `courses.example.com`);
+    - exact host only: subdomains do not match (`www.courses.example.com` needs
+      its own verified domain).
+
+    Requests from our embed page (on the CDN host) pass the domain check; the
+    embed page only loads inside a frame on the token's domain
+    (`Content-Security-Policy: frame-ancestors`).
+
+    **Expiry.** A token is expired when the CDN clock is at or after
+    `expiresAt`. There is no clock skew allowance. Note: browsers keep segments
+    in their cache for 1 day and playlists for 30 seconds, so test expiry with a
+    fresh client or no browser cache.
+
+    **CDN errors.** Every refused request has the header
+    `X-Segmnt-Error: <code>` and an `application/problem+json` body with the same
+    `code`. A token check runs in this order; the first failure wins:
+
+    | Status | `code` | When |
+    |---|---|---|
+    | `404` | `not_found` | Path is not a video file we serve. |
+    | `403` | `token_missing` | No `token` query parameter. |
+    | `403` | `token_invalid` | Bad format or signature, or the token is for another video. |
+    | `403` | `token_expired` | Token is past `expiresAt`. |
+    | `403` | `origin_missing` | No `Origin` and no `Referer` header. |
+    | `403` | `domain_mismatch` | `Origin` / `Referer` is not `https://{domain}`. |
+    | `403` | `video_unavailable` | Video is held or deleted. |
+    | `403` | `plan_limit_reached` | The account is over its free limit, or the request is for a quality above the plan's maximum. |
+
+    A held or deleted video gets `video_unavailable` within 5 minutes, also for
+    tokens issued before. After a delete, files are removed and the CDN can also
+    answer `404` `not_found`. A request for a quality above your plan's maximum
+    is also `plan_limit_reached`, even when the account is inside its limit; the
+    master playlist only lists the qualities your plan allows.
+
+    ## Conventions
+    - IDs are strings with a type prefix: `acc_`, `usr_`, `prj_`, `vid_`, `upl_`, `key_`, `dom_`, `whe_`, `evt_`.
+    - Times are RFC 3339 in UTC.
+    - Lists use cursor pagination: pass `nextCursor` back as `cursor`.
+    - Errors use `application/problem+json` (RFC 9457) with a stable `code`.
+    - `Idempotency-Key` is scoped to the account and the route. The same key with
+      a different body gets `422`.
+    - Money is an integer in the smallest unit of the currency (halalas for SAR).
+  license:
+    name: Proprietary
+    identifier: LicenseRef-Proprietary
+  contact:
+    name: segmnt engineering
+servers:
+  - url: https://test-api.segmnt.cloud
+    description: TEST environment
+security:
+  - apiKey: []
+  - session: []
+tags:
+  - name: Auth
+    description: |
+      SSO sign-in for the dashboard. No passwords are stored. Sign-in is a
+      browser redirect flow: `/auth/{provider}/start` → the provider →
+      `/auth/{provider}/callback`, which sets the `segmnt_session` cookie.
+      Launch providers: Google and GitHub. Apple and Reddit come later.
+  - name: Projects
+    description: An account has many projects. Agencies use one project per client.
+  - name: API keys
+    description: Server-side keys. Each key belongs to one project.
+  - name: Domains
+    description: Sites allowed to play the project's videos. A domain must be verified with a DNS TXT record.
+  - name: Uploads
+    description: Direct upload from the client to storage with pre-signed multipart URLs.
+  - name: Videos
+    description: Uploaded videos and their processing status.
+  - name: Playback
+    description: Signed playback tokens.
+  - name: Webhooks
+    description: |
+      HTTPS endpoints that receive video events. The MVP has no "send test event"
+      route and no delivery log. To test, register your own receiver and upload
+      a short video.
+  - name: Usage
+    description: Stored and watched time.
+  - name: Billing
+    description: Plans and checkout through the payment provider's hosted page.
+  - name: System
+    description: Health check.
+paths:
+  /health:
+    get:
+      tags: [System]
+      operationId: getHealth
+      summary: Health check
+      security: []
+      responses:
+        '200':
+          description: The API is up.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status:
+                    type: string
+                    const: ok
+        '4XX':
+          description: Client error.
+        '503':
+          description: The API is not ready.
+
+  /auth/providers:
+    get:
+      tags: [Auth]
+      operationId: listAuthProviders
+      summary: List the enabled sign-in providers
+      description: |
+        The dashboard calls this to draw its sign-in buttons. A provider is
+        listed only when it is configured in this environment.
+      security: []
+      responses:
+        '200':
+          description: The enabled providers.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AuthProvider'
+
+  /auth/{provider}/start:
+    parameters:
+      - $ref: '#/components/parameters/AuthProviderId'
+    get:
+      tags: [Auth]
+      operationId: startAuth
+      summary: Start an SSO sign-in (browser only)
+      description: |
+        Redirects the browser to the provider's sign-in page. Sets a short-lived
+        signed `segmnt_auth` cookie with the CSRF `state`, the PKCE verifier and
+        the `nonce` (`Path=/auth`, `HttpOnly`, `Secure`, `SameSite=Lax`,
+        10 minutes). After sign-in the browser lands on `return_to`.
+      security: []
+      parameters:
+        - name: return_to
+          in: query
+          required: false
+          description: |
+            Where to send the browser after sign-in: a path on the dashboard
+            (`/videos`) or a full URL on an allowed dashboard origin. Any other
+            value falls back to the dashboard root, so this route is never an
+            open redirect.
+          schema:
+            type: string
+            maxLength: 2048
+      responses:
+        '302':
+          description: Redirect to the provider. `Location` is its authorize URL.
+          headers:
+            Location:
+              schema:
+                type: string
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '503':
+          $ref: '#/components/responses/AuthNotConfigured'
+
+  /auth/{provider}/callback:
+    parameters:
+      - $ref: '#/components/parameters/AuthProviderId'
+    get:
+      tags: [Auth]
+      operationId: completeAuth
+      summary: Complete an SSO sign-in (the provider redirects here)
+      description: |
+        The provider redirects the browser here with `code` and `state`. The API
+        checks `state` and the flow cookie, exchanges the code (PKCE, and the
+        `nonce` for Google), creates the account on first sign-in, sets the
+        `segmnt_session` cookie (30 days), clears the flow cookie and redirects
+        to `return_to`.
+
+        A second provider links to an existing account only when its e-mail is
+        provider-verified; otherwise it creates a new account. Every new account
+        is flagged for internal review (A12). The flag never leaves the API.
+      security: []
+      parameters:
+        - name: code
+          in: query
+          required: false
+          description: The provider's authorization code. Missing when the user denied sign-in.
+          schema:
+            type: string
+        - name: state
+          in: query
+          required: false
+          description: The `state` the API sent in the authorize URL. Must match the flow cookie.
+          schema:
+            type: string
+        - name: error
+          in: query
+          required: false
+          description: Provider error when the user denied sign-in, for example `access_denied`.
+          schema:
+            type: string
+      responses:
+        '302':
+          description: Signed in. `Location` is `return_to`; `Set-Cookie` carries the session.
+          headers:
+            Location:
+              schema:
+                type: string
+        '400':
+          description: |
+            Missing, tampered or expired flow cookie, or `state` mismatch
+            (`code` is `invalid_state`); or the user denied sign-in
+            (`auth_denied`).
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          description: Could not create the account or the session (`code` is `internal_error`). The flow cookie is cleared.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '502':
+          description: The provider rejected the code or returned data we cannot trust (`code` is `provider_error`).
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '503':
+          $ref: '#/components/responses/AuthNotConfigured'
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      operationId: logout
+      summary: End the dashboard session
+      description: |
+        Deletes the session and clears the `segmnt_session` cookie. Safe to call
+        twice: a missing or expired session still returns `204`.
+      security: []
+      responses:
+        '204':
+          description: Logged out.
+
+  /v1/me:
+    get:
+      tags: [Auth]
+      operationId: getMe
+      summary: The signed-in user and its account
+      security:
+        - session: []
+      responses:
+        '200':
+          description: The session's user and account.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Me'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /v1/projects:
+    get:
+      tags: [Projects]
+      operationId: listProjects
+      summary: List projects
+      security:
+        - session: []
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: Projects in the account, newest first.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      tags: [Projects]
+      operationId: createProject
+      summary: Create a project
+      security:
+        - session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectInput'
+      responses:
+        '201':
+          description: Project created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /v1/projects/{projectId}:
+    parameters:
+      - $ref: '#/components/parameters/ProjectId'
+    get:
+      tags: [Projects]
+      operationId: getProject
+      summary: Get a project
+      responses:
+        '200':
+          description: The project.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      tags: [Projects]
+      operationId: updateProject
+      summary: Rename a project and/or update its white-label branding
+      security:
+        - session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectUpdateInput'
+      responses:
+        '200':
+          description: Project updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [Projects]
+      operationId: deleteProject
+      summary: Delete a project
+      description: Only an empty project can be deleted. Delete its videos first.
+      security:
+        - session: []
+      responses:
+        '204':
+          description: Project deleted. Its API keys, domains and webhook endpoints stop working.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /v1/projects/{projectId}/api-keys:
+    parameters:
+      - $ref: '#/components/parameters/ProjectId'
+    get:
+      tags: [API keys]
+      operationId: listApiKeys
+      summary: List API keys
+      security:
+        - session: []
+      responses:
+        '200':
+          description: Keys of the project. The secret is never returned here.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ApiKey'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      tags: [API keys]
+      operationId: createApiKey
+      summary: Create an API key
+      security:
+        - session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 100
+                  examples: [Course site backend]
+      responses:
+        '201':
+          description: Key created. `secret` is shown only in this response. We store only a hash.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiKeyWithSecret'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /v1/projects/{projectId}/api-keys/{keyId}:
+    parameters:
+      - $ref: '#/components/parameters/ProjectId'
+      - name: keyId
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: '^key_[A-Za-z0-9]+$'
+    delete:
+      tags: [API keys]
+      operationId: revokeApiKey
+      summary: Revoke an API key
+      security:
+        - session: []
+      responses:
+        '204':
+          description: Key revoked. Requests with it get `401` right away.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /v1/projects/{projectId}/domains:
+    parameters:
+      - $ref: '#/components/parameters/ProjectId'
+    get:
+      tags: [Domains]
+      operationId: listDomains
+      summary: List domains
+      responses:
+        '200':
+          description: Domains of the project.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Domain'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      tags: [Domains]
+      operationId: addDomain
+      summary: Add a domain
+      description: |
+        Adds a domain in `pending` status. Create the DNS TXT record from
+        `verification`, then call the verify route. Free accounts can have one
+        verified domain.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [hostname]
+              properties:
+                hostname:
+                  type: string
+                  format: hostname
+                  description: Exact host name, without scheme or path.
+                  examples: [courses.example.com]
+      responses:
+        '201':
+          description: Domain added.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Domain'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /v1/projects/{projectId}/domains/{domainId}:
+    parameters:
+      - $ref: '#/components/parameters/ProjectId'
+      - $ref: '#/components/parameters/DomainId'
+    delete:
+      tags: [Domains]
+      operationId: removeDomain
+      summary: Remove a domain
+      responses:
+        '204':
+          description: Domain removed. New tokens for it are refused. Tokens already issued work until they expire.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /v1/projects/{projectId}/domains/{domainId}/verify:
+    parameters:
+      - $ref: '#/components/parameters/ProjectId'
+      - $ref: '#/components/parameters/DomainId'
+    post:
+      tags: [Domains]
+      operationId: verifyDomain
+      summary: Check the DNS record and verify a domain
+      responses:
+        '200':
+          description: Check done. `status` is `verified` when the TXT record was found, otherwise still `pending`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Domain'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /v1/projects/{projectId}/uploads:
+    parameters:
+      - $ref: '#/components/parameters/ProjectId'
+    post:
+      tags: [Uploads]
+      operationId: createUpload
+      summary: Start an upload
+      description: |
+        Creates a video in `uploading` status and returns one pre-signed `PUT` URL
+        per part. The client sends each part straight to storage, keeps the `ETag`
+        response header of each part, then calls the complete route.
+
+        Part upload: `PUT` the raw bytes to the part URL. No auth header and no
+        other headers are needed (`Content-Type` is not checked). Storage CORS
+        allows `PUT` from any origin and exposes `ETag`, so a browser can read it.
+
+        URLs are for upload only. Playback never uses storage URLs. They work
+        until `expiresAt`, at least 24 hours after the start.
+
+        Plan limits are checked here with `sizeBytes`, and again later: on complete
+        (real file size) and before encoding (real duration). A file over the limit
+        ends as `failed` with `failure.code` = `plan_limit_reached` and is removed.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UploadInput'
+      responses:
+        '201':
+          description: Upload started.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Upload'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+  /v1/projects/{projectId}/uploads/{uploadId}:
+    parameters:
+      - $ref: '#/components/parameters/ProjectId'
+      - $ref: '#/components/parameters/UploadId'
+    delete:
+      tags: [Uploads]
+      operationId: abortUpload
+      summary: Cancel an upload
+      description: Removes the uploaded parts and the video. Unfinished uploads are also removed after `expiresAt`.
+      responses:
+        '204':
+          description: Upload cancelled.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /v1/projects/{projectId}/uploads/{uploadId}/complete:
+    parameters:
+      - $ref: '#/components/parameters/ProjectId'
+      - $ref: '#/components/parameters/UploadId'
+    post:
+      tags: [Uploads]
+      operationId: completeUpload
+      summary: Finish an upload
+      description: |
+        Joins the parts and starts encoding. The video moves to `processing`.
+        Safe to retry: if the upload was already completed, it returns `202` with
+        the current video.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [parts]
+              properties:
+                parts:
+                  type: array
+                  minItems: 1
+                  maxItems: 10000
+                  items:
+                    type: object
+                    required: [partNumber, etag]
+                    properties:
+                      partNumber:
+                        type: integer
+                        minimum: 1
+                        maximum: 10000
+                      etag:
+                        type: string
+                        description: Value of the `ETag` header returned by the part upload.
+      responses:
+        '202':
+          description: Upload finished. Encoding started.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Video'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: The upload was cancelled or expired.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+
+  /v1/projects/{projectId}/videos:
+    parameters:
+      - $ref: '#/components/parameters/ProjectId'
+    get:
+      tags: [Videos]
+      operationId: listVideos
+      summary: List videos
+      parameters:
+        - name: status
+          in: query
+          required: false
+          description: Only videos with this status.
+          schema:
+            $ref: '#/components/schemas/VideoStatus'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: Videos, newest first.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VideoList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /v1/projects/{projectId}/videos/{videoId}:
+    parameters:
+      - $ref: '#/components/parameters/ProjectId'
+      - $ref: '#/components/parameters/VideoId'
+    get:
+      tags: [Videos]
+      operationId: getVideo
+      summary: Get a video and its status
+      responses:
+        '200':
+          description: The video.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Video'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      tags: [Videos]
+      operationId: updateVideo
+      summary: Update a video
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              minProperties: 1
+              properties:
+                title:
+                  $ref: '#/components/schemas/VideoTitle'
+      responses:
+        '200':
+          description: Video updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Video'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [Videos]
+      operationId: deleteVideo
+      summary: Delete a video
+      description: Deletes the original, all qualities and thumbnails. Playback stops within 5 minutes.
+      responses:
+        '204':
+          description: Video deleted.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /v1/projects/{projectId}/videos/{videoId}/playback-tokens:
+    parameters:
+      - $ref: '#/components/parameters/ProjectId'
+      - $ref: '#/components/parameters/VideoId'
+    post:
+      tags: [Playback]
+      operationId: createPlaybackToken
+      summary: Create a playback token
+      description: |
+        Call this from your server each time you show the video to a viewer.
+        The token is signed (HMAC) and holds the video ID, the expiry and the
+        allowed domain. The CDN refuses requests whose `Origin` or `Referer` is
+        another domain.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlaybackTokenInput'
+      responses:
+        '201':
+          description: Token created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaybackToken'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+  /v1/projects/{projectId}/webhook-endpoints:
+    parameters:
+      - $ref: '#/components/parameters/ProjectId'
+    get:
+      tags: [Webhooks]
+      operationId: listWebhookEndpoints
+      summary: List webhook endpoints
+      responses:
+        '200':
+          description: Endpoints of the project. The signing secret is never returned here.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/WebhookEndpoint'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      tags: [Webhooks]
+      operationId: createWebhookEndpoint
+      summary: Add a webhook endpoint
+      description: |
+        Up to 5 endpoints per project. The host must resolve to a public address;
+        private, loopback and link-local addresses are refused here (`400`) and
+        again on every send.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [url, events]
+              properties:
+                url:
+                  type: string
+                  format: uri
+                  pattern: '^https://'
+                  examples: ['https://courses.example.com/hooks/segmnt']
+                events:
+                  type: array
+                  minItems: 1
+                  uniqueItems: true
+                  items:
+                    $ref: '#/components/schemas/WebhookEventType'
+      responses:
+        '201':
+          description: Endpoint added. `signingSecret` is shown only in this response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookEndpointWithSecret'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /v1/projects/{projectId}/webhook-endpoints/{endpointId}:
+    parameters:
+      - $ref: '#/components/parameters/ProjectId'
+      - name: endpointId
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: '^whe_[A-Za-z0-9]+$'
+    delete:
+      tags: [Webhooks]
+      operationId: deleteWebhookEndpoint
+      summary: Remove a webhook endpoint
+      responses:
+        '204':
+          description: Endpoint removed.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /v1/projects/{projectId}/usage:
+    parameters:
+      - $ref: '#/components/parameters/ProjectId'
+    get:
+      tags: [Usage]
+      operationId: getProjectUsage
+      summary: Get project usage
+      description: Account totals and plan limits are in `GET /v1/billing/plan`.
+      parameters:
+        - name: from
+          in: query
+          required: false
+          description: Start of the period (inclusive). Default is the start of the current billing period.
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          required: false
+          description: End of the period (inclusive). Default is today.
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Usage of the project.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectUsage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /v1/billing/plan:
+    get:
+      tags: [Billing]
+      operationId: getBillingPlan
+      summary: Get the account's plan, limits and usage
+      security:
+        - session: []
+      responses:
+        '200':
+          description: Current plan.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountPlan'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /v1/billing/plans:
+    get:
+      tags: [Billing]
+      operationId: listBillingPlans
+      summary: List plans you can buy
+      security:
+        - session: []
+      responses:
+        '200':
+          description: Plans on sale.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Plan'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /v1/billing/checkout:
+    post:
+      tags: [Billing]
+      operationId: createCheckout
+      summary: Start a checkout
+      description: |
+        Returns the payment provider's hosted checkout page. Send the user there.
+        The provider returns the user to the dashboard. The plan changes only when
+        the provider's payment webhook confirms the payment.
+      security:
+        - session: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [planId]
+              properties:
+                planId:
+                  $ref: '#/components/schemas/PlanId'
+                discountCode:
+                  type: string
+                  maxLength: 64
+                  description: Founding-customer or referral code.
+      responses:
+        '201':
+          description: Checkout created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Checkout'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /v1/billing/providers/{provider}/webhook:
+    parameters:
+      - name: provider
+        in: path
+        required: true
+        schema:
+          type: string
+          enum: [moyasar]
+    post:
+      tags: [Billing]
+      operationId: receivePaymentWebhook
+      summary: Payment provider callback (internal)
+      description: |
+        Called only by the payment provider. Not for customers. The request is
+        checked with the provider's own signature or secret token, so it has no
+        segmnt authentication. The body is the provider's own format.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '204':
+          description: Event accepted (also when it was already processed).
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+webhooks:
+  video.ready:
+    post:
+      tags: [Webhooks]
+      operationId: onVideoReady
+      summary: All qualities are ready and the video can play
+      parameters:
+        - $ref: '#/components/parameters/WebhookSignature'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookEvent'
+      responses:
+        '200':
+          $ref: '#/components/responses/WebhookReceived'
+  video.failed:
+    post:
+      tags: [Webhooks]
+      operationId: onVideoFailed
+      summary: Encoding failed
+      description: '`data.video.failure` says why.'
+      parameters:
+        - $ref: '#/components/parameters/WebhookSignature'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookEvent'
+      responses:
+        '200':
+          $ref: '#/components/responses/WebhookReceived'
+  video.held:
+    post:
+      tags: [Webhooks]
+      operationId: onVideoHeld
+      summary: Our team held the video and it does not play
+      description: When the hold ends, `video.ready` is sent again.
+      parameters:
+        - $ref: '#/components/parameters/WebhookSignature'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookEvent'
+      responses:
+        '200':
+          $ref: '#/components/responses/WebhookReceived'
+
+components:
+  securitySchemes:
+    apiKey:
+      type: http
+      scheme: bearer
+      description: Project API key. Server-side only.
+    session:
+      type: apiKey
+      in: cookie
+      name: segmnt_session
+      description: Dashboard session cookie, set after SSO sign-in.
+
+  parameters:
+    AuthProviderId:
+      name: provider
+      in: path
+      required: true
+      description: Sign-in provider id, from `GET /auth/providers` (for example `google`).
+      schema:
+        type: string
+        pattern: '^[a-z0-9_-]+$'
+    ProjectId:
+      name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: '^prj_[A-Za-z0-9]+$'
+    VideoId:
+      name: videoId
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: '^vid_[A-Za-z0-9]+$'
+    UploadId:
+      name: uploadId
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: '^upl_[A-Za-z0-9]+$'
+    DomainId:
+      name: domainId
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: '^dom_[A-Za-z0-9]+$'
+    Limit:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    Cursor:
+      name: cursor
+      in: query
+      required: false
+      description: '`nextCursor` from the previous page.'
+      schema:
+        type: string
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: false
+      description: Any unique string. A retry with the same key within 24 hours returns the first result.
+      schema:
+        type: string
+        maxLength: 255
+    WebhookSignature:
+      name: Segmnt-Signature
+      in: header
+      required: true
+      description: |
+        `t=<unix seconds>,v1=<hex HMAC-SHA256>`. The HMAC is over `<t>.<raw body>`
+        with the endpoint's signing secret. `t` is the time of this delivery
+        attempt (each retry is signed again), so refuse a `t` older than 5 minutes.
+      schema:
+        type: string
+        examples: ['t=1791648000,v1=5f2b...']
+
+  responses:
+    AuthNotConfigured:
+      description: Sign-in is not configured in this environment (`code` is `not_configured`).
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    BadRequest:
+      description: The request is not valid.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Unauthorized:
+      description: Missing or wrong API key or session.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Forbidden:
+      description: Not allowed, for example a plan limit (`code` is `plan_limit_reached`) or a domain that is not verified (`domain_not_verified`).
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    NotFound:
+      description: Not found, or not in a project this key or session can use.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Conflict:
+      description: The resource is in the wrong state, for example a video that is not `ready` yet.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    TooManyRequests:
+      description: Rate limit reached. Wait for `Retry-After` seconds.
+      headers:
+        Retry-After:
+          schema:
+            type: integer
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    WebhookReceived:
+      description: |
+        Return any 2xx within 10 seconds. Other answers are retried with backoff
+        for up to 24 hours. Events can arrive more than once and out of order:
+        use `id` to skip duplicates, and ignore an event whose
+        `data.video.updatedAt` is older than the one you have (or call
+        `GET` video for the current state).
+
+  schemas:
+    Problem:
+      type: object
+      required: [type, title, status, code]
+      properties:
+        type:
+          type: string
+          format: uri-reference
+        title:
+          type: string
+        status:
+          type: integer
+        code:
+          type: string
+          description: Stable error code for programs.
+          examples: [plan_limit_reached]
+        detail:
+          type: string
+
+    Timestamp:
+      type: string
+      format: date-time
+
+    AuthProvider:
+      type: object
+      required: [id, label]
+      properties:
+        id:
+          type: string
+          description: Provider id, used in the `/auth/{provider}/...` routes.
+          examples: [google]
+        label:
+          type: string
+          description: Human-readable name for the sign-in button.
+          examples: [Google]
+
+    Me:
+      type: object
+      required: [user, account]
+      properties:
+        user:
+          type: object
+          required: [id, role]
+          properties:
+            id:
+              type: string
+              examples: [usr_9fK2mQ]
+            email:
+              type: [string, 'null']
+              description: Only set when a provider verified it.
+            displayName:
+              type: [string, 'null']
+            role:
+              type: string
+              description: The user's role in the account. The MVP has `owner`.
+              examples: [owner]
+        account:
+          type: object
+          required: [id, name, planId, planStatus, createdAt]
+          properties:
+            id:
+              type: string
+              examples: [acc_5bT8qL]
+            name:
+              type: string
+            planId:
+              type: string
+              description: Current plan. The MVP has `free`; billing (A9) adds paid plans.
+              examples: [free]
+            planStatus:
+              type: string
+              enum: [active, pilot, past_due, canceled]
+            createdAt:
+              $ref: '#/components/schemas/Timestamp'
+
+    Project:
+      type: object
+      required: [id, name, createdAt, whiteLabel, branding]
+      properties:
+        id:
+          type: string
+          examples: [prj_8fK2mQ]
+        name:
+          type: string
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+        whiteLabel:
+          type: boolean
+          readOnly: true
+          description: |
+            True when the account's plan may hide our logo and brand the player
+            (a paid feature; free plans always show our logo).
+        branding:
+          $ref: '#/components/schemas/ProjectBranding'
+    ProjectBranding:
+      type: object
+      required: [hideLogo, primaryColor, logoUrl]
+      description: White-label player branding. Paid plans only (free plans always show our logo).
+      properties:
+        hideLogo:
+          type: boolean
+          default: false
+          description: Hide the segmnt badge on the player.
+        primaryColor:
+          type: string
+          pattern: '^#[0-9a-fA-F]{6}$'
+          default: '#0B5D42'
+          examples: ['#0B5D42']
+          description: Player primary colour (accent).
+        logoUrl:
+          type: [string, 'null']
+          description: |
+            Customer logo shown instead of ours, or null. Must be an
+            `https://` URL (up to 2048 characters); an `http://` URL is
+            rejected and reads back as null.
+    ProjectInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          examples: [Client A courses]
+    ProjectUpdateInput:
+      type: object
+      minProperties: 1
+      description: Rename a project and/or update its white-label branding. At least one field is required.
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          examples: [Client A courses]
+        branding:
+          type: object
+          minProperties: 1
+          description: |
+            Partial branding update. Setting branding on a plan without
+            `whiteLabel` returns `403 plan_limit_reached`.
+          properties:
+            hideLogo:
+              type: boolean
+            primaryColor:
+              type: string
+              pattern: '^#[0-9a-fA-F]{6}$'
+            logoUrl:
+              type: [string, 'null']
+              description: |
+                Customer logo URL. Must be an `https://` URL (up to 2048
+                characters), or null to clear it. An `http://` URL is
+                rejected with `400 invalid_request`.
+    ProjectList:
+      type: object
+      required: [data, nextCursor]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Project'
+        nextCursor:
+          type: [string, 'null']
+
+    ApiKey:
+      type: object
+      required: [id, name, prefix, createdAt, lastUsedAt]
+      properties:
+        id:
+          type: string
+          examples: [key_3hT9aZ]
+        name:
+          type: string
+        prefix:
+          type: string
+          description: First characters of the key, to recognise it.
+          examples: [Abcd1234]
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+        lastUsedAt:
+          description: |
+            When the key was last used. Updated at most once a minute, so it can lag
+            real use by up to 60 seconds; `null` means the key has never been used.
+          oneOf:
+            - $ref: '#/components/schemas/Timestamp'
+            - type: 'null'
+    ApiKeyWithSecret:
+      allOf:
+        - $ref: '#/components/schemas/ApiKey'
+        - type: object
+          required: [secret]
+          properties:
+            secret:
+              type: string
+              description: |
+                The full key: `sk_{prefix}_{secret}` (docs/architecture.md section 9).
+                Shown only in this response; we store only the SHA-256 of the secret.
+
+    Domain:
+      type: object
+      required: [id, hostname, status, verification, createdAt, verifiedAt]
+      properties:
+        id:
+          type: string
+          examples: [dom_7pW1cX]
+        hostname:
+          type: string
+          description: |
+            Lowercase hostname. Playback matches this exact host only (see
+            Playback in the API description); a subdomain needs its own domain.
+          examples: [courses.example.com]
+        status:
+          type: string
+          enum: [pending, verified]
+        verification:
+          type: object
+          description: Create this DNS record to prove you own the domain.
+          required: [type, name, value]
+          properties:
+            type:
+              type: string
+              const: TXT
+            name:
+              type: string
+              examples: [_segmnt-verify.courses.example.com]
+            value:
+              type: string
+              examples: [segmnt-verify=b41c09e2f7a3d6c1]
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+        verifiedAt:
+          oneOf:
+            - $ref: '#/components/schemas/Timestamp'
+            - type: 'null'
+
+    UploadInput:
+      type: object
+      required: [title, fileName, sizeBytes, contentType]
+      properties:
+        title:
+          $ref: '#/components/schemas/VideoTitle'
+        fileName:
+          type: string
+          maxLength: 255
+          examples: [lesson-01.mp4]
+        sizeBytes:
+          type: integer
+          minimum: 1
+          description: File size. The plan sets the maximum.
+          examples: [2147483648]
+        contentType:
+          type: string
+          enum: [video/mp4, video/quicktime, video/webm, video/x-matroska]
+    Upload:
+      type: object
+      required: [id, video, partSizeBytes, parts, expiresAt]
+      properties:
+        id:
+          type: string
+          examples: [upl_2bN6rD]
+        video:
+          $ref: '#/components/schemas/Video'
+        partSizeBytes:
+          type: integer
+          description: Size of every part except the last one.
+          examples: [104857600]
+        parts:
+          type: array
+          items:
+            type: object
+            required: [partNumber, url]
+            properties:
+              partNumber:
+                type: integer
+                minimum: 1
+              url:
+                type: string
+                format: uri
+                description: Pre-signed `PUT` URL for this part. Do not log it.
+        expiresAt:
+          $ref: '#/components/schemas/Timestamp'
+
+    VideoTitle:
+      type: string
+      minLength: 1
+      maxLength: 200
+      examples: [Lesson 1 - Introduction]
+    VideoStatus:
+      type: string
+      enum: [uploading, processing, ready, failed, held]
+      description: |
+        - `uploading`: waiting for the parts and the complete call.
+        - `processing`: encoding to HLS.
+        - `ready`: can play.
+        - `failed`: encoding failed; see `failure`.
+        - `held`: held by our team; does not play.
+    Quality:
+      type: string
+      enum: ['360p', '720p', '1080p', '1440p', '2160p']
+      description: 1440p and 2160p only on paid plans, and never above the source.
+    Video:
+      type: object
+      required: [id, projectId, title, status, durationSeconds, qualities, sizeBytes, failure, createdAt, updatedAt, readyAt]
+      properties:
+        id:
+          type: string
+          examples: [vid_9xR4tL]
+        projectId:
+          type: string
+        title:
+          $ref: '#/components/schemas/VideoTitle'
+        status:
+          $ref: '#/components/schemas/VideoStatus'
+        durationSeconds:
+          type: [number, 'null']
+          description: Known after encoding.
+        qualities:
+          type: array
+          description: Qualities that can play. Empty until `ready`.
+          items:
+            $ref: '#/components/schemas/Quality'
+        sizeBytes:
+          type: integer
+          description: Size of the original file.
+        failure:
+          description: Set only when `status` is `failed`.
+          oneOf:
+            - type: object
+              required: [code, message]
+              properties:
+                code:
+                  type: string
+                  examples: [unsupported_codec]
+                message:
+                  type: string
+            - type: 'null'
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+        updatedAt:
+          $ref: '#/components/schemas/Timestamp'
+        readyAt:
+          oneOf:
+            - $ref: '#/components/schemas/Timestamp'
+            - type: 'null'
+    VideoList:
+      type: object
+      required: [data, nextCursor]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Video'
+        nextCursor:
+          type: [string, 'null']
+
+    PlaybackTokenInput:
+      type: object
+      required: [domain]
+      properties:
+        domain:
+          type: string
+          format: hostname
+          description: A verified domain of the project, where the player runs.
+          examples: [courses.example.com]
+        expiresInSeconds:
+          type: integer
+          minimum: 60
+          maximum: 86400
+          default: 14400
+          description: Make it longer than the video so playback does not stop.
+    PlaybackToken:
+      type: object
+      required: [token, expiresAt, embedUrl, thumbnailUrl]
+      properties:
+        token:
+          type: string
+          description: Opaque. Do not parse it; the format can change.
+        expiresAt:
+          $ref: '#/components/schemas/Timestamp'
+        playlistUrl:
+          type: string
+          format: uri
+          description: |
+            HLS master playlist for your own player (hls.js or Safari). Only on
+            plans with `whiteLabel`; other plans must use `embedUrl`, which shows
+            our logo. The CDN adds the token to every link inside the playlists.
+          examples: ['https://test-cdn.segmnt.cloud/v/vid_9xR4tL/master.m3u8?token=...']
+        embedUrl:
+          type: string
+          format: uri
+          description: Our player (hls.js) for an iframe on the token's domain. Shows our logo unless the plan has `whiteLabel`.
+        thumbnailUrl:
+          type: string
+          format: uri
+
+    WebhookEventType:
+      type: string
+      enum: [video.ready, video.failed, video.held]
+    WebhookEndpoint:
+      type: object
+      required: [id, url, events, createdAt]
+      properties:
+        id:
+          type: string
+          examples: [whe_5mJ8kV]
+        url:
+          type: string
+          format: uri
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/WebhookEventType'
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+    WebhookEndpointWithSecret:
+      allOf:
+        - $ref: '#/components/schemas/WebhookEndpoint'
+        - type: object
+          required: [signingSecret]
+          properties:
+            signingSecret:
+              type: string
+              description: Use it to check `Segmnt-Signature`.
+    WebhookEvent:
+      type: object
+      required: [id, type, createdAt, projectId, data]
+      properties:
+        id:
+          type: string
+          description: Same for every retry of this event.
+          examples: [evt_1qA7zP]
+        type:
+          $ref: '#/components/schemas/WebhookEventType'
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+        projectId:
+          type: string
+        data:
+          type: object
+          required: [video]
+          properties:
+            video:
+              $ref: '#/components/schemas/Video'
+
+    ProjectUsage:
+      type: object
+      required: [projectId, from, to, storedSeconds, watchedMinutes]
+      properties:
+        projectId:
+          type: string
+        from:
+          type: string
+          format: date
+        to:
+          type: string
+          format: date
+        storedSeconds:
+          type: integer
+          description: Total length of the project's videos now (not only in the period).
+        watchedMinutes:
+          type: integer
+          description: Minutes watched by viewers in the period.
+
+    PlanId:
+      type: string
+      description: Plan names and prices are set by the board. Examples are not real plans.
+      examples: [free]
+    PlanLimits:
+      type: object
+      required: [storedSeconds, watchedMinutesPerPeriod, verifiedDomains, maxQuality, whiteLabel]
+      description: '`null` means no limit.'
+      properties:
+        storedSeconds:
+          type: [integer, 'null']
+        watchedMinutesPerPeriod:
+          type: [integer, 'null']
+        verifiedDomains:
+          type: [integer, 'null']
+        maxQuality:
+          $ref: '#/components/schemas/Quality'
+        whiteLabel:
+          type: boolean
+          description: Can hide our logo and brand the player.
+    Plan:
+      type: object
+      required: [id, name, price, limits]
+      properties:
+        id:
+          $ref: '#/components/schemas/PlanId'
+        name:
+          type: string
+        price:
+          type: object
+          required: [amount, currency, interval]
+          description: Before VAT. VAT (15% in Saudi Arabia) is added at checkout.
+          properties:
+            amount:
+              type: integer
+              minimum: 0
+              description: Smallest currency unit (halalas for SAR).
+            currency:
+              type: string
+              examples: [SAR]
+            interval:
+              type: string
+              enum: [month, year]
+        limits:
+          $ref: '#/components/schemas/PlanLimits'
+    AccountPlan:
+      type: object
+      required: [plan, status, currentPeriod, limits, usage]
+      properties:
+        plan:
+          type: object
+          required: [id, name]
+          properties:
+            id:
+              $ref: '#/components/schemas/PlanId'
+            name:
+              type: string
+        status:
+          type: string
+          enum: [active, pilot, past_due, canceled]
+        currentPeriod:
+          type: object
+          required: [start, end]
+          properties:
+            start:
+              $ref: '#/components/schemas/Timestamp'
+            end:
+              $ref: '#/components/schemas/Timestamp'
+        limits:
+          $ref: '#/components/schemas/PlanLimits'
+        usage:
+          type: object
+          description: Totals for all projects in the account in the current period.
+          required: [storedSeconds, watchedMinutes, verifiedDomains]
+          properties:
+            storedSeconds:
+              type: integer
+            watchedMinutes:
+              type: integer
+            verifiedDomains:
+              type: integer
+    Checkout:
+      type: object
+      required: [id, checkoutUrl, expiresAt]
+      properties:
+        id:
+          type: string
+        checkoutUrl:
+          type: string
+          format: uri
+          description: Hosted checkout page of the payment provider.
+        expiresAt:
+          $ref: '#/components/schemas/Timestamp'
