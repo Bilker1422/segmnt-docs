@@ -21,6 +21,12 @@ info:
     redirected to the provider and back, then the `segmnt_session` cookie
     authenticates the account routes.
 
+    ## Rate limits
+    Every `/v1/**` and `/auth/**` request is rate limited by client IP (task
+    A17): `/v1/**` allows 1,200 requests per minute and `/auth/**` allows 60 per
+    minute. `GET /health` and `OPTIONS` preflight are never counted. A blocked
+    request gets `429` with a `Retry-After` header and `code: "rate_limited"`.
+
     ## Video lifecycle
     `uploading` → `processing` → `ready`, or `failed`. Our team can move a video to
     `held` (it does not play) or back to `ready`. Moving to `ready`, `failed`
