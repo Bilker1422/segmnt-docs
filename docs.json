@@ -11,14 +11,14 @@
   "favicon": "/favicon.svg",
   "colors": {
     "primary": "#0B5D42",
-    "light": "#0B5D42",
-    "dark": "#4CAF8E"
+    "light": "#6FC79E",
+    "dark": "#0B5D42"
   },
   "appearance": {
     "default": "system"
   },
   "fonts": {
-    "family": "IBM Plex Sans"
+    "family": "IBM Plex Sans Arabic"
   },
   "icons": {
     "library": "lucide"
