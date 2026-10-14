@@ -2372,13 +2372,13 @@ components:
           readOnly: true
           description: |
             True when the account's plan may hide our logo and brand the player
-            (a paid feature; free plans always show our logo).
+            (Pro and Agency; Free and Starter always keep our logo and brand colour).
         branding:
           $ref: '#/components/schemas/ProjectBranding'
     ProjectBranding:
       type: object
       required: [hideLogo, primaryColor, logoUrl]
-      description: White-label player branding. Paid plans only (free plans always show our logo).
+      description: White-label player branding. Pro and Agency only (Free and Starter always keep our logo and brand colour).
       properties:
         hideLogo:
           type: boolean
