@@ -137,6 +137,7 @@ tags:
       route is gated by `adminAccess` (a Cloudflare Access JWT, or the TEST
       `ADMIN_TOKEN`). Internal helper routes are called by our own Workers with
       `internalSecret`.
+    x-internal: true
   - name: System
     description: Health check.
 paths:
@@ -428,6 +429,8 @@ paths:
   /v1/admin/bans:
     get:
       tags: [Admin]
+      x-excluded: true
+      x-internal: true
       operationId: listBans
       summary: List bans
       description: |
@@ -453,15 +456,19 @@ paths:
                 $ref: '#/components/schemas/Problem'
     post:
       tags: [Admin]
+      x-excluded: true
+      x-internal: true
       operationId: createBan
       summary: Ban an account, a phone and/or a device
       description: |
         **Every ban needs board approval.** The request must carry a
         `boardApprovalRef`; without one this answers `403 board_approval_required`
-        and nothing is written. A ban blocks the account (`banned_at`, so all
-        sessions and API keys stop at once), the phone number and the device
-        fingerprint. Safe to call twice: an identical active ban is returned, not
-        duplicated.
+        and nothing is written. A ban blocks the account (`banned_at`), the phone
+        number and the device fingerprint. Sessions stop at once: session lookups
+        ignore a banned account. API keys are **not** revoked, so an existing key
+        keeps working on non-upload routes; upload routes are gated separately by
+        the upload check and answer `403 account_banned`. Safe to call twice: an
+        identical active ban is returned, not duplicated.
       security:
         - adminAccess: []
       requestBody:
@@ -503,6 +510,8 @@ paths:
   /v1/admin/bans/{banId}/lift:
     post:
       tags: [Admin]
+      x-excluded: true
+      x-internal: true
       operationId: liftBan
       summary: Lift a ban
       description: Clears the ban; when it was the account's last active ban, `banned_at` is cleared too.
@@ -1447,6 +1456,8 @@ paths:
   /v1/admin/overview:
     get:
       tags: [Admin]
+      x-excluded: true
+      x-internal: true
       operationId: getAdminOverview
       summary: Review queue counts
       security:
@@ -1466,6 +1477,8 @@ paths:
   /v1/admin/scan:
     post:
       tags: [Admin]
+      x-excluded: true
+      x-internal: true
       operationId: runAdminScan
       summary: Run the abuse alert scan now
       description: The same scan the cron runs every 15 minutes. Idempotent per window.
@@ -1503,6 +1516,8 @@ paths:
   /v1/admin/alerts:
     get:
       tags: [Admin]
+      x-excluded: true
+      x-internal: true
       operationId: listAdminAlerts
       summary: List abuse alerts
       security:
@@ -1534,6 +1549,8 @@ paths:
       - $ref: '#/components/parameters/AlertId'
     post:
       tags: [Admin]
+      x-excluded: true
+      x-internal: true
       operationId: ackAdminAlert
       summary: Acknowledge an alert
       security:
@@ -1560,6 +1577,8 @@ paths:
   /v1/admin/accounts:
     get:
       tags: [Admin]
+      x-excluded: true
+      x-internal: true
       operationId: listAdminAccounts
       summary: List accounts (review list)
       security:
@@ -1590,6 +1609,8 @@ paths:
       - $ref: '#/components/parameters/AccountId'
     get:
       tags: [Admin]
+      x-excluded: true
+      x-internal: true
       operationId: getAdminAccount
       summary: Account detail (projects and usage)
       security:
@@ -1611,6 +1632,8 @@ paths:
       - $ref: '#/components/parameters/AccountId'
     post:
       tags: [Admin]
+      x-excluded: true
+      x-internal: true
       operationId: reviewAdminAccount
       summary: Set the hidden review flag
       description: The flag is never shown to the customer. `ok` clears the account from the review list.
@@ -1646,6 +1669,8 @@ paths:
       - $ref: '#/components/parameters/AccountId'
     post:
       tags: [Admin]
+      x-excluded: true
+      x-internal: true
       operationId: proposeAdminBan
       summary: Propose a ban (needs board approval)
       description: Records the proposal and raises an alert. It never bans an account; a ban runs only after board approval.
@@ -1680,6 +1705,8 @@ paths:
   /v1/admin/videos:
     get:
       tags: [Admin]
+      x-excluded: true
+      x-internal: true
       operationId: listAdminVideos
       summary: List videos (held, ready, failed)
       security:
@@ -1721,6 +1748,8 @@ paths:
       - $ref: '#/components/parameters/VideoId'
     get:
       tags: [Admin]
+      x-excluded: true
+      x-internal: true
       operationId: getAdminVideo
       summary: Video detail with review frames
       security:
@@ -1738,6 +1767,8 @@ paths:
           $ref: '#/components/responses/NotFound'
     delete:
       tags: [Admin]
+      x-excluded: true
+      x-internal: true
       operationId: removeAdminVideo
       summary: Remove a video
       description: Soft delete. The video stops playing within about a minute.
@@ -1756,6 +1787,8 @@ paths:
       - $ref: '#/components/parameters/VideoId'
     post:
       tags: [Admin]
+      x-excluded: true
+      x-internal: true
       operationId: holdAdminVideo
       summary: Hold a video (it stops playing)
       description: Sets `held` and sends the `video.held` webhook. Idempotent.
@@ -1778,6 +1811,8 @@ paths:
       - $ref: '#/components/parameters/VideoId'
     post:
       tags: [Admin]
+      x-excluded: true
+      x-internal: true
       operationId: unholdAdminVideo
       summary: Release a hold (back to ready)
       security:
@@ -1800,6 +1835,8 @@ paths:
       - $ref: '#/components/parameters/FrameName'
     get:
       tags: [Admin]
+      x-excluded: true
+      x-internal: true
       operationId: getAdminVideoFrame
       summary: Fetch one review frame (JPEG)
       description: The frame is private; the admin page fetches it with the admin credential and shows it as a blob.
