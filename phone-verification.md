@@ -1,13 +1,13 @@
 ---
 title: Phone verification
-description: A new free account verifies a Saudi mobile number with a one-time code before its first upload. Start the code, verify it, and see the upload error when verification is missing.
+description: A new free account verifies a mobile number (Saudi or GCC) with a one-time code before its first upload. Start the code, verify it, and see the upload error when verification is missing.
 icon: "smartphone"
 ---
 
-A new **free** account must verify a **Saudi mobile number** before it can upload
-its first video. One phone number is meant to verify one account (the API does
-not enforce that yet). The number is stored only as a salted hash, so nobody can
-read it back.
+A new **free** account must verify a **Saudi or GCC mobile number** before it
+can upload its first video. One phone number is meant to verify one account (the
+API does not enforce that yet). The number is stored only as a salted hash, so
+nobody can read it back.
 
 You verify the number from your own app, with the same session cookie the
 dashboard uses. The dashboard step is not built yet; see
@@ -24,10 +24,26 @@ version is on the Arabic docs site at
 - API in TEST: `https://test-api.segmnt.cloud`
 - Everything on this page uses the **session cookie** (`segmnt_session`), not an
   API key.
-- The number must be a **Saudi mobile**. These forms are accepted, with spaces,
-  dashes or brackets allowed: `05XXXXXXXX`, `5XXXXXXXX`, `9665XXXXXXXX`,
-  `+9665XXXXXXXX`. It is stored in the form `+9665XXXXXXXX`.
+- The number must be a **Saudi or GCC mobile**. Send a full international number
+  (`+CC...`), or a local number together with `country` (see the table below).
+  Without `country`, a local number is treated as Saudi. Spaces, dashes,
+  brackets and dots are allowed. The number is stored in the form `+CC...`
+  (E.164), for example `+966512345678`.
 - SMS is **not live yet**. See [Not live yet](#not-live-yet).
+
+These GCC countries are accepted. `country` is one of `sa`, `ae`, `kw`, `qa`,
+`bh`, `om`:
+
+| `country` | Country | National number | Stored form |
+| --- | --- | --- | --- |
+| `sa` (default) | Saudi Arabia | `5` + 8 digits (`512345678` or `0512345678`) | `+9665XXXXXXXX` |
+| `ae` | United Arab Emirates | `5` + 8 digits (`512345678` or `0512345678`) | `+9715XXXXXXXX` |
+| `kw` | Kuwait | `5`, `6` or `9` + 7 digits (`51234567`) | `+965XXXXXXXX` |
+| `qa` | Qatar | `3`, `5`, `6` or `7` + 7 digits (`31234567`) | `+974XXXXXXXX` |
+| `bh` | Bahrain | `3` + 7 digits (`31234567`) | `+973XXXXXXXX` |
+| `om` | Oman | `7` or `9` + 7 digits (`71234567`) | `+968XXXXXXXX` |
+
+A leading `0` (trunk) in a local number is dropped.
 
 ## 1. Check whether you must verify
 
@@ -61,6 +77,16 @@ curl -X POST "$BASE/v1/me/phone/start" \
   -d '{"phone":"0512345678"}'
 ```
 
+For a GCC number, send the full international number, or a local number with
+`country`:
+
+```bash
+curl -X POST "$BASE/v1/me/phone/start" \
+  -H "Cookie: segmnt_session=$SEGMNT_SESSION" \
+  -H "Content-Type: application/json" \
+  -d '{"phone":"0501234567","country":"ae"}'
+```
+
 Answer (`202`):
 
 ```json
@@ -80,7 +106,11 @@ Notes:
 - Each challenge is for one phone number. Starting again makes a new challenge;
   the old one still works until it is used or it expires.
 - A banned account or phone number gets `403 banned`.
-- A number that is not a Saudi mobile gets `400 invalid_phone`.
+- A number that is not a Saudi or GCC mobile gets `400 invalid_phone`.
+- A `country` that is not one of `sa`, `ae`, `kw`, `qa`, `bh`, `om` gets
+  `400 invalid_country`.
+- If the SMS provider cannot send the code, you get `502 sms_send_failed`.
+  Nothing is stored, so try again.
 
 ## 3. Verify the code
 
@@ -156,7 +186,8 @@ the text. The `type` field links to `https://docs.segmnt.cloud/errors/{code}`.
 | Status | `code` | Where | Meaning | What to do |
 | --- | --- | --- | --- | --- |
 | 400 | `invalid_request` | verify | Missing or wrong `challengeId`, `code` or `fingerprint` | Fix the request. Do not retry. |
-| 400 | `invalid_phone` | start | Not a Saudi mobile number | Send a number like `05XXXXXXXX`. |
+| 400 | `invalid_phone` | start | Not a Saudi or GCC mobile number | Send a number like `05XXXXXXXX` or `+9715XXXXXXXX`. |
+| 400 | `invalid_country` | start | `country` is not `sa`, `ae`, `kw`, `qa`, `bh` or `om` | Send a GCC `country`, or a full international number. |
 | 400 | `invalid_code` | verify | The code is wrong | Try again. After 5 wrong codes the challenge closes. |
 | 401 | `unauthorized` | both | Missing, wrong or expired session | Sign in again. |
 | 403 | `banned` | both | The account, phone or device is under an active ban | Contact us if you think this is a mistake. |
@@ -167,6 +198,7 @@ the text. The `type` field links to `https://docs.segmnt.cloud/errors/{code}`.
 | 410 | `code_expired` | verify | The 10 minutes passed | Start a new code. |
 | 429 | `too_many_attempts` | verify | 5 wrong codes on this challenge | Start a new code. |
 | 429 | `phone_rate_limited` | start | More than 5 codes in an hour | Wait, then try again. |
+| 502 | `sms_send_failed` | start | The SMS provider could not send the code | Try again in a moment. Nothing was stored. |
 | 503 | `not_configured` | both | Phone verification is off in this environment | Nothing to fix on your side. |
 | 503 | `sms_not_configured` | both | No SMS provider is approved yet | Nothing to fix on your side. |
 
@@ -179,7 +211,9 @@ phone-verification release reached TEST:
 - `POST /v1/me/phone/verify` with no session → `401 unauthorized`.
 - `GET /v1/me/phone/start` → `405 method_not_allowed` (both routes are `POST`).
 
-The full flow is proved by our API tests in `api/src/phone.test.ts`: Saudi E.164
-normalization, start and verify, the rate limit, the 10-minute expiry, the 5
-wrong codes, the idempotent retry, the upload gate, and the ban checks. The
-signed-in path needs a real session, so it is not re-run by hand here.
+The full flow is proved by our API tests in `api/src/phone.test.ts`: Saudi and
+GCC E.164 normalization, an unknown `country` (`400 invalid_country`), start and
+verify, the rate limit, the 10-minute expiry, the 5 wrong codes, the idempotent
+retry, the upload gate, the ban checks, and a failed SMS send (`502
+sms_send_failed`, with nothing stored). The signed-in path needs a real session,
+so it is not re-run by hand here.

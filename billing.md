@@ -112,6 +112,8 @@ curl -X POST "$BASE/v1/billing/checkout" \
   -d '{"planId":"pro"}'
 ```
 
+Answer (`201`):
+
 ```json
 {
   "id": "inv_5f0b2c8a",

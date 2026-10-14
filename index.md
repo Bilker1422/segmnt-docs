@@ -21,8 +21,8 @@ on the Arabic docs site at [test-docs.segmnt.cloud](https://test-docs.segmnt.clo
   sign in (SSO only), create a project, make an API key, verify a domain.
 - [Direct upload](/direct-upload) — send a video straight to storage with
   pre-signed URLs. Examples in Node.js, Python and PHP/Laravel.
-- [Phone verification](/phone-verification) — verify a Saudi mobile number
-  before a new free account's first upload.
+- [Phone verification](/phone-verification) — verify a Saudi or GCC mobile
+  number before a new free account's first upload.
 - [Usage and plan limits](/usage-and-limits) — read stored and watched usage,
   see your plan limits, and know what happens when you reach a limit.
 - [Plans, checkout and payment](/billing) — list the plans and prices in SAR,

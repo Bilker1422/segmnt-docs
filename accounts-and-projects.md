@@ -107,8 +107,8 @@ and never returns any hidden account field:
 ```
 
 `phoneVerified` is `true` once a phone number is verified. `phoneVerificationRequired`
-is `true` when the account must verify a Saudi mobile number before its first
-upload (a new free account). See [Phone verification](/phone-verification).
+is `true` when the account must verify a Saudi or GCC mobile number before its
+first upload (a new free account). See [Phone verification](/phone-verification).
 
 Sign out:
 
