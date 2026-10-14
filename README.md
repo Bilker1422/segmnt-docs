@@ -1,7 +1,9 @@
 # segmnt developer docs
 
 Public developer documentation for segmnt, built and hosted on
-[Mintlify](https://mintlify.com). Live at <https://segmnt.mintlify.site>.
+[Mintlify](https://mintlify.com). Live at <https://docs.segmnt.cloud> — the
+production domain the board confirmed on 14 Oct 2026 (YAH-530). The Mintlify
+preview host is <https://segmnt.mintlify.site>.
 
 **This repository is synced automatically.** The source of truth is the private
 `Bilker1422/segmnt` repository, folder `mintlify-docs/`. The
@@ -16,13 +18,14 @@ Mintlify builds this repo and serves the site, including the agent tools
 
 | Path | What it is |
 |---|---|
-| `docs.json` | Mintlify site config: theme, colours, logo, favicon, fonts, navigation, `noindex` for TEST, and the API reference (`api/openapi.yaml`). |
+| `docs.json` | Mintlify site config: theme, colours, logo, favicon, fonts, navigation, and the API reference (`api/openapi.yaml`). |
 | `index.md`, `accounts-and-projects.md`, `direct-upload.md`, `manage-videos.md`, `phone-verification.md`, `usage-and-limits.md`, `billing.md`, `reports-and-review.md`, `moderation.md` | English guide pages. This is the **source of truth** for the English docs. Every customer page that ships must land here, or CI fails. |
 | `logo/` | segmnt logos (`segmnt-logo.svg` light, `segmnt-logo-dark.svg` dark). |
 | `favicon.svg` | segmnt symbol mark. |
 | `api/openapi.yaml` | Copy of the segmnt API contract (`api/openapi.yaml` in the private repo). |
 
-English only. Arabic is out of scope for the Mintlify docs; the product stays
+English only. The board decided (YAH-530) not to host the Arabic docs, so the
+English pages do not link to an Arabic docs site; the product stays
 Arabic-first.
 
 ## Run it locally

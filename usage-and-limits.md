@@ -8,9 +8,7 @@ Your plan sets limits on stored hours, new uploads, watched minutes, domains,
 projects and playback quality. This page shows how to read your usage and your
 limits, and what happens when you reach one.
 
-This guide is written in simple English. It is in English only; the Arabic
-version is on the Arabic docs site at
-[test-docs.segmnt.cloud](https://test-docs.segmnt.cloud/ar/usage-and-limits/).
+This guide is written in simple English.
 
 ## Before you start
 

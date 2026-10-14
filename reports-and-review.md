@@ -9,9 +9,7 @@ to segmnt, and every report raises an alert for our team at once. We may then
 hold the video or remove it. This page shows the report call and what a hold or
 a remove does to playback.
 
-This guide is written in simple English. It is in English only; the Arabic
-version is on the Arabic docs site at
-[test-docs.segmnt.cloud](https://test-docs.segmnt.cloud/ar/reports-and-review/).
+This guide is written in simple English.
 
 ## Before you start
 

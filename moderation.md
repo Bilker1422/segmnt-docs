@@ -15,9 +15,7 @@ and how a held video is released.
 
 > **Status.** This page is **TEST only**. See the "Tested in TEST" section below.
 
-This guide is written in simple English. It is in English only; the Arabic
-version is on the Arabic docs site at
-[test-docs.segmnt.cloud](https://test-docs.segmnt.cloud/ar/moderation/).
+This guide is written in simple English.
 
 ## Before you start
 

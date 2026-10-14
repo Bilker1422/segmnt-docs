@@ -7,9 +7,7 @@ icon: "credit-card"
 segmnt bills in SAR, per month. This page shows how to list the plans, how to
 send a customer to the checkout, and how a confirmed payment changes the plan.
 
-This guide is written in simple English. It is in English only; the Arabic
-version is on the Arabic docs site at
-[test-docs.segmnt.cloud](https://test-docs.segmnt.cloud/ar/billing/).
+This guide is written in simple English.
 
 ## Before you start
 

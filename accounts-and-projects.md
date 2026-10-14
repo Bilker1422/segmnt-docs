@@ -9,9 +9,7 @@ This page covers sign-in, your session, and how to set up **projects**,
 
 You sign in with SSO only. **We never store a password.**
 
-This guide is written in simple English. It is in English only; the Arabic
-version is on the Arabic docs site at
-[test-docs.segmnt.cloud](https://test-docs.segmnt.cloud/ar/accounts-and-projects/).
+This guide is written in simple English.
 
 ## Before you start
 

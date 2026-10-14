@@ -23,14 +23,6 @@
   "icons": {
     "library": "lucide"
   },
-  "banner": {
-    "content": "TEST environment. These docs run on TEST only. Production is a separate, board-approved step."
-  },
-  "seo": {
-    "metatags": {
-      "robots": "noindex"
-    }
-  },
   "navigation": {
     "tabs": [
       {

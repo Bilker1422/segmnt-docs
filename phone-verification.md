@@ -18,9 +18,7 @@ dashboard uses. The dashboard step is not built yet; see
 
 Both calls below use your **session cookie**. An API key cannot call them.
 
-This guide is written in simple English. It is in English only; the Arabic
-version is on the Arabic docs site at
-[test-docs.segmnt.cloud](https://test-docs.segmnt.cloud/ar/phone-verification/).
+This guide is written in simple English.
 
 ## Before you start
 
