@@ -330,8 +330,10 @@ paths:
       operationId: startPhoneVerification
       summary: Send a phone verification code
       description: |
-        Starts phone verification for the signed-in account (task A13). Free
-        accounts must verify a phone number before their first upload. The number
+        Starts phone verification for the signed-in account (task A13). Phone
+        verification is not enforced in this version, so a free account can
+        upload without it; this route is kept for when the wizard phone step
+        ships. The number
         must be a Saudi or GCC mobile (`05XXXXXXXX`, `+9665XXXXXXXX`,
         `+9715XXXXXXXX`, `+965XXXXXXXX`, ...); it is stored only as a salted hash.
         Send a full international number (`+CC...`), or a local number together
@@ -2227,13 +2229,14 @@ components:
             phoneVerified:
               type: boolean
               description: |
-                True once a phone number is verified (task A13). Free accounts
-                must verify one before their first upload.
+                True once a phone number is verified (task A13). Not required to
+                upload in this version: phone verification is deferred.
             phoneVerificationRequired:
               type: boolean
               description: |
-                True when this account must verify a phone before it can upload
-                (a new free account that has not verified yet).
+                True when this account must verify a phone before it can upload.
+                Always `false` in this version: phone verification is off, so no
+                account is gated (task A13 is deferred).
 
     PhoneStartInput:
       type: object
