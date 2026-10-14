@@ -1735,6 +1735,11 @@ paths:
           schema:
             type: string
             pattern: '^acc_[A-Za-z0-9]+$'
+        - name: moderationState
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/ModerationState'
         - $ref: '#/components/parameters/Limit'
         - $ref: '#/components/parameters/Cursor'
       responses:
@@ -1860,6 +1865,57 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
+
+  /v1/admin/moderation:
+    get:
+      tags: [Admin]
+      x-excluded: true
+      x-internal: true
+      operationId: listAdminModerationQueue
+      summary: Human review queue (held and awaiting a check)
+      description: |
+        Videos that are held or still waiting for a moderation check: a free
+        account's first videos (`pending`) and anything the check flagged
+        (`flagged`). Oldest first, so nothing sits unlooked-at.
+      security:
+        - adminAccess: []
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: Videos to review, oldest first.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminVideoList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /v1/admin/moderation/scan:
+    post:
+      tags: [Admin]
+      x-excluded: true
+      x-internal: true
+      operationId: runModerationScan
+      summary: Run the moderation check now
+      description: |
+        Runs the AI check over the review frames of the videos that still need
+        it. Safe to call any time: a video is only checked once. The same scan
+        runs on the Worker cron when `MODERATION_PROVIDER` is set.
+      security:
+        - adminAccess: []
+      responses:
+        '200':
+          description: What the scan did.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModerationScanResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
 
 webhooks:
   video.ready:
@@ -2977,7 +3033,7 @@ components:
       allOf:
         - $ref: '#/components/schemas/Video'
         - type: object
-          required: [frames]
+          required: [frames, moderationState]
           properties:
             deletedAt:
               type: [string, 'null']
@@ -2988,6 +3044,8 @@ components:
               type: [string, 'null']
             projectName:
               type: [string, 'null']
+            moderationState:
+              $ref: '#/components/schemas/ModerationState'
             frames:
               type: array
               items:
@@ -3009,7 +3067,7 @@ components:
       allOf:
         - $ref: '#/components/schemas/Video'
         - type: object
-          required: [accountId, accountName]
+          required: [accountId, accountName, moderationState]
           properties:
             accountId:
               type: [string, 'null']
@@ -3017,3 +3075,30 @@ components:
             accountName:
               type: [string, 'null']
               description: The owning account's name, for the admin list.
+            moderationState:
+              $ref: '#/components/schemas/ModerationState'
+
+    ModerationState:
+      type: string
+      enum: [none, pending, cleared, flagged]
+      description: |
+        Moderation state of a video (A12b). `none`: playable as soon as it is
+        `ready` (no check pending). `pending`: held until checked - every one of
+        a free account's first videos starts here. `cleared`: checked and
+        allowed. `flagged`: the check flagged it; held until a human decides.
+
+    ModerationScanResult:
+      type: object
+      required: [provider, considered, cleared, flagged, failed]
+      properties:
+        provider:
+          type: [string, 'null']
+          description: The provider that ran, or `null` when none is configured.
+        considered:
+          type: integer
+        cleared:
+          type: integer
+        flagged:
+          type: integer
+        failed:
+          type: integer
