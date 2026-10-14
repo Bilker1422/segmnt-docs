@@ -2960,8 +2960,11 @@ components:
       allOf:
         - $ref: '#/components/schemas/Video'
         - type: object
-          required: [accountId]
+          required: [accountId, accountName]
           properties:
             accountId:
               type: [string, 'null']
               description: The account that owns the video's project.
+            accountName:
+              type: [string, 'null']
+              description: The owning account's name, for the admin list.
