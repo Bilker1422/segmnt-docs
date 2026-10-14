@@ -1301,7 +1301,7 @@ paths:
         required: true
         schema:
           type: string
-          enum: [moyasar]
+          enum: [moyasar, polar]
     post:
       tags: [Billing]
       operationId: receivePaymentWebhook
