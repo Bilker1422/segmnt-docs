@@ -132,9 +132,11 @@ tags:
     description: Plans and checkout through the payment provider's hosted page.
   - name: Admin
     description: |
-      Internal routes for our team (task A13 bans). Guarded by the
-      `X-Admin-Token` header and reached only from the admin page (A12, behind
-      Cloudflare Access). Every ban needs board approval.
+      Internal routes for our team (A12 abuse/review and A13 bans). Not for
+      customers. The page is at `/admin` behind Cloudflare Access. The A12
+      admin routes are gated by `adminAccess` (Cloudflare Access JWT, or the
+      TEST `ADMIN_TOKEN`); the A13 ban routes by `adminToken`. Internal helper
+      routes are called by our own Workers with `internalSecret`.
   - name: System
     description: Health check.
 paths:
@@ -1304,6 +1306,506 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
 
+  /v1/projects/{projectId}/videos/{videoId}/reports:
+    parameters:
+      - $ref: '#/components/parameters/ProjectId'
+      - $ref: '#/components/parameters/VideoId'
+      - $ref: '#/components/parameters/IdempotencyKey'
+    post:
+      tags: [Videos]
+      operationId: createVideoReport
+      summary: File a viewer report on a video
+      description: |
+        The customer's server files a report (for example a viewer pressed a
+        "report" button in the player). Every report raises an internal alert at
+        once. The customer sees nothing back except the stored report.
+        With an `Idempotency-Key`, a retried POST returns the first report and
+        raises no second alert; without it, a report is at-least-once.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VideoReportInput'
+      responses:
+        '200':
+          description: The report already existed (same `Idempotency-Key`); no new alert.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VideoReport'
+        '201':
+          description: The report was stored.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VideoReport'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /v1/internal/block:
+    get:
+      tags: [Admin]
+      operationId: getBlock
+      summary: Is this video or project blocked (internal)
+      description: |
+        Called by the playback Worker (best effort, cached ~60 s) so a held or
+        deleted video, or a banned / over-limit account, stops playing within
+        about a minute. Guarded by `USAGE_REPORT_SECRET`, never by a session.
+      security:
+        - internalSecret: []
+      parameters:
+        - name: id
+          in: query
+          required: true
+          description: A video id (`vid_...`) or a project id (`prj_...`).
+          schema:
+            type: string
+            pattern: '^(vid_|prj_)[A-Za-z0-9]+$'
+      responses:
+        '200':
+          description: The block state.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [blocked]
+                properties:
+                  blocked:
+                    type: boolean
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '405':
+          description: Method not allowed.
+        '503':
+          description: Internal routes are not configured.
+
+  /v1/internal/security-events:
+    post:
+      tags: [Admin]
+      operationId: reportSecurityEvents
+      summary: Report failed playback-token checks (internal)
+      description: |
+        Called by the playback Worker. `eventId` dedupes a retried report, so a
+        repeated POST cannot inflate the "possible leak" count.
+      security:
+        - internalSecret: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [events]
+              properties:
+                events:
+                  type: array
+                  minItems: 1
+                  maxItems: 100
+                  items:
+                    $ref: '#/components/schemas/SecurityEventInput'
+      responses:
+        '202':
+          description: Events accepted.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [accepted, duplicates]
+                properties:
+                  accepted:
+                    type: integer
+                  duplicates:
+                    type: integer
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '405':
+          description: Method not allowed.
+        '503':
+          description: Internal routes are not configured.
+
+  /v1/admin/overview:
+    get:
+      tags: [Admin]
+      operationId: getAdminOverview
+      summary: Review queue counts
+      security:
+        - adminAccess: []
+      responses:
+        '200':
+          description: Counts for the admin home.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminOverview'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '503':
+          description: Admin access is not configured.
+
+  /v1/admin/scan:
+    post:
+      tags: [Admin]
+      operationId: runAdminScan
+      summary: Run the abuse alert scan now
+      description: The same scan the cron runs every 15 minutes. Idempotent per window.
+      security:
+        - adminAccess: []
+      responses:
+        '200':
+          description: How many alerts the scan created.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [created, alerts]
+                properties:
+                  created:
+                    type: integer
+                  alerts:
+                    type: array
+                    description: The alerts this run created (empty when every rule already fired in this window).
+                    items:
+                      type: object
+                      required: [kind, subject, summary]
+                      properties:
+                        kind:
+                          type: string
+                        subject:
+                          type: string
+                        summary:
+                          type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '503':
+          description: Admin access is not configured.
+
+  /v1/admin/alerts:
+    get:
+      tags: [Admin]
+      operationId: listAdminAlerts
+      summary: List abuse alerts
+      security:
+        - adminAccess: []
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [open, acked, all]
+            default: open
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: Alerts, newest first.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlertList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /v1/admin/alerts/{alertId}/ack:
+    parameters:
+      - $ref: '#/components/parameters/AlertId'
+    post:
+      tags: [Admin]
+      operationId: ackAdminAlert
+      summary: Acknowledge an alert
+      security:
+        - adminAccess: []
+      responses:
+        '200':
+          description: The alert is acknowledged (idempotent).
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id, status]
+                properties:
+                  id:
+                    type: string
+                  status:
+                    type: string
+                    const: acked
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /v1/admin/accounts:
+    get:
+      tags: [Admin]
+      operationId: listAdminAccounts
+      summary: List accounts (review list)
+      security:
+        - adminAccess: []
+      parameters:
+        - name: reviewFlag
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [new, ok, watch]
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: Accounts, newest first.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminAccountList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /v1/admin/accounts/{accountId}:
+    parameters:
+      - $ref: '#/components/parameters/AccountId'
+    get:
+      tags: [Admin]
+      operationId: getAdminAccount
+      summary: Account detail (projects and usage)
+      security:
+        - adminAccess: []
+      responses:
+        '200':
+          description: The account, its projects and its usage.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminAccountDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /v1/admin/accounts/{accountId}/review:
+    parameters:
+      - $ref: '#/components/parameters/AccountId'
+    post:
+      tags: [Admin]
+      operationId: reviewAdminAccount
+      summary: Set the hidden review flag
+      description: The flag is never shown to the customer. `ok` clears the account from the review list.
+      security:
+        - adminAccess: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [flag]
+              properties:
+                flag:
+                  type: string
+                  enum: [ok, watch]
+      responses:
+        '200':
+          description: The updated account.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminAccount'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /v1/admin/accounts/{accountId}/ban-proposal:
+    parameters:
+      - $ref: '#/components/parameters/AccountId'
+    post:
+      tags: [Admin]
+      operationId: proposeAdminBan
+      summary: Propose a ban (needs board approval)
+      description: Records the proposal and raises an alert. It never bans an account; a ban runs only after board approval.
+      security:
+        - adminAccess: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason:
+                  type: string
+                  minLength: 1
+                  maxLength: 500
+      responses:
+        '200':
+          description: The account with the proposal recorded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminAccount'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /v1/admin/videos:
+    get:
+      tags: [Admin]
+      operationId: listAdminVideos
+      summary: List videos (held, ready, failed)
+      security:
+        - adminAccess: []
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/VideoStatus'
+        - name: projectId
+          in: query
+          required: false
+          schema:
+            type: string
+            pattern: '^prj_[A-Za-z0-9]+$'
+        - name: accountId
+          in: query
+          required: false
+          schema:
+            type: string
+            pattern: '^acc_[A-Za-z0-9]+$'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: Videos, newest first.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminVideoList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /v1/admin/videos/{videoId}:
+    parameters:
+      - $ref: '#/components/parameters/VideoId'
+    get:
+      tags: [Admin]
+      operationId: getAdminVideo
+      summary: Video detail with review frames
+      security:
+        - adminAccess: []
+      responses:
+        '200':
+          description: The video, its account and the names of its review frames.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminVideo'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [Admin]
+      operationId: removeAdminVideo
+      summary: Remove a video
+      description: Soft delete. The video stops playing within about a minute.
+      security:
+        - adminAccess: []
+      responses:
+        '204':
+          description: The video is removed.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /v1/admin/videos/{videoId}/hold:
+    parameters:
+      - $ref: '#/components/parameters/VideoId'
+    post:
+      tags: [Admin]
+      operationId: holdAdminVideo
+      summary: Hold a video (it stops playing)
+      description: Sets `held` and sends the `video.held` webhook. Idempotent.
+      security:
+        - adminAccess: []
+      responses:
+        '200':
+          description: The held video.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Video'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /v1/admin/videos/{videoId}/unhold:
+    parameters:
+      - $ref: '#/components/parameters/VideoId'
+    post:
+      tags: [Admin]
+      operationId: unholdAdminVideo
+      summary: Release a hold (back to ready)
+      security:
+        - adminAccess: []
+      responses:
+        '200':
+          description: The ready video.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Video'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /v1/admin/videos/{videoId}/frames/{name}:
+    parameters:
+      - $ref: '#/components/parameters/VideoId'
+      - $ref: '#/components/parameters/FrameName'
+    get:
+      tags: [Admin]
+      operationId: getAdminVideoFrame
+      summary: Fetch one review frame (JPEG)
+      description: The frame is private; the admin page fetches it with the admin credential and shows it as a blob.
+      security:
+        - adminAccess: []
+      responses:
+        '200':
+          description: The JPEG frame.
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
 webhooks:
   video.ready:
     post:
@@ -1375,6 +1877,17 @@ components:
         Shared token for the internal `/v1/admin/**` routes (task A13 bans),
         served by the A12 admin page behind Cloudflare Access. Never sent from a
         browser.
+    adminAccess:
+      type: http
+      scheme: bearer
+      description: |
+        Admin credential (task A12). Either a Cloudflare Access JWT (sent as the
+        `Cf-Access-Jwt-Assertion` header when the request passed the Access
+        policy) or the TEST `ADMIN_TOKEN` as a bearer token. Never a customer key.
+    internalSecret:
+      type: http
+      scheme: bearer
+      description: Shared `USAGE_REPORT_SECRET`. Used only by our own Workers (playback, api).
 
   parameters:
     AuthProviderId:
@@ -1392,6 +1905,28 @@ components:
       schema:
         type: string
         pattern: '^prj_[A-Za-z0-9]+$'
+    AccountId:
+      name: accountId
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: '^acc_[A-Za-z0-9]+$'
+    AlertId:
+      name: alertId
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: '^alt_[A-Za-z0-9]+$'
+    FrameName:
+      name: name
+      in: path
+      required: true
+      description: A review frame file name from the video detail (`NNNN.jpg`).
+      schema:
+        type: string
+        pattern: '^[0-9]{4}\.jpg$'
     VideoId:
       name: videoId
       in: path
@@ -2202,3 +2737,227 @@ components:
           type: [string, 'null']
           format: date-time
           description: When the hosted page stops working. `null` when the provider sets no expiry (Moyasar invoices do not expire by default).
+
+    VideoReportInput:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Short label, for example `abuse`, `copyright` or `spam`.
+        detail:
+          type: string
+          maxLength: 1000
+          description: Optional free text from the reporter.
+
+    VideoReport:
+      type: object
+      required: [id, videoId, reason]
+      properties:
+        id:
+          type: string
+        videoId:
+          type: string
+        reason:
+          type: string
+
+    SecurityEventInput:
+      type: object
+      required: [eventId, kind]
+      properties:
+        eventId:
+          type: string
+          maxLength: 128
+          description: Dedupe key. A retried report with the same id is counted once.
+        kind:
+          type: string
+          description: Event type, for example `token_failure`.
+        projectId:
+          type: [string, 'null']
+        videoId:
+          type: [string, 'null']
+        detail:
+          type: [string, 'null']
+          maxLength: 500
+
+    Alert:
+      type: object
+      required: [id, kind, severity, status, summary, createdAt]
+      properties:
+        id:
+          type: string
+        kind:
+          type: string
+          enum: [high_watch_minutes, upload_burst, domain_burst, token_failures, encode_failures, viewer_report, ban_proposed]
+        severity:
+          type: string
+          enum: [info, warning, critical]
+        status:
+          type: string
+          enum: [open, acked]
+        accountId:
+          type: [string, 'null']
+        projectId:
+          type: [string, 'null']
+        videoId:
+          type: [string, 'null']
+        summary:
+          type: string
+        detail:
+          type: object
+          additionalProperties: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        ackedAt:
+          type: [string, 'null']
+          format: date-time
+
+    AlertList:
+      type: object
+      required: [data, nextCursor]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Alert'
+        nextCursor:
+          type: [string, 'null']
+
+    AdminOverview:
+      type: object
+      required: [openAlerts, accountsNew, accountsWatch, videosHeld, videosReady, videosProcessing, videosFailed, reports7d]
+      properties:
+        openAlerts:
+          type: integer
+        accountsNew:
+          type: integer
+        accountsWatch:
+          type: integer
+        videosHeld:
+          type: integer
+        videosReady:
+          type: integer
+        videosProcessing:
+          type: integer
+        videosFailed:
+          type: integer
+        reports7d:
+          type: integer
+
+    AdminAccount:
+      type: object
+      required: [id, name, planId, planStatus, reviewFlag, createdAt]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        planId:
+          type: string
+        planStatus:
+          type: string
+        reviewFlag:
+          type: string
+          enum: [new, ok, watch]
+          description: Internal only. Never shown to the customer.
+        bannedAt:
+          type: [string, 'null']
+          format: date-time
+        banProposedAt:
+          type: [string, 'null']
+          format: date-time
+        banProposedReason:
+          type: [string, 'null']
+        createdAt:
+          type: string
+          format: date-time
+
+    AdminAccountList:
+      type: object
+      required: [data, nextCursor]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminAccount'
+        nextCursor:
+          type: [string, 'null']
+
+    AdminAccountDetail:
+      type: object
+      required: [account, projects, usage]
+      properties:
+        account:
+          $ref: '#/components/schemas/AdminAccount'
+        projects:
+          type: array
+          items:
+            type: object
+            required: [id, name, createdAt]
+            properties:
+              id:
+                type: string
+              name:
+                type: string
+              createdAt:
+                type: string
+                format: date-time
+              deletedAt:
+                type: [string, 'null']
+                format: date-time
+        usage:
+          type: object
+          required: [storedSeconds, watchedMinutes]
+          properties:
+            storedSeconds:
+              type: integer
+            watchedMinutes:
+              type: integer
+
+    AdminVideo:
+      allOf:
+        - $ref: '#/components/schemas/Video'
+        - type: object
+          required: [frames]
+          properties:
+            deletedAt:
+              type: [string, 'null']
+              format: date-time
+            accountId:
+              type: [string, 'null']
+            accountName:
+              type: [string, 'null']
+            projectName:
+              type: [string, 'null']
+            frames:
+              type: array
+              items:
+                type: string
+              description: Review frame file names under `frames/{videoId}/`.
+
+    AdminVideoList:
+      type: object
+      required: [data, nextCursor]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminVideoSummary'
+        nextCursor:
+          type: [string, 'null']
+
+    AdminVideoSummary:
+      allOf:
+        - $ref: '#/components/schemas/Video'
+        - type: object
+          required: [accountId]
+          properties:
+            accountId:
+              type: [string, 'null']
+              description: The account that owns the video's project.
