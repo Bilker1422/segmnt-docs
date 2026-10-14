@@ -1281,6 +1281,13 @@ paths:
                     answers `400 invalid_request` with a clear message and never
                     charges the full price by accident. An empty or blank string
                     is treated as no code.
+
+                    A code applied to a subscription is re-applied on each renewal
+                    for the promised number of months (founding and referral
+                    referrer 12, referral new customer 3). Send no `discountCode`
+                    on a renewal and the promise stored on the subscription is
+                    applied automatically; once the window is used up the renewal
+                    is at the full price.
       responses:
         '201':
           description: Checkout created.

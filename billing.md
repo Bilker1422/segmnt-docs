@@ -173,6 +173,20 @@ curl -X POST "$BASE/v1/billing/checkout" \
 - The code is **counted only when a payment is confirmed**. A provider retry does
   not count the same code twice.
 - A confirmed payment stores the code on the subscription (`discount_code`).
+- **The discount is kept on every renewal for the promised number of months.**
+  A founding code or a referral for the referrer lasts **12 months**; a referral
+  for the new customer lasts **3 months**. The first discounted payment locks the
+  promise on the subscription, and each later hosted payment re-applies it. Send
+  **no** `discountCode` on a renewal: the promise stored on the subscription is
+  applied automatically. Once the window is used up, the renewal is at the
+  **full price** again.
+- The code's `used` counter counts a **customer once**, on the first discounted
+  payment, not once per renewal. So `max_uses = 10` means **10 customers**, even
+  though each of them may pay 12 discounted months.
+- A locked promise is honored even when the code later expires or reaches its
+  cap: the customer was promised the discount. A **new** customer using that same
+  expired or used-up code is still refused with `400 invalid_request`.
+- The 40% cap applies on every payment, including a renewal.
 
 ## 3. The payment that changes the plan
 
