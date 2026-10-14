@@ -1273,7 +1273,13 @@ paths:
                 discountCode:
                   type: string
                   maxLength: 64
-                  description: Not available yet. A request with this field is refused with `400` instead of charging the wrong price.
+                  description: |
+                    An optional discount code. A founding code gives 30% off and
+                    a referral code 10% off; the total discount is capped at 40%.
+                    Codes are case-insensitive. The code is validated before the
+                    provider is called: an unknown, expired, or out-of-uses code
+                    answers `400 invalid_request` with a clear message and never
+                    charges the full price by accident.
       responses:
         '201':
           description: Checkout created.
