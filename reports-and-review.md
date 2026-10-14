@@ -76,6 +76,21 @@ Notes:
 - Our review tools are internal. They are not part of this API and customers
   cannot call them.
 
+### Our review page is internal
+
+Our team reads reports on an internal review page at `/admin` on the dashboard
+host. It sits behind **Cloudflare Access**, and it is not part of this API.
+
+- The page is served only at the real `/admin` path. There is no `#/admin` hash
+  route, so the Access policy on `/admin` covers the page. The API under
+  `/v1/admin/**` is a second door to the same data and shares the same gate.
+- When a reviewer is already signed in through Access, the page opens with no
+  extra token. A shared `ADMIN_TOKEN` is only the TEST fallback: without an
+  Access session the API answers `401` and the page shows a token form.
+- The videos list shows the account **name**, not the raw account id.
+
+Do not call `/v1/admin/**` from your app. It is for our team only.
+
 ## 3. When we hold or remove a video
 
 We can change a video from our side:
