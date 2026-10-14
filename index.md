@@ -26,9 +26,9 @@ and training companies. These guides are in **English**.
   number (available, not required in this version).
 - [Usage and plan limits](/usage-and-limits) — read stored and watched usage,
   see your plan limits, and know what happens when you reach a limit.
-- [Plans, checkout and payment](/billing) — list the plans and prices in SAR,
-  start a checkout (with an optional discount code), and see how a confirmed
-  payment changes the plan.
+- [Plans, payment and the paid-plan whitelist](/billing) — list the plans and
+  prices in SAR, join the paid-plan whitelist while paid plans are not on sale,
+  and see how a confirmed payment changes the plan when billing is on.
 - [Reports and video review](/reports-and-review) — file a viewer report, and
   know what a hold or a remove does to playback.
 - [Moderation and held videos](/moderation) — how the automatic check works,

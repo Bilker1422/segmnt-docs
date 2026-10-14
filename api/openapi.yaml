@@ -1289,10 +1289,16 @@ paths:
     post:
       tags: [Billing]
       operationId: createCheckout
-      summary: Start a checkout
+      summary: Start a checkout (paused)
       description: |
-        Returns the payment provider's hosted checkout page. Send the user there.
-        The provider returns the user to the dashboard. The plan changes only when
+        **Paid billing is paused** (board decision, 14 Oct 2026): every payment
+        gateway is blocked, so no provider is active. This call cannot start a
+        payment and cannot change a plan; it answers `503 billing_paused` before it
+        reaches any provider. Ask the customer to join the paid-plan whitelist
+        (`POST /v1/billing/whitelist`) instead.
+
+        When the board turns billing on (`BILLING_PROVIDER=moyasar|polar`), this
+        returns the provider's hosted checkout page, and the plan changes only when
         the provider's payment webhook confirms the payment.
       security:
         - session: []
@@ -1339,6 +1345,66 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '409':
           $ref: '#/components/responses/Conflict'
+        '503':
+          $ref: '#/components/responses/BillingPaused'
+
+  /v1/billing/whitelist:
+    get:
+      tags: [Billing]
+      operationId: listPlanWhitelist
+      summary: List the account's paid-plan whitelist entries
+      description: |
+        The account's own whitelist entries. Paid plans are not on sale yet, so a
+        customer joins this list instead of checking out.
+      security:
+        - session: []
+      responses:
+        '200':
+          description: The account's entries.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/WhitelistEntry'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      tags: [Billing]
+      operationId: joinPlanWhitelist
+      summary: Join the paid-plan whitelist
+      description: |
+        Records the account's interest in a paid plan. This stores INTENT only: it
+        takes no payment and never changes the plan. It is idempotent per account
+        and plan — calling it again refreshes the e-mail and keeps the original
+        `createdAt`.
+      security:
+        - session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WhitelistJoinRequest'
+      responses:
+        '201':
+          description: The entry (created or refreshed).
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/WhitelistEntry'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
 
   /v1/billing/providers/{provider}/webhook:
     parameters:
@@ -1356,6 +1422,9 @@ paths:
         Called only by the payment provider. Not for customers. The request is
         checked with the provider's own signature or secret token, so it has no
         segmnt authentication. The body is the provider's own format.
+
+        While paid billing is paused, a valid event is acknowledged with `204`
+        and no plan changes. The signature is still checked.
 
         The webhook body is never trusted. A verified event is used only to find
         the provider invoice; the invoice is then read back from the provider API,
@@ -2256,6 +2325,12 @@ components:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/Problem'
+    BillingPaused:
+      description: 'Paid plans are not on sale yet (`code` is `billing_paused`). Nothing was charged and no plan changed.'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
     WebhookReceived:
       description: |
         Return any 2xx within 10 seconds. Other answers are retried with backoff
@@ -2998,6 +3073,29 @@ components:
           type: [string, 'null']
           format: date-time
           description: When the hosted page stops working. `null` when the provider sets no expiry (Moyasar invoices do not expire by default).
+
+    WhitelistJoinRequest:
+      type: object
+      required: [planId]
+      properties:
+        planId:
+          $ref: '#/components/schemas/PlanId'
+        email:
+          type: [string, 'null']
+          maxLength: 254
+          description: Optional contact address for the launch. Defaults to the account owner's e-mail when omitted.
+    WhitelistEntry:
+      type: object
+      required: [planId, email, createdAt]
+      properties:
+        planId:
+          $ref: '#/components/schemas/PlanId'
+        email:
+          type: [string, 'null']
+        createdAt:
+          type: string
+          format: date-time
+          description: When the account first joined the whitelist for this plan. An idempotent re-join keeps this value.
 
     OverageInvoiceResult:
       type: object

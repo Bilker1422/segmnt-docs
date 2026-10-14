@@ -1,12 +1,15 @@
 ---
-title: Plans, checkout and payment
-description: List the plans on sale, start a checkout on Moyasar with an optional discount code, and see how a verified payment changes the plan. Prices in SAR per month, before VAT.
+title: Plans, payment and the paid-plan whitelist
+description: List the plans and prices in SAR, join the paid-plan whitelist while paid plans are not on sale, and see how a payment changes the plan when billing is on. Prices are per month, before VAT.
 icon: "credit-card"
 ---
 
-segmnt bills in SAR, per month. This page shows how to list the plans, how to
-send a customer to the checkout (with an optional discount code), and how a
-confirmed payment changes the plan.
+segmnt bills in SAR, per month. **Paid plans are not on sale yet**: every payment
+gateway is blocked right now, so there is no checkout. Instead, a customer
+**joins the paid-plan whitelist** and we contact them when paid plans open.
+
+This page shows how to list the plans, how to join the whitelist, and how a
+confirmed payment changes the plan when billing is on.
 
 This guide is written in simple English.
 
@@ -16,12 +19,13 @@ This guide is written in simple English.
 - Every billing call on this page uses your **session cookie** (the dashboard
   session). An API key cannot call them.
 - Prices are in **SAR per month, before VAT**.
-- The plans on sale are **Starter**, **Pro** and **Agency**. The free plan is
-  the default; you do not buy it.
+- The plans are **Starter**, **Pro** and **Agency**, but they are **not on sale
+  yet** (billing is paused). The free plan is the default. A customer joins the
+  [paid-plan whitelist](#3-join-the-paid-plan-whitelist) to ask for a paid plan.
 
-## 1. The plans on sale
+## 1. The plans
 
-`GET /v1/billing/plans` returns the plans a customer can buy.
+`GET /v1/billing/plans` returns the plans and their prices.
 
 ```bash
 curl "$BASE/v1/billing/plans" \
@@ -98,11 +102,10 @@ Notes:
   numbers you see on the site.
 - This call needs the session cookie. Without it you get `401 unauthorized`.
 
-## 2. Start a checkout
+## 2. Start a checkout (paused)
 
-`POST /v1/billing/checkout` returns the payment provider's hosted page. Send the
-customer there. The customer pays on **Moyasar** with mada, Apple Pay, STC Pay
-or a card.
+Checkout is **paused**: no payment gateway is active, so this call cannot start
+a payment and cannot change a plan. It answers `503 billing_paused`.
 
 ```bash
 curl -X POST "$BASE/v1/billing/checkout" \
@@ -111,33 +114,88 @@ curl -X POST "$BASE/v1/billing/checkout" \
   -d '{"planId":"pro"}'
 ```
 
-Answer (`201`):
+Answer (`503`):
 
 ```json
 {
-  "id": "inv_5f0b2c8a",
-  "checkoutUrl": "https://checkout.moyasar.com/invoice/inv_5f0b2c8a",
-  "expiresAt": null
+  "type": "https://docs.segmnt.cloud/errors/billing_paused",
+  "title": "Paid plans are not on sale yet. Join the paid-plan whitelist and we will contact you.",
+  "status": 503,
+  "code": "billing_paused",
+  "detail": "Paid plans are not on sale yet. Join the paid-plan whitelist and we will contact you."
 }
 ```
 
 Notes:
 
-- **The plan does not change here.** It changes only after the provider
-  confirms the payment (section 3).
-- `checkoutUrl` is the provider's hosted page. Redirect the user to it.
-- `expiresAt` is `null` when the provider sets no deadline. Moyasar invoices do
-  not expire by default, so do not invent one.
-- `planId` must be one of the plans on sale. An unknown or free plan gets
-  `400 invalid_request`.
-- `discountCode` is optional. Send an issued code and it is applied before the
-  provider is called. See [Discount codes](#discount-codes) below.
-- If online payment is not configured, checkout gets
-  `503 billing_unavailable`. Use a manual invoice.
-- If the provider does not answer, checkout gets
-  `502 billing_provider_error`. Try again.
+- **Nothing is charged and the plan does not change.** The call returns before it
+  reaches any provider.
+- Ask the customer to
+  [join the paid-plan whitelist](#3-join-the-paid-plan-whitelist) instead of
+  paying.
+- When billing is on, checkout answers `201` with the provider's hosted page
+  (`checkoutUrl`) and the customer pays with mada, Apple Pay, STC Pay or a card.
+  `planId` is then checked (a free or unknown plan gets `400 invalid_request`),
+  and `discountCode` is an optional code (see [Discount codes](#discount-codes)).
+- `503 billing_unavailable` (no provider configured) and `502
+  billing_provider_error` (the provider did not answer) apply again only after
+  the board turns billing on.
+
+## 3. Join the paid-plan whitelist
+
+Paid plans are not on sale yet. To ask for one, record your interest with this
+API. It **stores your intent only** — no payment, no plan change.
+
+`POST /v1/billing/whitelist` (session cookie):
+
+```bash
+curl -X POST "$BASE/v1/billing/whitelist" \
+  -H "Cookie: segmnt_session=$SEGMNT_SESSION" \
+  -H "Content-Type: application/json" \
+  -d '{"planId":"pro","email":"buyer@example.com"}'
+```
+
+Answer (`201`):
+
+```json
+{
+  "data": {
+    "planId": "pro",
+    "email": "buyer@example.com",
+    "createdAt": "2026-10-14T20:00:00.000Z"
+  }
+}
+```
+
+Notes:
+
+- `planId` must be one of the paid plans: `starter`, `pro` or `agency`. A free
+  or unknown plan gets `400 invalid_request`.
+- `email` is optional. When you omit it, we use the account owner's e-mail.
+- The call is **idempotent per account and plan**: calling it again does not
+  create a second entry, and the `createdAt` stays the first time. A new `email`
+  updates the contact address.
+- This never charges the customer and never changes the plan.
+
+`GET /v1/billing/whitelist` (session cookie) returns the account's entries:
+
+```bash
+curl "$BASE/v1/billing/whitelist" \
+  -H "Cookie: segmnt_session=$SEGMNT_SESSION"
+```
+
+```json
+{
+  "data": [
+    { "planId": "pro", "email": "buyer@example.com", "createdAt": "2026-10-14T20:00:00.000Z" }
+  ]
+}
+```
 
 ## Discount codes
+
+Discount codes apply at checkout, so they are **not usable while billing is
+paused**. This section is a reference for when the board turns billing on.
 
 `POST /v1/billing/checkout` takes an optional `discountCode`. A code is applied
 when it has been **issued to you**; creating a code is an internal segmnt action,
@@ -179,7 +237,11 @@ curl -X POST "$BASE/v1/billing/checkout" \
   expired or used-up code is still refused with `400 invalid_request`.
 - The 40% cap applies on every payment, including a renewal.
 
-## 3. The payment that changes the plan
+## 4. The payment that changes the plan
+
+Billing is paused, so no provider calls this route today. A valid event that
+arrived anyway is acknowledged with `204` and changes no plan. This section is a
+reference for when the board turns billing on.
 
 When the customer pays, Moyasar calls
 `POST /v1/billing/providers/moyasar/webhook`. This route is for the provider,
@@ -224,7 +286,7 @@ A verified event that does not match is refused with `400` and changes no plan.
 This covers a wrong amount, a currency that is not SAR, a missing plan or
 account in the invoice, an unknown plan, and an account we do not have.
 
-## 4. Check the plan after payment
+## 5. Check the plan after payment
 
 After a confirmed payment, `GET /v1/billing/plan` returns the paid plan, an
 active subscription period, the new limits and your usage. The call is
@@ -286,7 +348,9 @@ The stored invoice **lines** carry the VAT: each line has `unitAmount` (net),
 
 ## Not live yet
 
-- **The annual plan.** Only the monthly plan is on sale.
+- **Paid plans.** They are not on sale yet: billing is paused. A customer joins
+  the [paid-plan whitelist](#3-join-the-paid-plan-whitelist) and we contact them.
+- **The annual plan.** Only the monthly plan is planned.
 - **The watched-minute overage on the provider invoice.** Pro and Agency are
   never stopped at the watched-minutes limit. The overage is now recorded in
   TEST (see [Usage and plan limits](/usage-and-limits)); folding it into the
@@ -301,33 +365,35 @@ the text. The `type` field links to `https://docs.segmnt.cloud/errors/{code}`.
 
 | Status | `code` | Meaning | What to do |
 | --- | --- | --- | --- |
-| 400 | `invalid_request` | Unknown `planId`, or an unknown, expired or used-up `discountCode` | Send a plan on sale and a valid code (or no code). |
+| 400 | `invalid_request` | Unknown `planId` (checkout or whitelist), a bad whitelist `email`, or an unknown, expired or used-up `discountCode` | Send a plan on sale and a valid code or e-mail (or none). |
 | 400 | `billing_mismatch` | Provider webhook: the payment does not match the order (amount, currency, plan or account) | Check the invoice in the provider dashboard. No plan change was made. |
 | 401 | `unauthorized` | Missing, wrong or expired session | Sign in again. |
 | 401 | `invalid_signature` | Provider webhook: the secret token is wrong, or there is no invoice | Check the provider's webhook secret. |
 | 404 | `not_found` | Provider webhook: unknown payment provider | Use the provider's webhook URL (`/v1/billing/providers/moyasar/webhook`). |
 | 405 | `method_not_allowed` | Wrong method for the URL | See the method in each section above. |
 | 502 | `billing_provider_error` | The payment provider did not answer | Try again. For a webhook, the provider retries. |
+| 503 | `billing_paused` | Paid plans are not on sale yet (billing is paused) | Join the paid-plan whitelist. Nothing was charged. |
 | 503 | `billing_unavailable` | Online payment or webhooks are not configured | Use a manual invoice, or ask us to configure the provider. |
 
 ## Tested in TEST
 
 Checked against `https://test-api.segmnt.cloud` on 14 Oct 2026:
 
+- `POST /v1/billing/checkout` with a session -> `503 billing_paused` (no provider
+  is active; nothing is charged and the plan does not change).
+- `POST /v1/billing/whitelist` with a session -> `201`, and a second call ->
+  `201` with the same entry (idempotent per plan).
+- `GET /v1/billing/whitelist` with a session -> `200` with the account's rows.
 - `GET /v1/billing/plans` with no session -> `401 unauthorized`.
 - `POST /v1/billing/checkout` with no session -> `401 unauthorized`.
-- `POST /v1/billing/providers/moyasar/webhook` with no webhook secret
-  configured -> `503 billing_unavailable`.
-- `POST /v1/billing/checkout` with an unknown plan -> `400 invalid_request`
-  (unit test).
-- `POST /v1/billing/checkout` with an unknown, expired or used-up `discountCode`
-  -> `400 invalid_request` (unit test).
+- `POST /v1/billing/checkout` with an unknown plan (billing on) -> `400
+  invalid_request` (unit test).
 
-The paid path (a verified invoice applies the plan, the 15% VAT invoice,
-sequential invoice numbers, idempotent replay, and every `400` refusal path) is
-proved by the API tests in `api/src/billing.test.ts`. The same tests cover the
-discount paths: a founding code (30%), a referral code (10%), the 40% cap, the
-plan line plus the negative discount line that still reconcile to the total, and
-a replay that does not count the code twice. The live Moyasar sandbox run needs
-the payment provider's sandbox keys, so the end-to-end provider call is not run
-on TEST yet.
+The pause and the whitelist are proved by the API tests in
+`api/src/billing.test.ts`: checkout answers `503 billing_paused` with **no**
+provider call and no plan change, and the whitelist is idempotent per
+account+plan and account-scoped. The same tests keep the retained payment path
+covered for when the board turns billing on: a verified invoice applies the plan
+and the 15% VAT invoice, sequential invoice numbers, idempotent replay, and every
+`400` refusal path. The live Moyasar sandbox run needs sandbox keys, so the
+end-to-end provider call is not run on TEST while billing is paused.

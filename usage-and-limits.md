@@ -122,8 +122,9 @@ Notes:
   per month.
 - The pilot runs for 30 days and needs no credit card. When it ends, the account
   returns to its plan (usually Free).
-- Paid plan numbers come from the plan catalog. See
-  [Plans, checkout and payment](/billing) for the prices and how to buy a plan.
+- Paid plan numbers come from the plan catalog. Paid plans are not on sale yet;
+  see [Plans, payment and the paid-plan whitelist](/billing) for the prices and
+  how to join the paid-plan whitelist.
 
 ## 4. Quality weighting
 
