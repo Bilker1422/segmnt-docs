@@ -130,8 +130,8 @@ Notes:
 | Highest quality | 720p |
 | Our logo on the player | Shown |
 
-- A free account is enough to build and test one course. It keeps our logo on
-  the player and plays up to **720p**.
+- A free account is enough to build and test one site or product. It keeps our
+  logo on the player and plays up to **720p**.
 - Counters reset at the start of each UTC month. Stored hours do not reset; they
   fall when you delete a video.
 - Hours count by the source quality, so a 4K file uses more of the limit than a

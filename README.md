@@ -25,8 +25,8 @@ Mintlify builds this repo and serves the site, including the agent tools
 | `api/openapi.yaml` | Copy of the segmnt API contract (`api/openapi.yaml` in the private repo). |
 
 English only. The board decided (YAH-530) not to host the Arabic docs, so the
-English pages do not link to an Arabic docs site; the product stays
-Arabic-first.
+English pages do not link to an Arabic docs site. Arabic is supported in the
+product (UI and player), but Arabic is a feature, not the pitch.
 
 ## Run it locally
 

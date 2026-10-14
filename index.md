@@ -1,15 +1,19 @@
 ---
 title: segmnt docs
-description: Host and stream course videos with signed playback, up to 4K, billed in SAR. Guides for developers at agencies, course platforms and training companies.
+description: segmnt is video infrastructure. Upload through one API and we encode, store, secure and stream it on your own domain. Use it for a course platform — or any product that needs video.
 icon: "home"
 ---
 
-segmnt hosts and streams your course videos. Your viewers watch on **your** site,
-from **your** domain. Every playback link is signed, so a copied link does not
-work anywhere else.
+segmnt is video infrastructure. Upload through one API and we encode, store,
+secure and stream it on your own domain. Use it for a course platform — or any
+product that needs video.
 
-This site is for developers who build with segmnt: agencies, course platforms
-and training companies. These guides are in **English**.
+Your viewers watch on **your** site, from **your** domain. Every playback link
+is signed, so a copied link does not work anywhere else.
+
+This site is for developers who build with segmnt — agencies, and teams building
+a course platform or any product that needs video. These guides are in
+**English**.
 
 ## Start here
 
