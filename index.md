@@ -21,6 +21,8 @@ on the Arabic docs site at [test-docs.segmnt.cloud](https://test-docs.segmnt.clo
   sign in (SSO only), create a project, make an API key, verify a domain.
 - [Direct upload](/direct-upload) — send a video straight to storage with
   pre-signed URLs. Examples in Node.js, Python and PHP/Laravel.
+- [Manage videos](/manage-videos) — rename a video or delete it to free stored
+  hours. Examples in curl, Node.js, Python and PHP/Laravel.
 - [Phone verification](/phone-verification) — verify a Saudi or GCC mobile
   number (available, not required in this version).
 - [Usage and plan limits](/usage-and-limits) — read stored and watched usage,

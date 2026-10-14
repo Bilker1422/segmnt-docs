@@ -140,6 +140,8 @@ Notes:
 ## Where to go next
 
 - [Direct upload](/direct-upload) — the 4 upload calls, with code examples.
+- [Manage videos](/manage-videos) — rename a video or delete it and free its
+  stored hours.
 - [Accounts, projects, API keys and domains](/accounts-and-projects) — the setup
   behind every project.
 - [Moderation and held videos](/moderation) — why a first video waits.
