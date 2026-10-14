@@ -1754,15 +1754,21 @@ components:
       examples: [free]
     PlanLimits:
       type: object
-      required: [storedSeconds, watchedMinutesPerPeriod, verifiedDomains, maxQuality, whiteLabel]
+      required: [storedSeconds, uploadSecondsPerPeriod, watchedMinutesPerPeriod, verifiedDomains, projects, maxQuality, whiteLabel]
       description: '`null` means no limit.'
       properties:
         storedSeconds:
           type: [integer, 'null']
+        uploadSecondsPerPeriod:
+          type: [integer, 'null']
+          description: New seconds uploaded per period (per month; over the whole window for a pilot).
         watchedMinutesPerPeriod:
           type: [integer, 'null']
         verifiedDomains:
           type: [integer, 'null']
+        projects:
+          type: [integer, 'null']
+          description: Projects the account may have.
         maxQuality:
           $ref: '#/components/schemas/Quality'
         whiteLabel:
@@ -1840,4 +1846,6 @@ components:
           format: uri
           description: Hosted checkout page of the payment provider.
         expiresAt:
-          $ref: '#/components/schemas/Timestamp'
+          type: [string, 'null']
+          format: date-time
+          description: When the hosted page stops working. `null` when the provider sets no expiry (Moyasar invoices do not expire by default).
