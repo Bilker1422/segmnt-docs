@@ -42,7 +42,15 @@
           },
           {
             "group": "Guides",
-            "pages": ["accounts-and-projects", "direct-upload", "reports-and-review", "moderation"]
+            "pages": [
+              "accounts-and-projects",
+              "direct-upload",
+              "phone-verification",
+              "usage-and-limits",
+              "billing",
+              "reports-and-review",
+              "moderation"
+            ]
           }
         ]
       },

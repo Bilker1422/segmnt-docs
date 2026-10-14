@@ -9,13 +9,9 @@ to segmnt, and every report raises an alert for our team at once. We may then
 hold the video or remove it. This page shows the report call and what a hold or
 a remove does to playback.
 
-> العربية: قد يُبلغ أحد الزوّار عن فيديو، مثلاً لمحتوى مسيء. ويرسل خادمك البلاغ
-> إلى segmnt، وكل بلاغ يرفع تنبيهاً لفريقنا فوراً. وقد نوقف الفيديو مؤقتاً أو
-> نزيله بعد ذلك. وتوضّح هذه الصفحة نداء الإبلاغ وما يفعله الإيقاف أو الإزالة
-> بالتشغيل.
-
-This guide is written in simple English so it is easy to translate to Arabic.
-The Arabic version is on this site: use the language picker at the top right.
+This guide is written in simple English. It is in English only; the Arabic
+version is on the Arabic docs site at
+[test-docs.segmnt.cloud](https://test-docs.segmnt.cloud/ar/reports-and-review/).
 
 ## Before you start
 
@@ -140,13 +136,13 @@ the text.
 
 ## Tested in TEST
 
-Checked against `https://test-api.segmnt.cloud` on 14 Oct 2026, once A12 was on
-TEST:
+Checked against `https://test-api.segmnt.cloud` on 14 Oct 2026, once the report
+route was on TEST:
 
 - `POST .../reports` with no key, and with a wrong key, both answer
   `401 unauthorized`.
 - `GET .../reports` answers `405 method_not_allowed`.
-- The full path with a project key is proved by the A12 API tests
+- The full path with a project key is proved by our API tests
   (`api/src/alerts.test.ts`): `201` for a new report, `200` for a retry with the
   same `Idempotency-Key`, `400 invalid_request` for a missing `reason`, and
   `404 not_found` for a key of another project.

@@ -10,7 +10,7 @@ work anywhere else.
 
 This site is for developers who build with segmnt: agencies, course platforms
 and training companies. These guides are in **English**. The Arabic guides are
-on the older site at [test-docs.segmnt.cloud](https://test-docs.segmnt.cloud/ar/).
+on the Arabic docs site at [test-docs.segmnt.cloud](https://test-docs.segmnt.cloud/ar/).
 
 ## Start here
 
@@ -18,6 +18,12 @@ on the older site at [test-docs.segmnt.cloud](https://test-docs.segmnt.cloud/ar/
   sign in (SSO only), create a project, make an API key, verify a domain.
 - [Direct upload](/direct-upload) — send a video straight to storage with
   pre-signed URLs. Examples in Node.js, Python and PHP/Laravel.
+- [Phone verification](/phone-verification) — verify a Saudi mobile number
+  before a new free account's first upload.
+- [Usage and plan limits](/usage-and-limits) — read stored and watched usage,
+  see your plan limits, and know what happens when you reach a limit.
+- [Plans, checkout and payment](/billing) — list the plans and prices in SAR,
+  start a checkout on Moyasar, and see how a confirmed payment changes the plan.
 - [Reports and video review](/reports-and-review) — file a viewer report, and
   know what a hold or a remove does to playback.
 - [Moderation and held videos](/moderation) — how the automatic check works,

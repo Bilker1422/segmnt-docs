@@ -13,17 +13,11 @@ queue.
 This page shows the moderation states, what your app sees when a video is held,
 and how a held video is released.
 
-> **Status.** This page covers A12b (YAH-375, PR #149), now merged. It is
-> **TEST only**. See the "Tested in TEST" section below.
+> **Status.** This page is **TEST only**. See the "Tested in TEST" section below.
 
-> العربية: يجرى فحص مراجعة على كل فيديو بعد جاهزيته، بالنظر إلى إطارات
-> المراجعة التي يكتبها المُرمِّز (إطار كل 10 ثوانٍ). وإذا علّم الفحص فيديو، أو
-> كانت أول فيديوهات الحساب المجاني تنتظر الفحص، يُوقَف الفيديو ولا يعمل. ويفرجه
-> فريقنا من قائمة داخلية. وتوضّح هذه الصفحة حالات المراجعة، وما يراه تطبيقك عند
-> إيقاف فيديو، وكيف يُفرج عنه.
-
-This guide is written in simple English so it is easy to translate to Arabic.
-The Arabic version is on this site: use the language picker at the top right.
+This guide is written in simple English. It is in English only; the Arabic
+version is on the Arabic docs site at
+[test-docs.segmnt.cloud](https://test-docs.segmnt.cloud/ar/moderation/).
 
 ## Before you start
 
@@ -115,7 +109,8 @@ person acts (section 5) or a check releases the video.
 - A free account's **first videos** are held until checked. The default is
   **3**, and our config allows 0 to 5.
 - A **paid** account's first video is not held.
-- A free account verifies a phone number before its first upload.
+- A free account verifies a phone number before its first upload. See
+  [Phone verification](/phone-verification).
 - Until the AI check runs, these videos wait for a person in our review queue.
 
 The count is per account, across all of its projects, and it counts videos that
@@ -187,8 +182,7 @@ the text.
 
 ## Tested in TEST
 
-This page describes **A12b** (YAH-375, PR #149). PR #149 is merged and TEST
-deploys from `main`. It is **TEST only**; no paid provider is called.
+It is **TEST only**; no paid provider is called. TEST deploys from `main`.
 
 The behaviour is proved by our API test suite:
 

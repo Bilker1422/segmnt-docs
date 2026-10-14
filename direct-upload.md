@@ -74,6 +74,13 @@ send it again with the same key (within 24 hours) and you get the same upload.
 
 Treat the part URLs like secrets. Do not log them.
 
+A new free account must verify a phone number before its first upload. See
+[Phone verification](/phone-verification). If it has not verified, this call
+gets `403 phone_verification_required`, and a blocked account gets
+`403 account_banned`. The phone gate is active only when an SMS provider is
+configured; while SMS is not live, the upload is not blocked for that reason.
+The ban check always applies.
+
 ## Step 2: PUT the parts
 
 Cut the file into pieces of `partSizeBytes`. `PUT` the raw bytes of piece N to
@@ -132,7 +139,9 @@ Errors use `application/problem+json`. Use the `code` field in your code, not th
 | create | 400 | `invalid_request` | Missing or wrong field, or file type not supported | Fix the request. Do not retry. |
 | any | 401 | `unauthorized` | Missing, wrong or revoked key | Check the key. |
 | any | 405 | `method_not_allowed` | Wrong method for the URL | Check the URL and the HTTP method. |
-| create | 403 | `plan_limit_reached` | File is larger than your plan allows | Use a smaller file or change plan. |
+| create | 403 | `plan_limit_reached` | File is larger than your plan allows, or you are over your stored-hours or new-upload limit | Use a smaller file, delete a video, or change plan. |
+| create | 403 | `phone_verification_required` | A new free account has not verified a phone number yet | Verify a phone number first ([Phone verification](/phone-verification)). |
+| create | 403 | `account_banned` | The account is blocked | Contact us if you think this is a mistake. |
 | any | 404 | `not_found` | Wrong project or upload ID, or the key is for another project | Check the IDs. |
 | complete | 400 | `invalid_request` | `parts` list is not valid | Fix the request. |
 | complete | 400 | `invalid_parts` | Part numbers or ETags do not match what was uploaded | Check that every part was uploaded and the ETags are right. |
