@@ -101,14 +101,16 @@ and never returns any hidden account field:
     "planStatus": "active",
     "createdAt": "...",
     "phoneVerified": false,
-    "phoneVerificationRequired": true
+    "phoneVerificationRequired": false
   }
 }
 ```
 
-`phoneVerified` is `true` once a phone number is verified. `phoneVerificationRequired`
-is `true` when the account must verify a Saudi or GCC mobile number before its
-first upload (a new free account). See [Phone verification](/phone-verification).
+`phoneVerified` is `true` once a phone number is verified.
+`phoneVerificationRequired` is always `false` in this version (phone verification
+is available but not required), and becomes `true` only when the phone gate is
+on: a new free account that has not verified yet. See
+[Phone verification](/phone-verification).
 
 Sign out:
 

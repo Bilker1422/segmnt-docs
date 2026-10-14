@@ -109,7 +109,8 @@ person acts (section 5) or a check releases the video.
 - A free account's **first videos** are held until checked. The default is
   **3**, and our config allows 0 to 5.
 - A **paid** account's first video is not held.
-- A free account verifies a phone number before its first upload. See
+- Phone verification is available but not required in this version, so it does
+  not hold or block the first upload. See
   [Phone verification](/phone-verification).
 - Until the AI check runs, these videos wait for a person in our review queue.
 

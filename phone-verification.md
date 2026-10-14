@@ -1,13 +1,16 @@
 ---
 title: Phone verification
-description: A new free account verifies a mobile number (Saudi or GCC) with a one-time code before its first upload. Start the code, verify it, and see the upload error when verification is missing.
+description: Phone verification is available but not required in this version. A free account can verify a mobile number (Saudi or GCC) with a one-time code; the first upload is not gated.
 icon: "smartphone"
 ---
 
-A new **free** account must verify a **Saudi or GCC mobile number** before it
-can upload its first video. One phone number is meant to verify one account (the
-API does not enforce that yet). The number is stored only as a salted hash, so
-nobody can read it back.
+Phone verification is **available but not required** in this version. A new
+**free** account can upload its first video without verifying a phone: the phone
+step has no gate right now. The two endpoints below still work, so you can add
+the step to your app now and it keeps working when the gate is switched on.
+
+One phone number is meant to verify one account (the API does not enforce that
+yet). The number is stored only as a salted hash, so nobody can read it back.
 
 You verify the number from your own app, with the same session cookie the
 dashboard uses. The dashboard step is not built yet; see
@@ -45,7 +48,7 @@ These GCC countries are accepted. `country` is one of `sa`, `ae`, `kw`, `qa`,
 
 A leading `0` (trunk) in a local number is dropped.
 
-## 1. Check whether you must verify
+## 1. Check whether the phone step is required
 
 `GET /v1/me` returns two fields on `account`:
 
@@ -55,7 +58,7 @@ A leading `0` (trunk) in a local number is dropped.
     "id": "acc_...",
     "planId": "free",
     "phoneVerified": false,
-    "phoneVerificationRequired": true
+    "phoneVerificationRequired": false
   }
 }
 ```
@@ -63,10 +66,12 @@ A leading `0` (trunk) in a local number is dropped.
 | Field | Meaning |
 | --- | --- |
 | `phoneVerified` | `true` once a phone number is verified on this account. |
-| `phoneVerificationRequired` | `true` when the account must verify a phone before it can upload (a new free account that has not verified yet). |
+| `phoneVerificationRequired` | Always `false` in this version. It is `true` only when the phone gate is switched on: a new free account that has not verified yet. |
 
-Use `phoneVerificationRequired` to show the phone step. Do **not** block the
-whole app on it: only the first upload is blocked.
+In this version `phoneVerificationRequired` is always `false`, so nothing is
+gated. When the phone step ships and the gate is switched on, use this field to
+show the step. Do **not** block the whole app on it: then only the first upload
+is blocked.
 
 ## 2. Start the code
 
@@ -146,22 +151,25 @@ Rules for the challenge:
 - **Safe to retry.** Repeating a successful call with the same `challengeId`
   returns `200` again and does not verify twice.
 
-## 4. Upload is blocked until you verify
+## 4. Upload is not blocked in this version
 
-When your app (or the dashboard) starts an upload with
-`POST /v1/projects/{projectId}/uploads`, a free account that must verify gets:
+In this version an upload is **not** blocked for phone verification. When your
+app (or the dashboard) starts an upload with
+`POST /v1/projects/{projectId}/uploads`, the ban check still runs:
 
 | Status | `code` | Meaning |
 | --- | --- | --- |
-| `403` | `phone_verification_required` | A new free account has not verified a phone yet. |
 | `403` | `account_banned` | The account is blocked. |
 
-Finish [step 3](#3-verify-the-code) first. Paid plans and accounts that existed
-before this feature are not gated. The ban check applies to every plan.
+`403 phone_verification_required` is **not** returned in this version. When the
+phone step ships and the gate is switched on, a new free account that has not
+verified gets it, and you finish [step 3](#3-verify-the-code) first. Paid plans
+and accounts that existed before the feature are not gated. The ban check
+applies to every plan.
 
-The phone gate is active only when an SMS provider is configured. While SMS is
-not live (see [Not live yet](#not-live-yet)), an upload is **not** blocked with
-`phone_verification_required`; the ban check still applies.
+When the gate is switched on, it is active only if an SMS provider is
+configured. While SMS is not live (see [Not live yet](#not-live-yet)), the phone
+gate stays off; the ban check still applies.
 
 ## Not live yet
 
@@ -191,7 +199,7 @@ the text. The `type` field links to `https://docs.segmnt.cloud/errors/{code}`.
 | 400 | `invalid_code` | verify | The code is wrong | Try again. After 5 wrong codes the challenge closes. |
 | 401 | `unauthorized` | both | Missing, wrong or expired session | Sign in again. |
 | 403 | `banned` | both | The account, phone or device is under an active ban | Contact us if you think this is a mistake. |
-| 403 | `phone_verification_required` | upload | Not verified yet | Verify a phone number first. |
+| 403 | `phone_verification_required` | upload | Not returned in this version. When the phone gate is on: not verified yet | Verify a phone number first. |
 | 403 | `account_banned` | upload | The account is blocked | Contact us if you think this is a mistake. |
 | 404 | `challenge_not_found` | verify | Unknown, already-used or another account's challenge | Start a new code. |
 | 405 | `method_not_allowed` | both | Wrong method for the URL | Use `POST`. |
