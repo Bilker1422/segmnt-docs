@@ -156,12 +156,17 @@ What stops depends on the plan:
 
 - **Free and Pilot:** uploads stop at the limit, and playback stops at the
   watched-minutes limit.
-- **Paid:** uploads stop at the limit. Playback continues to **120%** of the
-  watched minutes, then stops until the next month or an upgrade.
+- **Paid:** uploads stop at the limit. Playback never stops: past the included
+  minutes, extra watch time is cheap pay-as-you-go and is added to your next
+  invoice. No "call sales" wall and no sudden stop.
 
-For playback we stop issuing **new** playback links. A link that was already
-issued keeps working until it expires (4 hours by default). This is why playback
-can overrun the minute limit a little before it stops.
+For free and pilot playback we stop issuing **new** playback links. A link that
+was already issued keeps working until it expires (4 hours by default). This is
+why playback can overrun the minute limit a little before it stops.
+
+`GET /v1/billing/plan` returns the extra minutes in
+`usage.overageMinutes`, so you can see the pay-as-you-go amount before the next
+invoice. The invoice itself (A14) is not live yet.
 
 You do not lose data. Delete videos or remove domains to go back under a limit,
 or upgrade to raise it. When the month (or the pilot) ends, the counters reset.

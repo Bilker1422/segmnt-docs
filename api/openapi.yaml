@@ -2771,6 +2771,10 @@ components:
           description: New seconds uploaded per period (per month; over the whole window for a pilot).
         watchedMinutesPerPeriod:
           type: [integer, 'null']
+          description: |
+            Included watched minutes per period. Free and pilot playback stops at
+            this limit; paid plans continue past it and the extra time is cheap
+            pay-as-you-go on the next invoice (YAH-28 rule 5, billing is A14).
         verifiedDomains:
           type: [integer, 'null']
         projects:
@@ -2834,7 +2838,7 @@ components:
         usage:
           type: object
           description: Totals for all projects in the account in the current period.
-          required: [storedSeconds, watchedMinutes, verifiedDomains]
+          required: [storedSeconds, watchedMinutes, verifiedDomains, overageMinutes]
           properties:
             storedSeconds:
               type: integer
@@ -2842,6 +2846,13 @@ components:
               type: integer
             verifiedDomains:
               type: integer
+            overageMinutes:
+              type: integer
+              description: |
+                Watched minutes past the plan's included minutes in this period,
+                billed as cheap pay-as-you-go on the next invoice (YAH-28 rule 5,
+                billing is A14). `0` when under the limit or when the plan has no
+                limit. Paid plans never stop playback at this point.
     Checkout:
       type: object
       required: [id, checkoutUrl, expiresAt]
