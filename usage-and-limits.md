@@ -164,9 +164,11 @@ For free and pilot playback we stop issuing **new** playback links. A link that
 was already issued keeps working until it expires (4 hours by default). This is
 why playback can overrun the minute limit a little before it stops.
 
-`GET /v1/billing/plan` returns the extra minutes in
-`usage.overageMinutes`, so you can see the pay-as-you-go amount before the next
-invoice. The invoice itself (A14) is not live yet.
+`GET /v1/billing/plan` returns the extra watched minutes in
+`usage.overageMinutes`. This number is **always `0` for Free and Pilot**: those
+plans stop playback at the watched-minutes limit, so they are never billed for
+overage. The pay-as-you-go amount applies only to paid plans, where you can see
+it here before the next invoice. The invoice itself (A14) is not live yet.
 
 You do not lose data. Delete videos or remove domains to go back under a limit,
 or upgrade to raise it. When the month (or the pilot) ends, the counters reset.
