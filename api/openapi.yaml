@@ -1373,6 +1373,8 @@ paths:
   /v1/internal/block:
     get:
       tags: [Admin]
+      x-excluded: true
+      x-internal: true
       operationId: getBlock
       summary: Is this video or project blocked (internal)
       description: |
@@ -1412,6 +1414,8 @@ paths:
   /v1/internal/security-events:
     post:
       tags: [Admin]
+      x-excluded: true
+      x-internal: true
       operationId: reportSecurityEvents
       summary: Report failed playback-token checks (internal)
       description: |
