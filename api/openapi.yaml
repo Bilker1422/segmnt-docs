@@ -2867,7 +2867,7 @@ components:
 
     PreviewToken:
       type: object
-      required: [token, expiresAt, embedUrl]
+      required: [token, expiresAt, embedUrl, thumbnailUrl]
       properties:
         token:
           type: string
@@ -2885,6 +2885,10 @@ components:
             visible `YOUR_PLAYBACK_TOKEN` placeholder in the copyable embed
             snippet, so a preview token never leaks into what a customer copies.
           examples: ['https://test-cdn.segmnt.cloud/e/vid_9xR4tL']
+        thumbnailUrl:
+          type: string
+          format: uri
+          description: Signed poster/thumbnail URL for the video detail page.
 
     WebhookEventType:
       type: string
