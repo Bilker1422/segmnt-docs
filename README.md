@@ -19,7 +19,7 @@ Mintlify builds this repo and serves the site, including the agent tools
 | Path | What it is |
 |---|---|
 | `docs.json` | Mintlify site config: theme, colours, logo, favicon, fonts, navigation, and the API reference (`api/openapi.yaml`). |
-| `index.md`, `accounts-and-projects.md`, `direct-upload.md`, `manage-videos.md`, `phone-verification.md`, `usage-and-limits.md`, `billing.md`, `reports-and-review.md`, `moderation.md` | English guide pages. This is the **source of truth** for the English docs. Every customer page that ships must land here, or CI fails. |
+| `index.md`, `accounts-and-projects.md`, `direct-upload.md`, `manage-videos.md`, `phone-verification.md`, `usage-and-limits.md`, `billing.md`, `reports-and-review.md`, `moderation.md`, `embed-a-video.md`, `playback-tokens.md`, `wordpress.md`, `playback-protection.md` | English guide pages. This is the **source of truth** for the English docs. Every customer page that ships must land here, or CI fails. |
 | `logo/` | segmnt logos (`segmnt-logo.svg` light, `segmnt-logo-dark.svg` dark). |
 | `favicon.svg` | segmnt symbol mark. |
 | `api/openapi.yaml` | Copy of the segmnt API contract (`api/openapi.yaml` in the private repo). |

@@ -113,10 +113,11 @@ Notes:
 - The token expires at `expiresAt` (4 hours by default). Ask for a new token for
   each viewing session.
 
-> **The embed code is not here yet.** The player's iframe and JavaScript embed
-> page, and the dashboard's copy-embed control, are **not released**: on TEST the
-> embed URL still answers `404`. When the embed page ships, this step will show
-> the embed code. Until then, this step ends at the playback token.
+> **Next step: embed code.** The player's iframe embed page is live in TEST, so
+> this step no longer ends at the token. Copy the iframe from
+> [Embed a video on any website](/embed-a-video), put your token in it, and paste
+> it into your page. For WordPress, see
+> [Add segmnt to WordPress](/wordpress).
 
 ## Step 5: Know the free-tier limits
 
@@ -139,6 +140,11 @@ Notes:
 
 ## Where to go next
 
+- [Embed a video on any website](/embed-a-video) — copy the iframe and paste it.
+- [Create playback tokens on your server](/playback-tokens) — cURL, Node.js and
+  PHP examples.
+- [How playback protection works](/playback-protection) — why a copied link
+  does not play.
 - [Direct upload](/direct-upload) — the 4 upload calls, with code examples.
 - [Manage videos](/manage-videos) — rename a video or delete it and free its
   stored hours.
@@ -158,6 +164,6 @@ The routes on this page are the released TEST API:
 - The signed playback path (token issue → CDN check → playlist rewrite on
   `/v/{videoId}/...`) is proved end to end against TEST by
   `a7-playback-e2e.yml`.
-- The iframe/JavaScript embed page (`/e/{videoId}` and `segmnt-player.js` on the
-  CDN host) is **not deployed yet**. It ships with the player release, so the
-  embed code is not documented here yet.
+- The iframe embed page (`/e/{videoId}`) and `segmnt-player.js` are **live in
+  TEST**: `/e/{videoId}` with no token answers `403 token_missing`, and
+  `segmnt-player.js` answers `200`. See [Embed a video on any website](/embed-a-video).

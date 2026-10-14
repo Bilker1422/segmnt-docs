@@ -37,17 +37,24 @@ a course platform or any product that needs video. These guides are in
   know what a hold or a remove does to playback.
 - [Moderation and held videos](/moderation) — how the automatic check works,
   why a video is held for review, and how a held video is released.
+- [Embed a video on any website](/embed-a-video) — copy the embed code, replace
+  the token, paste it. The short path for non-developers.
+- [Create playback tokens on your server](/playback-tokens) — cURL, Node.js and
+  PHP examples. Keep the API key on your server, never in a page.
+- [Add segmnt to WordPress](/wordpress) — a Custom HTML block, and where the
+  playback token comes from.
+- [How playback protection works](/playback-protection) — tokens and verified
+  domains, and why a copied link does not play.
 
 ## Status of this site
 
 Everything here runs on **TEST**. A production release starts only after the
 board approves it.
 
-We only document features that are released. These pages come later, when the
-feature ships:
+We only document features that are released. Embed codes (iframe and
+JavaScript), signed playback tokens and domain-locked playback are released in
+TEST; their guides are above.
 
-- Embed codes: iframe and JavaScript — when the player's embed page ships.
+This page comes later, when the feature ships:
+
 - Webhooks and the encoding pipeline — when the encode pipeline ships.
-
-Playback tokens are released and are in the [Getting started](/getting-started)
-guide.

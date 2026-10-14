@@ -13,7 +13,8 @@ the file. The upload has 4 steps:
 4. We encode the video. Poll the video until it is `ready` (the `video.ready` webhook ships with the encode release).
 
 The pre-signed URLs are for upload only. Playback uses separate signed playback
-tokens. That guide comes when signed playback is released.
+tokens: see [Create playback tokens on your server](/playback-tokens) and
+[Embed a video on any website](/embed-a-video).
 
 ## Before you start
 

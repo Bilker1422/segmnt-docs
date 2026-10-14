@@ -44,6 +44,15 @@
               "reports-and-review",
               "moderation"
             ]
+          },
+          {
+            "group": "Embed and playback",
+            "pages": [
+              "embed-a-video",
+              "playback-tokens",
+              "wordpress",
+              "playback-protection"
+            ]
           }
         ]
       },
