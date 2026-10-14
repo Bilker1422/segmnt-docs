@@ -339,8 +339,8 @@ paths:
 
         At most 5 codes per account per hour. A phone number or account under an
         active ban is refused. SMS is sent through the board-approved provider
-        (Msegat, or Twilio while volume is small); when none is configured this
-        route answers `503`. In the
+        (BudgetSMS; Msegat or Twilio can be used instead); when none is
+        configured this route answers `503`. In the
         TEST environment only, the `test` provider also returns the code in
         `testCode` so the automated end-to-end test can finish the flow.
       security:
