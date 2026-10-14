@@ -169,8 +169,10 @@ stops.
 `usage.overageMinutes`. This number is **always `0` for Free, Starter and
 Pilot**: those plans stop playback at the watched-minutes limit, so they are
 never billed for overage. The pay-as-you-go amount applies only to **Pro and
-Agency**, where you can see it here before the next invoice. The invoice itself
-(A14) is not live yet.
+Agency**, where you can see it here before the next invoice. The overage is
+billed per **started minute** past the limit, from the raw watched seconds, and
+it appears on your **next invoice**. In TEST the overage record is written now;
+adding it to the payment provider's invoice is a later step.
 
 You do not lose data. Delete videos or remove domains to go back under a limit,
 or upgrade to raise it. When the month (or the pilot) ends, the counters reset.

@@ -287,6 +287,10 @@ The stored invoice **lines** carry the VAT: each line has `unitAmount` (net),
 ## Not live yet
 
 - **The annual plan.** Only the monthly plan is on sale.
+- **The watched-minute overage on the provider invoice.** Pro and Agency are
+  never stopped at the watched-minutes limit. The overage is now recorded in
+  TEST (see [Usage and plan limits](/usage-and-limits)); folding it into the
+  payment provider's invoice is a later step.
 - **The invoice PDF.** The 15% VAT invoice is written, but its PDF file is not
   built yet.
 
