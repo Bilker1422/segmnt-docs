@@ -1259,7 +1259,7 @@ paths:
                 discountCode:
                   type: string
                   maxLength: 64
-                  description: Founding-customer or referral code.
+                  description: Not available yet. A request with this field is refused with `400` instead of charging the wrong price.
       responses:
         '201':
           description: Checkout created.
@@ -1290,6 +1290,16 @@ paths:
         Called only by the payment provider. Not for customers. The request is
         checked with the provider's own signature or secret token, so it has no
         segmnt authentication. The body is the provider's own format.
+
+        The webhook body is never trusted. A verified event is used only to find
+        the provider invoice; the invoice is then read back from the provider API,
+        and its amount and currency are checked against the plan's board-fixed
+        price. Only then is the plan applied: the payment, the VAT invoice, the
+        subscription and the account plan are written in one batch, so the same
+        event can be replayed safely (a provider retries). A refunded invoice
+        reverses an applied payment: the subscription is set to `canceled` and the
+        account returns to the free plan. A verified event that does not match
+        what was ordered answers 400 and changes no plan.
       security: []
       requestBody:
         required: true
@@ -1300,11 +1310,13 @@ paths:
               additionalProperties: true
       responses:
         '204':
-          description: Event accepted (also when it was already processed).
+          description: Event accepted (also when it was already processed, or was not a paid payment).
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '502':
+          description: The provider API could not be read. The provider will retry.
 
   /v1/projects/{projectId}/videos/{videoId}/reports:
     parameters:
@@ -2673,7 +2685,7 @@ components:
         price:
           type: object
           required: [amount, currency, interval]
-          description: Before VAT. VAT (15% in Saudi Arabia) is added at checkout.
+          description: Before VAT. VAT (15% in Saudi Arabia) is added at checkout when billing VAT mode is on.
           properties:
             amount:
               type: integer
