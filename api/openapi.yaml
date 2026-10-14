@@ -133,10 +133,10 @@ tags:
   - name: Admin
     description: |
       Internal routes for our team (A12 abuse/review and A13 bans). Not for
-      customers. The page is at `/admin` behind Cloudflare Access. The A12
-      admin routes are gated by `adminAccess` (Cloudflare Access JWT, or the
-      TEST `ADMIN_TOKEN`); the A13 ban routes by `adminToken`. Internal helper
-      routes are called by our own Workers with `internalSecret`.
+      customers. The page is at `/admin` behind Cloudflare Access. Every admin
+      route is gated by `adminAccess` (a Cloudflare Access JWT, or the TEST
+      `ADMIN_TOKEN`). Internal helper routes are called by our own Workers with
+      `internalSecret`.
   - name: System
     description: Health check.
 paths:
@@ -435,7 +435,7 @@ paths:
         Access) and the board use it. Phone numbers and fingerprints are never
         returned, only whether a ban names one.
       security:
-        - adminToken: []
+        - adminAccess: []
       responses:
         '200':
           description: The 100 newest bans.
@@ -463,7 +463,7 @@ paths:
         fingerprint. Safe to call twice: an identical active ban is returned, not
         duplicated.
       security:
-        - adminToken: []
+        - adminAccess: []
       requestBody:
         required: true
         content:
@@ -507,7 +507,7 @@ paths:
       summary: Lift a ban
       description: Clears the ban; when it was the account's last active ban, `banned_at` is cleared too.
       security:
-        - adminToken: []
+        - adminAccess: []
       parameters:
         - $ref: '#/components/parameters/BanId'
       responses:
@@ -1881,14 +1881,6 @@ components:
       in: cookie
       name: segmnt_session
       description: Dashboard session cookie, set after SSO sign-in.
-    adminToken:
-      type: apiKey
-      in: header
-      name: X-Admin-Token
-      description: |
-        Shared token for the internal `/v1/admin/**` routes (task A13 bans),
-        served by the A12 admin page behind Cloudflare Access. Never sent from a
-        browser.
     adminAccess:
       type: http
       scheme: bearer
