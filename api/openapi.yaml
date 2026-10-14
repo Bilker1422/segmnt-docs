@@ -1034,7 +1034,7 @@ paths:
       tags: [Videos]
       operationId: deleteVideo
       summary: Delete a video
-      description: Deletes the original, all qualities and thumbnails. Playback stops within about a minute.
+      description: Deletes the original, the HLS renditions and the thumbnail, and stops playback. Playback stops within about a minute. The original is removed at once; the HLS renditions and thumbnail are removed in the background, so storage clears shortly after.
       responses:
         '204':
           description: Video deleted.
