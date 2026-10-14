@@ -1279,7 +1279,8 @@ paths:
                     Codes are case-insensitive. The code is validated before the
                     provider is called: an unknown, expired, or out-of-uses code
                     answers `400 invalid_request` with a clear message and never
-                    charges the full price by accident.
+                    charges the full price by accident. An empty or blank string
+                    is treated as no code.
       responses:
         '201':
           description: Checkout created.
