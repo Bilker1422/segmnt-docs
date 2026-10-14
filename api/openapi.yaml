@@ -1485,7 +1485,7 @@ paths:
         cannot lock it. TEST only: no payment provider is charged. Idempotent:
         one overage invoice per account per month, so a retried run records
         nothing new. A `null` board rate means nothing is billed
-        (`reason: no_price`). Free and Pilot are never billed.
+        (`reason: no_price`). Free, Starter and Pilot are never billed.
       security:
         - internalSecret: []
       requestBody:
@@ -1515,7 +1515,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/OverageInvoiceResult'
         '200':
-          description: Nothing was recorded (no overage, no price, already billed, or not a paid plan).
+          description: Nothing was recorded (no overage, no price, already billed, or not a pay-as-you-go plan (Pro or Agency)).
           content:
             application/json:
               schema:
@@ -2833,9 +2833,10 @@ components:
         watchedMinutesPerPeriod:
           type: [integer, 'null']
           description: |
-            Included watched minutes per period. Free and pilot playback stops at
-            this limit; paid plans continue past it and the extra time is cheap
-            pay-as-you-go on the next invoice (YAH-28 rule 5, billing is A14).
+            Included watched minutes per period. Free, Starter and Pilot playback
+            stops at this limit; Pro and Agency continue past it and the extra
+            time is cheap pay-as-you-go on the next invoice (YAH-28 rule 5,
+            board decision 14 Oct 2026; billing is A14).
         verifiedDomains:
           type: [integer, 'null']
         projects:
@@ -2911,11 +2912,12 @@ components:
               type: integer
               description: |
                 Watched minutes past the plan's included minutes in this period,
-                billed as cheap pay-as-you-go on the next invoice (YAH-28 rule 5,
+                billed as cheap pay-as-you-go on the next invoice (YAH-28 rule 5;
                 billing is A14). `0` when under the limit, when the plan has no
-                limit, or when the plan is not billed overage: free and pilot stop
-                playback at the limit, so they always report `0`. Paid plans never
-                stop playback at this point.
+                limit, or when the plan is not billed overage: Free, Starter and
+                Pilot stop playback at the limit, so they always report `0`.
+                Pro and Agency never stop playback at this point (board decision
+                14 Oct 2026).
     Checkout:
       type: object
       required: [id, checkoutUrl, expiresAt]

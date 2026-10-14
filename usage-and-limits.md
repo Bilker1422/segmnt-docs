@@ -154,21 +154,23 @@ the action that would pass it. It can happen on:
 
 What stops depends on the plan:
 
-- **Free and Pilot:** uploads stop at the limit, and playback stops at the
-  watched-minutes limit.
-- **Paid:** uploads stop at the limit. Playback never stops: past the included
-  minutes, extra watch time is cheap pay-as-you-go and is added to your next
-  invoice. No "call sales" wall and no sudden stop.
+- **Free, Starter and Pilot:** uploads stop at the limit, and playback stops at
+  the watched-minutes limit. Starter's wall is watch time.
+- **Pro and Agency:** uploads stop at the limit. Playback never stops: past the
+  included minutes, extra watch time is cheap pay-as-you-go and is added to your
+  next invoice. No "call sales" wall and no sudden stop.
 
-For free and pilot playback we stop issuing **new** playback links. A link that
-was already issued keeps working until it expires (4 hours by default). This is
-why playback can overrun the minute limit a little before it stops.
+For Free, Starter and Pilot playback we stop issuing **new** playback links. A
+link that was already issued keeps working until it expires (4 hours by
+default). This is why playback can overrun the minute limit a little before it
+stops.
 
 `GET /v1/billing/plan` returns the extra watched minutes in
-`usage.overageMinutes`. This number is **always `0` for Free and Pilot**: those
-plans stop playback at the watched-minutes limit, so they are never billed for
-overage. The pay-as-you-go amount applies only to paid plans, where you can see
-it here before the next invoice. The invoice itself (A14) is not live yet.
+`usage.overageMinutes`. This number is **always `0` for Free, Starter and
+Pilot**: those plans stop playback at the watched-minutes limit, so they are
+never billed for overage. The pay-as-you-go amount applies only to **Pro and
+Agency**, where you can see it here before the next invoice. The invoice itself
+(A14) is not live yet.
 
 You do not lose data. Delete videos or remove domains to go back under a limit,
 or upgrade to raise it. When the month (or the pilot) ends, the counters reset.
