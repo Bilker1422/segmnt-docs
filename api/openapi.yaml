@@ -1082,6 +1082,44 @@ paths:
         '429':
           $ref: '#/components/responses/TooManyRequests'
 
+  /v1/projects/{projectId}/videos/{videoId}/preview-token:
+    parameters:
+      - $ref: '#/components/parameters/ProjectId'
+      - $ref: '#/components/parameters/VideoId'
+    post:
+      tags: [Playback]
+      operationId: createPreviewToken
+      summary: Create a dashboard preview token
+      description: |
+        Used by the dashboard's first-run wizard to test a video in our player
+        before it is embedded on a customer site. Unlike `createPlaybackToken`,
+        this route is **session**-authenticated: a new user has no API key, and a
+        key secret must never reach the browser. The account must own the project.
+
+        The token is short-lived and its allowed domain is fixed to one of our
+        dashboard hosts (never a caller-supplied value). The CDN and the embed
+        page both use that domain, so a preview token plays only while the
+        dashboard frames it and is useless on a customer site.
+      security:
+        - session: []
+      responses:
+        '201':
+          description: Preview token created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PreviewToken'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
   /v1/projects/{projectId}/webhook-endpoints:
     parameters:
       - $ref: '#/components/parameters/ProjectId'
@@ -2751,6 +2789,27 @@ components:
         thumbnailUrl:
           type: string
           format: uri
+
+    PreviewToken:
+      type: object
+      required: [token, expiresAt, embedUrl]
+      properties:
+        token:
+          type: string
+          description: |
+            Opaque signed token. Do not parse it. It works for one video, one
+            dashboard host and a short time only.
+        expiresAt:
+          $ref: '#/components/schemas/Timestamp'
+        embedUrl:
+          type: string
+          format: uri
+          description: |
+            Our player (hls.js) for an iframe. The URL has no token in it: the
+            dashboard appends the real token for the live preview and the
+            visible `YOUR_PLAYBACK_TOKEN` placeholder in the copyable embed
+            snippet, so a preview token never leaks into what a customer copies.
+          examples: ['https://test-cdn.segmnt.cloud/e/vid_9xR4tL']
 
     WebhookEventType:
       type: string
