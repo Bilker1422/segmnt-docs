@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: segmnt API
-  version: 0.1.0-draft
+  version: 0.6.1
   summary: Video hosting and signed HLS playback for course platforms, agencies and training companies.
   description: |
     First draft of the segmnt API contract (task A2). It is a contract for the MVP
