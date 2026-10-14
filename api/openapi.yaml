@@ -1469,6 +1469,66 @@ paths:
         '503':
           description: Internal routes are not configured.
 
+  /v1/internal/billing/overage:
+    post:
+      tags: [Admin]
+      x-excluded: true
+      x-internal: true
+      operationId: runOverageBilling
+      summary: Bill one account's watched-minute overage (internal)
+      description: |
+        A14 follow-up (YAH-586). Records the watched-minute overage for one
+        whole, CLOSED UTC calendar month at the board-fixed rate plus VAT, in
+        SAR. Bills every STARTED minute past the plan's included minutes
+        (`ceil`), built from the raw watched seconds, so a partial minute is not
+        lost. A month that has not closed yet is refused, and an early run
+        cannot lock it. TEST only: no payment provider is charged. Idempotent:
+        one overage invoice per account per month, so a retried run records
+        nothing new. A `null` board rate means nothing is billed
+        (`reason: no_price`). Free and Pilot are never billed.
+      security:
+        - internalSecret: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [accountId, periodStart, periodEnd]
+              properties:
+                accountId:
+                  type: string
+                  pattern: '^acc_[A-Za-z0-9]+$'
+                periodStart:
+                  type: string
+                  format: date
+                  description: First day of the month, inclusive (YYYY-MM-DD, the 1st).
+                periodEnd:
+                  type: string
+                  format: date
+                  description: First day of the next month, exclusive (YYYY-MM-DD). The month must already have ended.
+      responses:
+        '201':
+          description: An overage invoice was recorded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OverageInvoiceResult'
+        '200':
+          description: Nothing was recorded (no overage, no price, already billed, or not a paid plan).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OverageInvoiceResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '405':
+          description: Method not allowed.
+        '503':
+          description: Internal routes are not configured.
+
   /v1/admin/overview:
     get:
       tags: [Admin]
@@ -2870,6 +2930,30 @@ components:
           type: [string, 'null']
           format: date-time
           description: When the hosted page stops working. `null` when the provider sets no expiry (Moyasar invoices do not expire by default).
+
+    OverageInvoiceResult:
+      type: object
+      required: [recorded]
+      properties:
+        recorded:
+          type: boolean
+          description: True when a new overage invoice row was written.
+        reason:
+          type: string
+          description: |
+            Why nothing was recorded: `no_price` (no board rate fixed yet),
+            `no_overage`, `duplicate`, `unknown_account`, `not_paid`, or
+            `not_closed` (the month has not ended).
+        planId:
+          type: string
+        overageSeconds:
+          type: integer
+        billableMinutes:
+          type: integer
+          description: Started minutes billed (ceil of the overage seconds).
+        total:
+          type: integer
+          description: Total billed in halalas, VAT included.
 
     VideoReportInput:
       type: object
