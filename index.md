@@ -27,7 +27,8 @@ and training companies. These guides are in **English**.
 - [Usage and plan limits](/usage-and-limits) — read stored and watched usage,
   see your plan limits, and know what happens when you reach a limit.
 - [Plans, checkout and payment](/billing) — list the plans and prices in SAR,
-  start a checkout on Moyasar, and see how a confirmed payment changes the plan.
+  start a checkout (with an optional discount code), and see how a confirmed
+  payment changes the plan.
 - [Reports and video review](/reports-and-review) — file a viewer report, and
   know what a hold or a remove does to playback.
 - [Moderation and held videos](/moderation) — how the automatic check works,
