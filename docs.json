@@ -42,7 +42,7 @@
           },
           {
             "group": "Guides",
-            "pages": ["accounts-and-projects", "direct-upload"]
+            "pages": ["accounts-and-projects", "direct-upload", "reports-and-review"]
           }
         ]
       },

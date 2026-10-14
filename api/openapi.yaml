@@ -31,7 +31,7 @@ info:
     `uploading` → `processing` → `ready`, or `failed`. Our team can move a video to
     `held` (it does not play) or back to `ready`. Moving to `ready`, `failed`
     or `held` sends a webhook.
-    A held or deleted video stops playing within 5 minutes, also for tokens
+    A held or deleted video stops playing within about a minute, also for tokens
     issued before.
 
     ## Playback
@@ -77,7 +77,7 @@ info:
     | `403` | `video_unavailable` | Video is held or deleted. |
     | `403` | `plan_limit_reached` | The account is over its free limit, or the request is for a quality above the plan's maximum. |
 
-    A held or deleted video gets `video_unavailable` within 5 minutes, also for
+    A held or deleted video gets `video_unavailable` within about a minute, also for
     tokens issued before. After a delete, files are removed and the CDN can also
     answer `404` `not_found`. A request for a quality above your plan's maximum
     is also `plan_limit_reached`, even when the account is inside its limit; the
@@ -1020,7 +1020,7 @@ paths:
       tags: [Videos]
       operationId: deleteVideo
       summary: Delete a video
-      description: Deletes the original, all qualities and thumbnails. Playback stops within 5 minutes.
+      description: Deletes the original, all qualities and thumbnails. Playback stops within about a minute.
       responses:
         '204':
           description: Video deleted.
