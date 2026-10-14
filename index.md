@@ -14,6 +14,9 @@ on the Arabic docs site at [test-docs.segmnt.cloud](https://test-docs.segmnt.clo
 
 ## Start here
 
+- [Getting started](/getting-started) — sign up with SSO, create a project,
+  upload your first video, get a signed playback token, and see the free-tier
+  limits.
 - [Accounts, projects, API keys and domains](/accounts-and-projects) —
   sign in (SSO only), create a project, make an API key, verify a domain.
 - [Direct upload](/direct-upload) — send a video straight to storage with
@@ -37,6 +40,8 @@ board approves it.
 We only document features that are released. These pages come later, when the
 feature ships:
 
-- Playback tokens and the player — when signed playback ships.
-- Embed codes: iframe and JavaScript — when the player ships.
+- Embed codes: iframe and JavaScript — when the player's embed page ships.
 - Webhooks and the encoding pipeline — when the encode pipeline ships.
+
+Playback tokens are released and are in the [Getting started](/getting-started)
+guide.

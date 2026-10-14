@@ -38,7 +38,7 @@
         "groups": [
           {
             "group": "Start here",
-            "pages": ["index"]
+            "pages": ["index", "getting-started"]
           },
           {
             "group": "Guides",
