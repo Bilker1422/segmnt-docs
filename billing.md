@@ -1,11 +1,12 @@
 ---
 title: Plans, checkout and payment
-description: List the plans on sale, start a checkout on Moyasar, and see how a verified payment changes the plan. Prices in SAR per month, before VAT.
+description: List the plans on sale, start a checkout on Moyasar with an optional discount code, and see how a verified payment changes the plan. Prices in SAR per month, before VAT.
 icon: "credit-card"
 ---
 
 segmnt bills in SAR, per month. This page shows how to list the plans, how to
-send a customer to the checkout, and how a confirmed payment changes the plan.
+send a customer to the checkout (with an optional discount code), and how a
+confirmed payment changes the plan.
 
 This guide is written in simple English.
 
@@ -129,12 +130,40 @@ Notes:
   not expire by default, so do not invent one.
 - `planId` must be one of the plans on sale. An unknown or free plan gets
   `400 invalid_request`.
-- A `discountCode` is refused with `400 invalid_request` while discount codes
-  are not built. We refuse it instead of charging the wrong price.
+- `discountCode` is optional. Send an issued code and it is applied before the
+  provider is called. See [Discount codes](#discount-codes) below.
 - If online payment is not configured, checkout gets
   `503 billing_unavailable`. Use a manual invoice.
 - If the provider does not answer, checkout gets
   `502 billing_provider_error`. Try again.
+
+## Discount codes
+
+`POST /v1/billing/checkout` takes an optional `discountCode`. A code is applied
+when it has been **issued to you**; creating a code is an internal segmnt action,
+so this page does not show how to create one.
+
+```bash
+curl -X POST "$BASE/v1/billing/checkout" \
+  -H "Cookie: segmnt_session=$SEGMNT_SESSION" \
+  -H "Content-Type: application/json" \
+  -d '{"planId":"pro","discountCode":"FOUNDING-30"}'
+```
+
+- A **founding** code gives **30% off** and a **referral** code gives **10% off**.
+  The **total discount is capped at 40%**, so no code can take off more than that.
+- Codes are **case-insensitive** and trimmed, so `founding-30` and `FOUNDING-30 `
+  are the same code.
+- The code is **checked before the payment provider is called**. An unknown,
+  expired or used-up code answers `400 invalid_request` with a clear message, so
+  the customer is never charged the full price by accident.
+- The discount is applied to the plan price **before VAT**: VAT (15%) is charged
+  on the discounted net, not on the full price.
+- The 15% VAT invoice shows the plan line and, when a code was applied, a second
+  **negative discount line**. The lines still add up to the invoice total.
+- The code is **counted only when a payment is confirmed**. A provider retry does
+  not count the same code twice.
+- A confirmed payment stores the code on the subscription (`discount_code`).
 
 ## 3. The payment that changes the plan
 
@@ -243,7 +272,6 @@ The stored invoice **lines** carry the VAT: each line has `unitAmount` (net),
 
 ## Not live yet
 
-- **Discount codes.** Checkout refuses a code instead of overcharging.
 - **The annual plan.** Only the monthly plan is on sale.
 - **The invoice PDF.** The 15% VAT invoice is written, but its PDF file is not
   built yet.
@@ -255,7 +283,7 @@ the text. The `type` field links to `https://docs.segmnt.cloud/errors/{code}`.
 
 | Status | `code` | Meaning | What to do |
 | --- | --- | --- | --- |
-| 400 | `invalid_request` | Unknown `planId`, or a `discountCode` while codes are not live | Send a plan on sale, and no code. |
+| 400 | `invalid_request` | Unknown `planId`, or an unknown, expired or used-up `discountCode` | Send a plan on sale and a valid code (or no code). |
 | 400 | `billing_mismatch` | Provider webhook: the payment does not match the order (amount, currency, plan or account) | Check the invoice in the provider dashboard. No plan change was made. |
 | 401 | `unauthorized` | Missing, wrong or expired session | Sign in again. |
 | 401 | `invalid_signature` | Provider webhook: the secret token is wrong, or there is no invoice | Check the provider's webhook secret. |
@@ -272,11 +300,16 @@ Checked against `https://test-api.segmnt.cloud` on 14 Oct 2026:
 - `POST /v1/billing/checkout` with no session -> `401 unauthorized`.
 - `POST /v1/billing/providers/moyasar/webhook` with no webhook secret
   configured -> `503 billing_unavailable`.
-- `POST /v1/billing/checkout` with an unknown plan or a `discountCode` ->
-  `400 invalid_request` (unit test).
+- `POST /v1/billing/checkout` with an unknown plan -> `400 invalid_request`
+  (unit test).
+- `POST /v1/billing/checkout` with an unknown, expired or used-up `discountCode`
+  -> `400 invalid_request` (unit test).
 
 The paid path (a verified invoice applies the plan, the 15% VAT invoice,
 sequential invoice numbers, idempotent replay, and every `400` refusal path) is
-proved by the API tests in `api/src/billing.test.ts`. The live Moyasar sandbox
-run needs the payment provider's sandbox keys, so the end-to-end provider call is
-not run on TEST yet.
+proved by the API tests in `api/src/billing.test.ts`. The same tests cover the
+discount paths: a founding code (30%), a referral code (10%), the 40% cap, the
+plan line plus the negative discount line that still reconcile to the total, and
+a replay that does not count the code twice. The live Moyasar sandbox run needs
+the payment provider's sandbox keys, so the end-to-end provider call is not run
+on TEST yet.
