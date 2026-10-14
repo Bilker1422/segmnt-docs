@@ -338,10 +338,10 @@ paths:
         with `country`; without `country` a local number is treated as Saudi.
 
         At most 5 codes per account per hour. A phone number or account under an
-        active ban is refused. SMS costs money, so this route answers `503` until
-        the board approves an SMS provider; in the TEST environment only, the
-        code is also returned in `testCode` so the automated end-to-end test can
-        finish the flow.
+        active ban is refused. SMS is sent through the board-approved provider
+        (Msegat); when it is not configured this route answers `503`. In the
+        TEST environment only, the `test` provider also returns the code in
+        `testCode` so the automated end-to-end test can finish the flow.
       security:
         - session: []
       requestBody:
@@ -370,7 +370,7 @@ paths:
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '503':
-          description: Phone verification is not configured, or no SMS provider is approved (`code` is `not_configured` or `sms_not_configured`).
+          description: Phone verification is not configured, or the SMS provider is not set up (`code` is `not_configured` or `sms_not_configured`).
           content:
             application/problem+json:
               schema:
