@@ -108,7 +108,9 @@ The video goes `processing` then `ready` (or `failed`). Poll
 `video.ready` webhook is not live yet; it ships with the encode release, and this
 guide will show it then.
 In rare cases our team can hold a video for review (status `held`). It does not
-play until the hold ends.
+play until the hold ends. A free account's first videos are also held until an
+automatic check runs and a person releases them. See
+[Moderation and held videos](/moderation).
 
 ## Cancel an upload
 

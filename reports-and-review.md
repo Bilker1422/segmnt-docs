@@ -114,11 +114,17 @@ receive these events only if your webhook endpoint subscribed to them.
 A hold does not delete your file or reset your usage. To stop a video forever,
 ask us to remove it.
 
-## 4. New accounts
+## 4. New accounts and automatic moderation
 
 Every new account is checked by a person on our team. This runs in the
 background: you never see it, and you do not have to do anything. If we find a
 problem, we may hold or remove a video (section 3).
+
+A video also gets an **automatic moderation check** after it is ready, and a
+free account's first videos are held until a person checks them. A held video
+does not play: a playback token is refused with `409 video_not_ready` and the
+detail `The video is held for review.` Our team releases it from the same review
+page. See [Moderation and held videos](/moderation).
 
 ## 5. Errors
 

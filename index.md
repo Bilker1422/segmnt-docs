@@ -18,6 +18,10 @@ on the older site at [test-docs.segmnt.cloud](https://test-docs.segmnt.cloud/ar/
   sign in (SSO only), create a project, make an API key, verify a domain.
 - [Direct upload](/direct-upload) — send a video straight to storage with
   pre-signed URLs. Examples in Node.js, Python and PHP/Laravel.
+- [Reports and video review](/reports-and-review) — file a viewer report, and
+  know what a hold or a remove does to playback.
+- [Moderation and held videos](/moderation) — how the automatic check works,
+  why a video is held for review, and how a held video is released.
 
 ## Status of this site
 
