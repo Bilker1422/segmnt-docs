@@ -2851,8 +2851,10 @@ components:
               description: |
                 Watched minutes past the plan's included minutes in this period,
                 billed as cheap pay-as-you-go on the next invoice (YAH-28 rule 5,
-                billing is A14). `0` when under the limit or when the plan has no
-                limit. Paid plans never stop playback at this point.
+                billing is A14). `0` when under the limit, when the plan has no
+                limit, or when the plan is not billed overage: free and pilot stop
+                playback at the limit, so they always report `0`. Paid plans never
+                stop playback at this point.
     Checkout:
       type: object
       required: [id, checkoutUrl, expiresAt]
