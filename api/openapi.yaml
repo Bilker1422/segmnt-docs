@@ -3083,7 +3083,7 @@ components:
       type: string
       enum: [none, pending, cleared, flagged]
       description: |
-        Moderation state of a video (A12b). `none`: playable as soon as it is
+        Moderation state of a video. `none`: playable as soon as it is
         `ready` (no check pending). `pending`: held until checked - every one of
         a free account's first videos starts here. `cleared`: checked and
         allowed. `flagged`: the check flagged it; held until a human decides.
