@@ -130,6 +130,11 @@ tags:
     description: Stored and watched time.
   - name: Billing
     description: Plans and checkout through the payment provider's hosted page.
+  - name: Admin
+    description: |
+      Internal routes for our team (task A13 bans). Guarded by the
+      `X-Admin-Token` header and reached only from the admin page (A12, behind
+      Cloudflare Access). Every ban needs board approval.
   - name: System
     description: Health check.
 paths:
@@ -315,6 +320,211 @@ paths:
                 $ref: '#/components/schemas/Me'
         '401':
           $ref: '#/components/responses/Unauthorized'
+
+  /v1/me/phone/start:
+    post:
+      tags: [Auth]
+      operationId: startPhoneVerification
+      summary: Send a phone verification code
+      description: |
+        Starts phone verification for the signed-in account (task A13). Free
+        accounts must verify a phone number before their first upload. The number
+        must be a Saudi mobile (`05XXXXXXXX`, `+9665XXXXXXXX`, ...); it is stored
+        only as a salted hash.
+
+        At most 5 codes per account per hour. A phone number or account under an
+        active ban is refused. SMS costs money, so this route answers `503` until
+        the board approves an SMS provider; in the TEST environment only, the
+        code is also returned in `testCode` so the automated end-to-end test can
+        finish the flow.
+      security:
+        - session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PhoneStartInput'
+      responses:
+        '202':
+          description: A code was sent.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PhoneChallenge'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: The account or phone number is banned (`code` is `banned`).
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '503':
+          description: Phone verification is not configured, or no SMS provider is approved (`code` is `not_configured` or `sms_not_configured`).
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+
+  /v1/me/phone/verify:
+    post:
+      tags: [Auth]
+      operationId: verifyPhone
+      summary: Verify a phone code and save the device fingerprint
+      description: |
+        Completes phone verification and stores the device fingerprint (task
+        A13). The challenge is single-use and expires after 10 minutes; 5 wrong
+        codes close it. Repeating a successful call with the same challenge is a
+        no-op `200`. A banned account, phone or device is refused.
+      security:
+        - session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PhoneVerifyInput'
+      responses:
+        '200':
+          description: The phone number is verified.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PhoneVerified'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: The account, phone number or device is banned (`code` is `banned`).
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '404':
+          description: The challenge is unknown, already used, or belongs to another account (`code` is `challenge_not_found`).
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '410':
+          description: The code expired (`code` is `code_expired`).
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '503':
+          $ref: '#/components/responses/AuthNotConfigured'
+
+  /v1/admin/bans:
+    get:
+      tags: [Admin]
+      operationId: listBans
+      summary: List bans
+      description: |
+        Internal admin route (task A13). The admin page (A12, behind Cloudflare
+        Access) and the board use it. Phone numbers and fingerprints are never
+        returned, only whether a ban names one.
+      security:
+        - adminToken: []
+      responses:
+        '200':
+          description: The 100 newest bans.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BanList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '503':
+          description: The admin API is not configured (`code` is `admin_not_configured`).
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+    post:
+      tags: [Admin]
+      operationId: createBan
+      summary: Ban an account, a phone and/or a device
+      description: |
+        **Every ban needs board approval.** The request must carry a
+        `boardApprovalRef`; without one this answers `403 board_approval_required`
+        and nothing is written. A ban blocks the account (`banned_at`, so all
+        sessions and API keys stop at once), the phone number and the device
+        fingerprint. Safe to call twice: an identical active ban is returned, not
+        duplicated.
+      security:
+        - adminToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BanInput'
+      responses:
+        '201':
+          description: A new ban is active.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ban'
+        '200':
+          description: An identical active ban already existed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ban'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: No board approval reference (`code` is `board_approval_required`).
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '503':
+          description: The admin API is not configured (`code` is `admin_not_configured`).
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+
+  /v1/admin/bans/{banId}/lift:
+    post:
+      tags: [Admin]
+      operationId: liftBan
+      summary: Lift a ban
+      description: Clears the ban; when it was the account's last active ban, `banned_at` is cleared too.
+      security:
+        - adminToken: []
+      parameters:
+        - $ref: '#/components/parameters/BanId'
+      responses:
+        '200':
+          description: The lifted ban.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ban'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '503':
+          description: The admin API is not configured (`code` is `admin_not_configured`).
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
 
   /v1/projects:
     get:
@@ -1157,6 +1367,14 @@ components:
       in: cookie
       name: segmnt_session
       description: Dashboard session cookie, set after SSO sign-in.
+    adminToken:
+      type: apiKey
+      in: header
+      name: X-Admin-Token
+      description: |
+        Shared token for the internal `/v1/admin/**` routes (task A13 bans),
+        served by the A12 admin page behind Cloudflare Access. Never sent from a
+        browser.
 
   parameters:
     AuthProviderId:
@@ -1195,6 +1413,13 @@ components:
       schema:
         type: string
         pattern: '^dom_[A-Za-z0-9]+$'
+    BanId:
+      name: banId
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: '^ban_[A-Za-z0-9]+$'
     Limit:
       name: limit
       in: query
@@ -1360,6 +1585,131 @@ components:
               enum: [active, pilot, past_due, canceled]
             createdAt:
               $ref: '#/components/schemas/Timestamp'
+            phoneVerified:
+              type: boolean
+              description: |
+                True once a phone number is verified (task A13). Free accounts
+                must verify one before their first upload.
+            phoneVerificationRequired:
+              type: boolean
+              description: |
+                True when this account must verify a phone before it can upload
+                (a new free account that has not verified yet).
+
+    PhoneStartInput:
+      type: object
+      required: [phone]
+      properties:
+        phone:
+          type: string
+          description: A Saudi mobile number. Stored only as a salted hash.
+          examples: ['0512345678', '+966512345678']
+
+    PhoneChallenge:
+      type: object
+      required: [challengeId, phone, expiresAt]
+      properties:
+        challengeId:
+          type: string
+          examples: [phc_8fK2mQ]
+        phone:
+          type: string
+          description: The number with its middle digits masked.
+          examples: ['+96651****678']
+        expiresAt:
+          $ref: '#/components/schemas/Timestamp'
+        testCode:
+          type: string
+          description: |
+            Present ONLY in the TEST environment (`TEST_SINK=1`), so the
+            automated end-to-end test can finish the flow without a real SMS.
+            Never present in production.
+
+    PhoneVerifyInput:
+      type: object
+      required: [challengeId, code, fingerprint]
+      properties:
+        challengeId:
+          type: string
+          examples: [phc_8fK2mQ]
+        code:
+          type: string
+          pattern: '^\d{6}$'
+          examples: ['123456']
+        fingerprint:
+          type: string
+          maxLength: 256
+          description: A stable identifier for the browser/device, stored only as a salted hash.
+
+    PhoneVerified:
+      type: object
+      required: [phoneVerified, phoneVerifiedAt]
+      properties:
+        phoneVerified:
+          type: boolean
+        phoneVerifiedAt:
+          $ref: '#/components/schemas/Timestamp'
+
+    BanInput:
+      type: object
+      required: [reason, boardApprovalRef]
+      properties:
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 500
+        boardApprovalRef:
+          type: string
+          minLength: 1
+          description: Reference to the board approval. A ban cannot be written without it.
+          examples: ['APPR-42']
+        accountId:
+          type: string
+          examples: [acc_5bT8qL]
+        phone:
+          type: string
+          description: Saudi mobile number, stored only as a salted hash.
+        fingerprint:
+          type: string
+          maxLength: 256
+          description: Device fingerprint, stored only as a salted hash.
+
+    Ban:
+      type: object
+      required: [id, reason, boardApprovalRef, status, createdAt]
+      properties:
+        id:
+          type: string
+          examples: [ban_3kQ8mZ]
+        accountId:
+          type: [string, 'null']
+        hasPhone:
+          type: boolean
+          description: True when the ban names a phone number (the value itself is never returned).
+        hasFingerprint:
+          type: boolean
+          description: True when the ban names a device fingerprint (the value itself is never returned).
+        reason:
+          type: string
+        boardApprovalRef:
+          type: string
+        status:
+          type: string
+          enum: [active, lifted]
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+        liftedAt:
+          type: [string, 'null']
+          format: date-time
+
+    BanList:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Ban'
 
     Project:
       type: object
