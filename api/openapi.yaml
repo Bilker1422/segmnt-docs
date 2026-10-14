@@ -332,8 +332,10 @@ paths:
       description: |
         Starts phone verification for the signed-in account (task A13). Free
         accounts must verify a phone number before their first upload. The number
-        must be a Saudi mobile (`05XXXXXXXX`, `+9665XXXXXXXX`, ...); it is stored
-        only as a salted hash.
+        must be a Saudi or GCC mobile (`05XXXXXXXX`, `+9665XXXXXXXX`,
+        `+9715XXXXXXXX`, `+965XXXXXXXX`, ...); it is stored only as a salted hash.
+        Send a full international number (`+CC...`), or a local number together
+        with `country`; without `country` a local number is treated as Saudi.
 
         At most 5 codes per account per hour. A phone number or account under an
         active ban is refused. SMS costs money, so this route answers `503` until
@@ -2178,8 +2180,14 @@ components:
       properties:
         phone:
           type: string
-          description: A Saudi mobile number. Stored only as a salted hash.
-          examples: ['0512345678', '+966512345678']
+          description: A Saudi or GCC mobile number. Stored only as a salted hash.
+          examples: ['0512345678', '+966512345678', '+971501234567']
+        country:
+          type: string
+          enum: [sa, ae, kw, qa, bh, om]
+          description: |
+            Country of a local `phone` (for example `ae` for `0501234567`).
+            Ignored when `phone` starts with a country code. Defaults to `sa`.
 
     PhoneChallenge:
       type: object
@@ -2244,7 +2252,7 @@ components:
           examples: [acc_5bT8qL]
         phone:
           type: string
-          description: Saudi mobile number, stored only as a salted hash.
+          description: Saudi or GCC mobile number, stored only as a salted hash (use a country code for a non-Saudi number).
         fingerprint:
           type: string
           maxLength: 256
