@@ -1743,7 +1743,10 @@ components:
           format: date
         storedSeconds:
           type: integer
-          description: Total length of the project's videos now (not only in the period).
+          description: |
+            Total stored length of the project's videos, weighted by quality
+            (1 h of 1440p counts as 2 h, 1 h of 4K counts as 4 h), which is what
+            counts against the plan's stored-hours limit.
         watchedMinutes:
           type: integer
           description: Minutes watched by viewers in the period.
