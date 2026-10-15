@@ -8,9 +8,6 @@ This guide puts a segmnt video inside a WordPress page. It works with the
 **Gutenberg editor** and any theme. You use a **Custom HTML** block, and the
 video's **playback token** comes from your server.
 
-> The examples use the **TEST** hosts. In production the API host is
-> `api.segmnt.cloud` and the embed host is `cdn.segmnt.cloud`.
-
 ## What you need
 
 1. A **ready** segmnt video (`vid_...`).
@@ -29,7 +26,7 @@ video's **playback token** comes from your server.
 
 ```html
 <div style="position:relative;width:100%;aspect-ratio:16 / 9;">
-  <iframe src="https://test-cdn.segmnt.cloud/e/vid_9xR4tL?token=YOUR_PLAYBACK_TOKEN"
+  <iframe src="https://cdn.segmnt.cloud/e/vid_9xR4tL?token=YOUR_PLAYBACK_TOKEN"
     title="segmnt video" loading="lazy"
     style="position:absolute;inset:0;width:100%;height:100%;border:0;"
     allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
@@ -53,7 +50,7 @@ the block, and preview the page. This is fine to check the setup. It stops
 playing when the token expires.
 
 ```bash
-curl -X POST "https://test-api.segmnt.cloud/v1/projects/$PROJECT_ID/videos/vid_9xR4tL/playback-tokens" \
+curl -X POST "https://api.segmnt.cloud/v1/projects/$PROJECT_ID/videos/vid_9xR4tL/playback-tokens" \
   -H "Authorization: Bearer $SEGMNT_KEY" \
   -H "Content-Type: application/json" \
   -d '{"domain":"courses.example.com"}'
@@ -75,8 +72,8 @@ Keep the API key in `wp-config.php`, **never** in a page or the block:
 // wp-config.php — keep this out of version control and out of any page.
 define('SEGMNT_API_KEY', 'sk_...');
 define('SEGMNT_PROJECT', 'prj_7kQ2mB');
-define('SEGMNT_API_BASE', 'https://test-api.segmnt.cloud');
-define('SEGMNT_CDN', 'https://test-cdn.segmnt.cloud');
+define('SEGMNT_API_BASE', 'https://api.segmnt.cloud');
+define('SEGMNT_CDN', 'https://cdn.segmnt.cloud');
 ```
 
 ```php
@@ -150,7 +147,7 @@ Notes:
 
 ## Tested in TEST
 
-Checked on TEST on 15 Oct 2026:
+Checked on 15 Oct 2026:
 
 - The embed host serves the player: `GET /e/{videoId}` with no token → `403`
   `token_missing`; `GET /segmnt-player.js` → `200`.

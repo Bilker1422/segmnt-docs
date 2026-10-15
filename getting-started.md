@@ -114,7 +114,7 @@ Notes:
 - The token expires at `expiresAt` (4 hours by default). Ask for a new token for
   each viewing session.
 
-> **Next step: embed code.** The player's iframe embed page is live in TEST, so
+> **Next step: embed code.** The player's iframe embed page is live, so
 > this step no longer ends at the token. Copy the iframe from
 > [Embed a video on any website](/embed-a-video), put your token in it, and paste
 > it into your page. For WordPress, see
@@ -165,6 +165,6 @@ The routes on this page are the released API:
 - The signed playback path (token issue → CDN check → playlist rewrite on
   `/v/{videoId}/...`) is proved end to end against TEST by
   `a7-playback-e2e.yml`.
-- The iframe embed page (`/e/{videoId}`) and `segmnt-player.js` are **live in
-  TEST**: `/e/{videoId}` with no token answers `403 token_missing`, and
+- The iframe embed page (`/e/{videoId}`) and `segmnt-player.js` are **live**:
+  `/e/{videoId}` with no token answers `403 token_missing`, and
   `segmnt-player.js` answers `200`. See [Embed a video on any website](/embed-a-video).

@@ -117,11 +117,11 @@ colour. The plan and branding travel inside the signed token.
 
 ## Tested in TEST
 
-Checked on TEST on 15 Oct 2026:
+Checked on 15 Oct 2026:
 
-- `GET https://test-cdn.segmnt.cloud/e/{videoId}` with no token → `403` with
+- `GET https://cdn.segmnt.cloud/e/{videoId}` with no token → `403` with
   `X-Segmnt-Error: token_missing`.
-- `GET https://test-cdn.segmnt.cloud/v/{videoId}/master.m3u8` with no token →
+- `GET https://cdn.segmnt.cloud/v/{videoId}/master.m3u8` with no token →
   `403`.
 - The token check, the expiry, the `Origin`/`Referer` domain check, the
   `frame-ancestors` policy and the playlist rewrite are covered by the playback

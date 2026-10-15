@@ -31,7 +31,7 @@ Copy this block into your page's HTML. Replace two things:
 
 ```html
 <div style="position:relative;width:100%;aspect-ratio:16 / 9;">
-  <iframe src="https://test-cdn.segmnt.cloud/e/vid_9xR4tL?token=YOUR_PLAYBACK_TOKEN"
+  <iframe src="https://cdn.segmnt.cloud/e/vid_9xR4tL?token=YOUR_PLAYBACK_TOKEN"
     title="segmnt video" loading="lazy"
     style="position:absolute;inset:0;width:100%;height:100%;border:0;"
     allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
@@ -48,9 +48,6 @@ real token never leaks into what you copy.
 > The video page's own embed panel ("Add to your website") ships with the
 > dashboard redesign (YAH-703). Until then, use the guided setup, or copy the
 > block above.
-
-> The examples here use the **TEST** host `test-cdn.segmnt.cloud`. In production
-> the embed host is `cdn.segmnt.cloud`.
 
 ## Step 1: Copy the code
 
@@ -108,11 +105,11 @@ The API key is not.
 
 ## Tested in TEST
 
-Checked on TEST on 15 Oct 2026:
+Checked on 15 Oct 2026:
 
-- `GET https://test-cdn.segmnt.cloud/e/{videoId}` with no token → `403` with
+- `GET https://cdn.segmnt.cloud/e/{videoId}` with no token → `403` with
   `X-Segmnt-Error: token_missing`.
-- `GET https://test-cdn.segmnt.cloud/segmnt-player.js` → `200` (the player
+- `GET https://cdn.segmnt.cloud/segmnt-player.js` → `200` (the player
   script is live).
 - The token check, the domain check and the playlist rewrite are covered by the
   playback Worker tests (`playback-worker/src/*.test.ts`).

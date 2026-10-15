@@ -34,8 +34,8 @@ Answer (`201`):
 {
   "token": "v1....",
   "expiresAt": "2026-10-15T17:00:00.000Z",
-  "embedUrl": "https://test-cdn.segmnt.cloud/e/vid_9xR4tL?token=v1....",
-  "thumbnailUrl": "https://test-cdn.segmnt.cloud/v/vid_9xR4tL/thumb.jpg?token=v1...."
+  "embedUrl": "https://cdn.segmnt.cloud/e/vid_9xR4tL?token=v1....",
+  "thumbnailUrl": "https://cdn.segmnt.cloud/v/vid_9xR4tL/thumb.jpg?token=v1...."
 }
 ```
 
@@ -43,7 +43,7 @@ On a plan with **white-label** (Pro and Agency), the answer also has
 `playlistUrl` for your own hls.js player:
 
 ```json
-{ "playlistUrl": "https://test-cdn.segmnt.cloud/v/vid_9xR4tL/master.m3u8?token=v1...." }
+{ "playlistUrl": "https://cdn.segmnt.cloud/v/vid_9xR4tL/master.m3u8?token=v1...." }
 ```
 
 Put `embedUrl` in an iframe, or `playlistUrl` in your own player. See
@@ -56,7 +56,7 @@ export SEGMNT_KEY="sk_..."      # keep this on your server
 export PROJECT_ID="prj_7kQ2mB"
 export VIDEO_ID="vid_9xR4tL"
 
-curl -X POST "https://test-api.segmnt.cloud/v1/projects/$PROJECT_ID/videos/$VIDEO_ID/playback-tokens" \
+curl -X POST "https://api.segmnt.cloud/v1/projects/$PROJECT_ID/videos/$VIDEO_ID/playback-tokens" \
   -H "Authorization: Bearer $SEGMNT_KEY" \
   -H "Content-Type: application/json" \
   -d '{"domain":"courses.example.com"}'
@@ -65,7 +65,7 @@ curl -X POST "https://test-api.segmnt.cloud/v1/projects/$PROJECT_ID/videos/$VIDE
 ## Node.js (18+)
 
 ```js
-const BASE = "https://test-api.segmnt.cloud";
+const BASE = "https://api.segmnt.cloud";
 const { SEGMNT_KEY, PROJECT_ID } = process.env;
 
 export async function createPlaybackToken(videoId, domain, expiresInSeconds) {
@@ -90,7 +90,7 @@ use Illuminate\Support\Facades\Http;
 
 function segmntPlaybackToken(string $videoId, string $domain, ?int $expiresInSeconds = null): array
 {
-    $api = 'https://test-api.segmnt.cloud/v1/projects/' . config('services.segmnt.project');
+    $api = 'https://api.segmnt.cloud/v1/projects/' . config('services.segmnt.project');
 
     $body = ['domain' => $domain];
     if ($expiresInSeconds !== null) {
@@ -114,7 +114,7 @@ Build the iframe on your server and send only the finished HTML:
 
 ```php
 $t = segmntPlaybackToken($videoId, 'courses.example.com');
-$src = 'https://test-cdn.segmnt.cloud/e/' . $videoId . '?token=' . urlencode($t['token']);
+$src = 'https://cdn.segmnt.cloud/e/' . $videoId . '?token=' . urlencode($t['token']);
 ?><iframe src="<?= htmlspecialchars($src) ?>" title="segmnt video"
   style="width:100%;aspect-ratio:16/9;border:0" allowfullscreen></iframe>
 ```
@@ -137,7 +137,7 @@ the text.
 
 ## Tested in TEST
 
-Checked against `https://test-api.segmnt.cloud` on 15 Oct 2026:
+Checked on 15 Oct 2026:
 
 - `POST /v1/projects/{projectId}/videos/{videoId}/playback-tokens` with no key →
   `401 unauthorized` (the route is live).
