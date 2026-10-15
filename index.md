@@ -1,7 +1,7 @@
 ---
 title: segmnt docs
 description: segmnt is video infrastructure. Upload through one API and we encode, store, secure and stream it on your own domain. Use it for a course platform — or any product that needs video.
-icon: "home"
+icon: "house"
 ---
 
 segmnt is video infrastructure. Upload through one API and we encode, store,
