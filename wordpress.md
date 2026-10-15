@@ -1,23 +1,88 @@
 ---
 title: Add segmnt to WordPress
-description: Put a segmnt video in a WordPress page with a Custom HTML block, and learn where the playback token comes from.
+description: Put a segmnt video in a WordPress page with the segmnt video plugin and a shortcode, or with a Custom HTML block and a token from your server.
 icon: "globe"
 ---
 
-This guide puts a segmnt video inside a WordPress page. It works with the
-**Gutenberg editor** and any theme. You use a **Custom HTML** block, and the
-video's **playback token** comes from your server.
+There are two ways to put a segmnt video on a WordPress page:
 
-## What you need
+| Path | Best for | What you do |
+| --- | --- | --- |
+| **Plugin (easiest)** | Most sites. No code. | Install the `segmnt-video` plugin, save your key once, then add `[segmnt id="vid_..."]` to a page. |
+| **Custom HTML block** | Any platform, or a site that cannot install a plugin. | Paste an HTML block, and build the playback token on your server. |
 
-1. A **ready** segmnt video (`vid_...`).
-2. A **verified** domain: the WordPress site's own domain, for example
-   `blog.example.com` or `courses.example.com`. If WordPress is at
-   `www.example.com`, verify `www.example.com` too, because we match the exact
-   host. See [Accounts, projects, API keys and domains](/accounts-and-projects).
-3. A **playback token** for that video. Your server makes it; see below.
+Both paths need the same two things: a **ready** video (`vid_...`) and a
+**verified domain**. The plugin does **not** remove the verified-domain step.
 
-## Step 1: Add a Custom HTML block
+## Easy path: the segmnt video plugin
+
+The plugin keeps your API key on your server and asks segmnt for a signed
+playback token on each page render. It ships no second player: it frames the
+same player we use everywhere (hls.js, automatic quality, Arabic RTL).
+
+> **Availability:** the plugin is in **early access (TEST)**. It is not in the
+> WordPress.org directory yet — a production release is a later phase. Install
+> it from the plugin zip.
+
+### Step 1: Install the plugin
+
+1. In WordPress, go to **Plugins → Add New → Upload Plugin**.
+2. Upload the `segmnt-video` zip and click **Install Now**.
+3. Click **Activate**.
+
+### Step 2: Paste your key and project id once
+
+1. Go to **Settings → segmnt video**.
+2. Paste:
+   - your **project id** (`prj_...`), and
+   - a **playback** API key (`sk_...`). Create a playback key in the segmnt
+     dashboard; it can only make playback tokens — it cannot upload, delete or
+     read your account.
+3. Click **Save Changes**.
+
+The key is stored on your server and is never sent to the browser.
+
+### Step 3: Make the domain verified
+
+The domain of this WordPress site must be a **verified domain** of the project,
+for example `blog.example.com` or `courses.example.com`. If WordPress is at
+`www.example.com`, verify `www.example.com` too, because we match the exact
+host. See [Accounts, projects, API keys and domains](/accounts-and-projects).
+
+If the domain is not verified, the API answers `400` and the video does not
+play.
+
+### Step 4: Add the shortcode to a page
+
+Edit the page and add a **Shortcode** block:
+
+```
+[segmnt id="vid_9xR4tL"]
+```
+
+Replace `vid_9xR4tL` with your video id. Attributes are optional:
+
+| Attribute | Required | Default | Meaning |
+| --- | --- | --- | --- |
+| `id` | yes | - | The video id, `vid_...` |
+| `title` | no | a localized "Video" | iframe title, for screen readers |
+| `locale` | no | the site locale, else `ar` | player language: `ar` or `en` |
+| `aspect` | no | `16 / 9` | responsive aspect ratio |
+
+### Page cache and the 4-hour token
+
+The plugin asks for the normal **4-hour** playback token and re-mints a few
+minutes before it expires. WordPress and your host may cache the built HTML, so
+keep the **page-cache lifetime under about 4 hours**, or leave `[segmnt]` pages
+**uncached**. A page cached for longer can serve a token that has already
+expired, and the video stops.
+
+## Any-platform path: a Custom HTML block
+
+Use this path for any other site or page builder, or when you cannot install a
+plugin. It works with the **Gutenberg editor** and any theme.
+
+### Step 1: Add a Custom HTML block
 
 1. Edit the page in WordPress.
 2. Click **+**, search for **Custom HTML**, and add the block.
@@ -37,13 +102,13 @@ video's **playback token** comes from your server.
 4. Preview the page. The video plays on the preview domain only if that domain
    is verified and the token was made for it.
 
-## Step 2: Where the token comes from
+### Step 2: Where the token comes from
 
 A token **expires** (4 hours by default), so pasting one token into the block is
 only good for a short test. For a real page, the token must be **fresh** on each
 page load. There are two ways.
 
-### Option A: A quick test (paste a token by hand)
+#### Option A: A quick test (paste a token by hand)
 
 Make a token once from your server with the playback-tokens call, paste it into
 the block, and preview the page. This is fine to check the setup. It stops
@@ -59,12 +124,12 @@ curl -X POST "https://api.segmnt.cloud/v1/projects/$PROJECT_ID/videos/vid_9xR4tL
 Copy the `token` value from the answer. See
 [Create playback tokens on your server](/playback-tokens).
 
-### Option B: A fresh token on every page load (recommended)
+#### Option B: A fresh token on every page load (recommended)
 
 WordPress runs on PHP on your server, so it can call our API and print the
 iframe with a fresh token. Add a small **shortcode** to your theme or a small
-plugin, then use `[segmnt video="vid_9xR4tL"]` in any page (or keep the Custom
-HTML block and paste the built HTML).
+plugin, then use it in any page (or keep the Custom HTML block and paste the
+built HTML).
 
 Keep the API key in `wp-config.php`, **never** in a page or the block:
 
@@ -77,8 +142,9 @@ define('SEGMNT_CDN', 'https://cdn.segmnt.cloud');
 ```
 
 ```php
-// functions.php (a small plugin is cleaner) — a [segmnt] shortcode.
-add_shortcode('segmnt', function ($atts) {
+// functions.php (a small plugin is cleaner) — a [segmnt_embed] shortcode.
+// The tag is different from the plugin's [segmnt] so the two never clash.
+add_shortcode('segmnt_embed', function ($atts) {
     $atts = shortcode_atts(['video' => '', 'domain' => $_SERVER['HTTP_HOST'] ?? ''], $atts);
     $video  = sanitize_text_field($atts['video']);
     $domain = strtolower(preg_replace('/:\d+$/', '', sanitize_text_field($atts['domain'])));
@@ -117,16 +183,17 @@ add_shortcode('segmnt', function ($atts) {
 Then in the page use the shortcode block:
 
 ```
-[segmnt video="vid_9xR4tL"]
+[segmnt_embed video="vid_9xR4tL"]
 ```
 
 Notes:
 
 - The shortcode runs in PHP on your server, so the **API key never reaches the
   browser**.
-- WordPress caches pages. If your site serves cached HTML, keep the token's
-  life longer than the cache (for example `expiresInSeconds` of 6 hours for a
-  4-hour page cache), or refresh the cache before the token expires.
+- The domain must be **verified** here too. This path does not remove that step.
+- WordPress caches pages. Keep the page-cache lifetime **under about 4 hours**,
+  or leave the page uncached, so the token is still valid when the page is
+  served.
 - If the page is public and long-lived, a short token is safer. Ask for a new
   token per page load, and do not cache the HTML that holds it.
 
@@ -134,10 +201,15 @@ Notes:
 
 | Problem | Cause | Fix |
 | --- | --- | --- |
-| The block shows code, not a video | The editor escaped the HTML, or the block is a Code block, not a Custom HTML block | Use the **Custom HTML** block, or the `[segmnt]` shortcode. |
+| The block shows code, not a video | The editor escaped the HTML, or the block is a Code block, not a Custom HTML block | Use the **Custom HTML** block, or the shortcode block. |
+| The video does not play (plugin) | The site domain is not a verified domain, the key is not a playback key, or the video is not ready | Check **Settings → segmnt video**, verify the domain, and make sure the video is ready and not held for review. |
+| The video plays, then stops after a while (plugin) | The page cache is holding the page longer than the token lives | Keep the page-cache lifetime under about 4 hours, or leave `[segmnt]` pages uncached. |
 | "This video needs a playback token" | `YOUR_PLAYBACK_TOKEN` was left in the code | Replace it with a real token, or use Option B. |
 | "This playback link has expired" | The token is older than its `expiresAt` | Use Option B, or make a longer token. |
 | "Origin does not match the allowed domain" | The site's domain is not the token's domain, or it is not verified | Verify the exact host (`www.` counts as its own host) and make the token for it. |
+
+If you revoke a playback key, new page views stop getting a token at once. A
+viewer who already loaded the page keeps playing until that token expires.
 
 ## Where to go next
 
@@ -149,9 +221,13 @@ Notes:
 
 Checked on 15 Oct 2026:
 
+- The **segmnt video** plugin v1 was verified on a real WordPress site in TEST,
+  in English and Arabic (RTL), including the "the key never leaves the server"
+  and "revoke the key" checks.
 - The embed host serves the player: `GET /e/{videoId}` with no token → `403`
   `token_missing`; `GET /segmnt-player.js` → `200`.
 - The playback-tokens route is live: with no key it answers `401 unauthorized`.
-- The WordPress shortcode uses the public WordPress HTTP API
-  (`wp_remote_post`), the same call as the cURL example, which is covered by
-  `api/src/playback-tokens.test.ts`.
+- The plugin shortcode mints through the same route as the cURL example, which
+  is covered by `api/src/playback-tokens.test.ts`.
+- The manual-path shortcode uses the public WordPress HTTP API
+  (`wp_remote_post`), the same call as the cURL example.

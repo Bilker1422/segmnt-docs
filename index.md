@@ -41,8 +41,8 @@ a course platform or any product that needs video. These guides are in
   the token, paste it. The short path for non-developers.
 - [Create playback tokens on your server](/playback-tokens) — cURL, Node.js and
   PHP examples. Keep the API key on your server, never in a page.
-- [Add segmnt to WordPress](/wordpress) — a Custom HTML block, and where the
-  playback token comes from.
+- [Add segmnt to WordPress](/wordpress) — the easy plugin path, and the
+  Custom HTML block with a token from your server.
 - [How playback protection works](/playback-protection) — tokens and verified
   domains, and why a copied link does not play.
 

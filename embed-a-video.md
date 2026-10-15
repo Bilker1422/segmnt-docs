@@ -69,8 +69,8 @@ how, with cURL, Node.js and PHP examples.
 
 Paste the block where the video should appear.
 
-- **WordPress:** use a **Custom HTML** block. See
-  [Add segmnt to WordPress](/wordpress).
+- **WordPress:** install the **segmnt video** plugin (easy path), or use a
+  **Custom HTML** block. See [Add segmnt to WordPress](/wordpress).
 - **Another site or page builder:** paste it into an HTML block, or build it on
   your server and send the finished HTML.
 
