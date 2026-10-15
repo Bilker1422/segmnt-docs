@@ -21,15 +21,17 @@ for the page (from a short cache, and re-mints it before it expires). It ships
 no second player: it frames the same player we use everywhere (hls.js,
 automatic quality, Arabic RTL).
 
-> **Availability:** the plugin is in **early access (TEST)**. It is not in the
-> WordPress.org directory yet — a production release is a later phase. Install
-> it from the plugin zip.
+> **Availability:** the plugin is **v1.0.0**. Download it from
+> [segmnt-video-1.0.0.zip](https://segmnt.cloud/downloads/segmnt-video-1.0.0.zip).
+> It is not in the WordPress.org directory yet — that is a later phase.
 
 ### Step 1: Install the plugin
 
-1. In WordPress, go to **Plugins → Add New → Upload Plugin**.
-2. Upload the `segmnt-video` zip and click **Install Now**.
-3. Click **Activate**.
+1. Download
+   [segmnt-video-1.0.0.zip](https://segmnt.cloud/downloads/segmnt-video-1.0.0.zip).
+2. In WordPress, go to **Plugins → Add New → Upload Plugin**.
+3. Upload the zip and click **Install Now**.
+4. Click **Activate**.
 
 ### Step 2: Paste your key and project id once
 
