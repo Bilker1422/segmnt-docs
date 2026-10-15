@@ -694,6 +694,13 @@ paths:
                   minLength: 1
                   maxLength: 100
                   examples: [Course site backend]
+                scope:
+                  type: string
+                  enum: [full, playback]
+                  default: full
+                  description: |
+                    `playback` creates a key that can only mint playback tokens
+                    (for the WordPress plugin). Omit it for a normal `full` key.
       responses:
         '201':
           description: Key created. `secret` is shown only in this response. We store only a hash.
@@ -2298,7 +2305,11 @@ components:
           schema:
             $ref: '#/components/schemas/Problem'
     Forbidden:
-      description: Not allowed, for example a plan limit (`code` is `plan_limit_reached`) or a domain that is not verified (`domain_not_verified`).
+      description: |
+        Not allowed. `code` says why: `insufficient_scope` (a playback-only API
+        key called a route it may not use), a plan limit
+        (`plan_limit_reached`), or a domain that is not verified
+        (`domain_not_verified`).
       content:
         application/problem+json:
           schema:
@@ -2636,7 +2647,7 @@ components:
 
     ApiKey:
       type: object
-      required: [id, name, prefix, createdAt, lastUsedAt]
+      required: [id, name, prefix, scope, createdAt, lastUsedAt]
       properties:
         id:
           type: string
@@ -2647,6 +2658,15 @@ components:
           type: string
           description: First characters of the key, to recognise it.
           examples: [Abcd1234]
+        scope:
+          type: string
+          enum: [full, playback]
+          description: |
+            `full` (default): the key can call every `/v1` route of its project.
+            `playback`: the key can call ONLY the playback-token mint route, so a
+            key that sits on a customer's server (for example a WordPress site)
+            cannot upload, encode, delete, read account data, or spend money.
+          examples: [full]
         createdAt:
           $ref: '#/components/schemas/Timestamp'
         lastUsedAt:
