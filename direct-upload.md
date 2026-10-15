@@ -19,7 +19,7 @@ tokens: see [Create playback tokens on your server](/playback-tokens) and
 ## Before you start
 
 - A project ID (`prj_...`) and an API key for that project (`sk_...`).
-- Base URL in TEST: `https://test-api.segmnt.cloud`
+- Base URL: `https://api.segmnt.cloud`
 - Send the key as `Authorization: Bearer <key>` on the API calls.
   Do **not** send it to the part URLs.
 
@@ -176,7 +176,7 @@ Do not retry `400`, `401`, `403` and `404` from the API without a change.
 import { open } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 
-const BASE = "https://test-api.segmnt.cloud";
+const BASE = "https://api.segmnt.cloud";
 const { SEGMNT_KEY, PROJECT_ID } = process.env;
 const api = (path, init = {}) =>
   fetch(`${BASE}/v1/projects/${PROJECT_ID}${path}`, {
@@ -234,7 +234,7 @@ export async function upload(path, title) {
 ```python
 import os, time, uuid, requests
 
-BASE = "https://test-api.segmnt.cloud"
+BASE = "https://api.segmnt.cloud"
 PROJECT = os.environ["PROJECT_ID"]
 HEADERS = {"Authorization": f"Bearer {os.environ['SEGMNT_KEY']}"}
 API = f"{BASE}/v1/projects/{PROJECT}"
@@ -286,7 +286,7 @@ use Illuminate\Support\Facades\Http;
 
 function segmntUpload(string $path, string $title): array
 {
-    $api = 'https://test-api.segmnt.cloud/v1/projects/' . config('services.segmnt.project');
+    $api = 'https://api.segmnt.cloud/v1/projects/' . config('services.segmnt.project');
     $client = fn () => Http::withToken(config('services.segmnt.key'))->acceptJson();
 
     $size = filesize($path);

@@ -13,8 +13,8 @@ This guide is written in simple English.
 
 ## Before you start
 
-- Dashboard in TEST: `https://test-app.segmnt.cloud`
-- API in TEST: `https://test-api.segmnt.cloud`
+- Dashboard: `https://app.segmnt.cloud`
+- API: `https://api.segmnt.cloud`
 - IDs: accounts start with `acc_`, users with `usr_`, projects with `prj_`,
   API keys with `key_`, domains with `dom_`.
 
@@ -29,7 +29,7 @@ The buttons come from the API, so the dashboard only shows providers that work
 in this environment:
 
 ```bash
-curl https://test-api.segmnt.cloud/auth/providers
+curl https://api.segmnt.cloud/auth/providers
 ```
 
 ```json
@@ -42,7 +42,7 @@ provider signs you in, and it returns the browser to
 sign-in and starts your session.
 
 ```bash
-curl -i "https://test-api.segmnt.cloud/auth/google/start?return_to=/videos"
+curl -i "https://api.segmnt.cloud/auth/google/start?return_to=/videos"
 ```
 
 Answer: `302` to the provider. We also set a short-lived flow cookie
@@ -79,7 +79,7 @@ Every `/v1/projects...` call needs this session cookie. Without a valid session
 you get `401 unauthorized`:
 
 ```bash
-curl https://test-api.segmnt.cloud/v1/projects
+curl https://api.segmnt.cloud/v1/projects
 ```
 
 ```json
@@ -113,7 +113,7 @@ on: a new free account that has not verified yet. See
 Sign out:
 
 ```bash
-curl -X POST https://test-api.segmnt.cloud/auth/logout
+curl -X POST https://api.segmnt.cloud/auth/logout
 ```
 
 Answer `204`. Safe to call twice.
@@ -238,7 +238,7 @@ the text. The `type` field links to `https://docs.segmnt.cloud/errors/{code}`.
 
 ## Tested in TEST
 
-Checked against `https://test-api.segmnt.cloud` on 12 Oct 2026:
+Checked on 12 Oct 2026:
 
 - `GET /auth/providers` → `200` with `google` and `github`.
 - `GET /auth/google/start?return_to=/videos` → `302` to Google, with the

@@ -99,7 +99,7 @@ Notes:
 ### Node.js (18+)
 
 ```js
-const BASE = "https://test-api.segmnt.cloud";
+const BASE = "https://api.segmnt.cloud";
 const { SEGMNT_KEY, PROJECT_ID } = process.env;
 const api = (path, init = {}) =>
   fetch(`${BASE}/v1/projects/${PROJECT_ID}${path}`, {
@@ -126,7 +126,7 @@ export async function remove(videoId) {
 ```python
 import os, requests
 
-BASE = "https://test-api.segmnt.cloud"
+BASE = "https://api.segmnt.cloud"
 API = f"{BASE}/v1/projects/{os.environ['PROJECT_ID']}"
 HEADERS = {"Authorization": f"Bearer {os.environ['SEGMNT_KEY']}"}
 
@@ -157,13 +157,13 @@ function segmntClient()
 
 function segmntRenameVideo(string $videoId, string $title): array
 {
-    $api = 'https://test-api.segmnt.cloud/v1/projects/' . config('services.segmnt.project');
+    $api = 'https://api.segmnt.cloud/v1/projects/' . config('services.segmnt.project');
     return segmntClient()->patch("$api/videos/$videoId", ['title' => $title])->throw()->json();
 }
 
 function segmntDeleteVideo(string $videoId): bool
 {
-    $api = 'https://test-api.segmnt.cloud/v1/projects/' . config('services.segmnt.project');
+    $api = 'https://api.segmnt.cloud/v1/projects/' . config('services.segmnt.project');
     $res = segmntClient()->delete("$api/videos/$videoId");
     if ($res->status() === 404) {
         return false; // already deleted, or wrong id
@@ -186,7 +186,7 @@ the text.
 
 ## Tested in TEST
 
-Checked against `https://test-api.segmnt.cloud` on 14 Oct 2026, after the
+Checked on 14 Oct 2026, after the
 rename/delete route was on TEST:
 
 - `PATCH` and `DELETE .../videos/{videoId}` with no key answer

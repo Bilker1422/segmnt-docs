@@ -15,7 +15,7 @@ This guide is written in simple English.
 
 ## Before you start
 
-- API in TEST: `https://test-api.segmnt.cloud`
+- API: `https://api.segmnt.cloud`
 - Every billing call on this page uses your **session cookie** (the dashboard
   session). An API key cannot call them.
 - Prices are in **SAR per month, before VAT**.
@@ -377,7 +377,7 @@ the text. The `type` field links to `https://docs.segmnt.cloud/errors/{code}`.
 
 ## Tested in TEST
 
-Checked against `https://test-api.segmnt.cloud` on 14 Oct 2026:
+Checked on 14 Oct 2026:
 
 - `POST /v1/billing/checkout` with a session -> `503 billing_paused` (no provider
   is active; nothing is charged and the plan does not change).

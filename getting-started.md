@@ -11,12 +11,13 @@ little after the upload ends.
 > العربية: أنشئ أول فيديو لك في نحو 5 دقائق: سجّل الدخول عبر SSO، وأنشئ مشروعاً،
 > وارفع أول فيديو، واحصل على رمز تشغيل موقّع، واعرف حدود الخطة المجانية.
 
-Everything on this page runs on **TEST**.
+> **Test environment.** Internal testers can use the test hosts: dashboard
+> `https://test-app.segmnt.cloud`, API `https://test-api.segmnt.cloud`.
 
 ## Before you start
 
-- Dashboard (TEST): `https://test-app.segmnt.cloud`
-- API (TEST): `https://test-api.segmnt.cloud`
+- Dashboard: `https://app.segmnt.cloud`
+- API: `https://api.segmnt.cloud`
 - Sign-in is **SSO only** (Google or GitHub). **We never store a password.**
 - Your free account is created on the first sign-in.
 - IDs: accounts `acc_`, projects `prj_`, API key ids `key_` (the key secret is
@@ -24,7 +25,7 @@ Everything on this page runs on **TEST**.
 
 ## Step 1: Sign up with SSO
 
-1. Open the dashboard: `https://test-app.segmnt.cloud`.
+1. Open the dashboard: `https://app.segmnt.cloud`.
 2. Pick **Google** or **GitHub**.
 3. The provider signs you in. We create your free account on this first sign-in
    and start a 30-day session.
@@ -42,7 +43,7 @@ In the dashboard: **Projects** → **New project**, then give it a name.
 Or with the API (session cookie):
 
 ```bash
-curl -X POST https://test-api.segmnt.cloud/v1/projects \
+curl -X POST https://api.segmnt.cloud/v1/projects \
   -H "Cookie: segmnt_session=$SEGMNT_SESSION" \
   -H "Content-Type: application/json" \
   -d '{"name":"Client A courses"}'
@@ -99,7 +100,7 @@ white-label, `playlistUrl`:
 {
   "token": "v1....",
   "expiresAt": "2026-10-14T17:00:00.000Z",
-  "thumbnailUrl": "https://test-cdn.segmnt.cloud/v/vid_9xR4tL/thumb.jpg"
+  "thumbnailUrl": "https://cdn.segmnt.cloud/v/vid_9xR4tL/thumb.jpg"
 }
 ```
 
@@ -156,7 +157,7 @@ Notes:
 
 ## Tested in TEST
 
-The routes on this page are the released TEST API:
+The routes on this page are the released API:
 
 - `POST /v1/projects` and
   `POST /v1/projects/{projectId}/videos/{videoId}/playback-tokens` are in the API

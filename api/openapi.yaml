@@ -38,7 +38,7 @@ info:
     Videos never have a public URL. Your server asks for a playback token for one
     video and one verified domain. The token goes in the `token` query parameter
     of the master playlist URL:
-    `https://test-cdn.segmnt.cloud/v/{videoId}/master.m3u8?token={token}`.
+    `https://cdn.segmnt.cloud/v/{videoId}/master.m3u8?token={token}`.
     The CDN rewrites every playlist it returns and adds the same `?token=` to
     each link inside, so a player only needs the master playlist URL.
 
@@ -97,8 +97,8 @@ info:
   contact:
     name: segmnt engineering
 servers:
-  - url: https://test-api.segmnt.cloud
-    description: TEST environment
+  - url: https://api.segmnt.cloud
+    description: Production
 security:
   - apiKey: []
   - session: []
@@ -2856,7 +2856,7 @@ components:
             HLS master playlist for your own player (hls.js or Safari). Only on
             plans with `whiteLabel`; other plans must use `embedUrl`, which shows
             our logo. The CDN adds the token to every link inside the playlists.
-          examples: ['https://test-cdn.segmnt.cloud/v/vid_9xR4tL/master.m3u8?token=...']
+          examples: ['https://cdn.segmnt.cloud/v/vid_9xR4tL/master.m3u8?token=...']
         embedUrl:
           type: string
           format: uri
@@ -2884,7 +2884,7 @@ components:
             dashboard appends the real token for the live preview and the
             visible `YOUR_PLAYBACK_TOKEN` placeholder in the copyable embed
             snippet, so a preview token never leaks into what a customer copies.
-          examples: ['https://test-cdn.segmnt.cloud/e/vid_9xR4tL']
+          examples: ['https://cdn.segmnt.cloud/e/vid_9xR4tL']
         thumbnailUrl:
           type: string
           format: uri

@@ -22,7 +22,7 @@ This guide is written in simple English.
 
 ## Before you start
 
-- API in TEST: `https://test-api.segmnt.cloud`
+- API: `https://api.segmnt.cloud`
 - Everything on this page uses the **session cookie** (`segmnt_session`), not an
   API key.
 - The number must be a **Saudi or GCC mobile**. Send a full international number
@@ -210,7 +210,7 @@ the text. The `type` field links to `https://docs.segmnt.cloud/errors/{code}`.
 
 ## Tested in TEST
 
-Checked against `https://test-api.segmnt.cloud` on 14 Oct 2026, after the
+Checked on 14 Oct 2026, after the
 phone-verification release reached TEST:
 
 - `POST /v1/me/phone/start` with no session → `401 unauthorized`.

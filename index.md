@@ -48,8 +48,8 @@ a course platform or any product that needs video. These guides are in
 
 ## Status of this site
 
-Everything here runs on **TEST**. A production release starts only after the
-board approves it.
+These are the production docs for segmnt. A production release starts only after
+the board approves it.
 
 We only document features that are released. Embed codes (iframe and
 JavaScript), signed playback tokens and domain-locked playback are released in

@@ -13,7 +13,7 @@ This guide is written in simple English.
 
 ## Before you start
 
-- API in TEST: `https://test-api.segmnt.cloud`
+- API: `https://api.segmnt.cloud`
 - `POST /v1/projects/{projectId}/videos/{videoId}/reports` accepts a **project
   API key** (`Authorization: Bearer sk_...`) — the same key you use for playback
   tokens.
@@ -134,7 +134,7 @@ the text.
 
 ## Tested in TEST
 
-Checked against `https://test-api.segmnt.cloud` on 14 Oct 2026, once the report
+Checked on 14 Oct 2026, once the report
 route was on TEST:
 
 - `POST .../reports` with no key, and with a wrong key, both answer

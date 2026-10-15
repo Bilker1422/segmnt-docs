@@ -12,7 +12,7 @@ This guide is written in simple English.
 
 ## Before you start
 
-- API in TEST: `https://test-api.segmnt.cloud`
+- API: `https://api.segmnt.cloud`
 - `GET /v1/billing/plan` uses your **session cookie** (the dashboard session).
 - `GET /v1/projects/{projectId}/usage` accepts a **project API key**
   (`Authorization: Bearer sk_...`) or your session cookie.
@@ -193,7 +193,7 @@ the text. The `type` field links to `https://docs.segmnt.cloud/errors/{code}`.
 
 ## Tested in TEST
 
-Checked against `https://test-api.segmnt.cloud` on 14 Oct 2026:
+Checked on 14 Oct 2026:
 
 - `GET /v1/billing/plan` with no session → `401 unauthorized`.
 - `GET /v1/projects/{projectId}/usage` with no credential → `401 unauthorized`.

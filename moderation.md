@@ -19,7 +19,7 @@ This guide is written in simple English.
 
 ## Before you start
 
-- API in TEST: `https://test-api.segmnt.cloud`
+- API: `https://api.segmnt.cloud`
 - Playback uses
   `POST /v1/projects/{projectId}/videos/{videoId}/playback-tokens`.
 - A held video is refused with `409` `code: video_not_ready`. The `detail` is
@@ -199,6 +199,6 @@ The behaviour is proved by our API test suite:
 - `api/src/admin.test.ts` — the review queue lists `pending`/held videos, a
   release clears the hold and writes the audit row, and the scan route answers.
 
-A live check against `https://test-api.segmnt.cloud` needs a held video and a
+A live check needs a held video and a
 verified domain. The API tests above cover the behaviour; we re-run them after
 every change.
