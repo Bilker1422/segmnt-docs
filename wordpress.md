@@ -16,9 +16,10 @@ Both paths need the same two things: a **ready** video (`vid_...`) and a
 
 ## Easy path: the segmnt video plugin
 
-The plugin keeps your API key on your server and asks segmnt for a signed
-playback token on each page render. It ships no second player: it frames the
-same player we use everywhere (hls.js, automatic quality, Arabic RTL).
+The plugin keeps your API key on your server and gets a signed playback token
+for the page (from a short cache, and re-mints it before it expires). It ships
+no second player: it frames the same player we use everywhere (hls.js,
+automatic quality, Arabic RTL).
 
 > **Availability:** the plugin is in **early access (TEST)**. It is not in the
 > WordPress.org directory yet — a production release is a later phase. Install
@@ -65,7 +66,7 @@ Replace `vid_9xR4tL` with your video id. Attributes are optional:
 | Attribute | Required | Default | Meaning |
 | --- | --- | --- | --- |
 | `id` | yes | - | The video id, `vid_...` |
-| `title` | no | a localized "Video" | iframe title, for screen readers |
+| `title` | no | `segmnt video` (localized) | iframe title, for screen readers |
 | `locale` | no | the site locale, else `ar` | player language: `ar` or `en` |
 | `aspect` | no | `16 / 9` | responsive aspect ratio |
 
@@ -77,7 +78,7 @@ keep the **page-cache lifetime under about 4 hours**, or leave `[segmnt]` pages
 **uncached**. A page cached for longer can serve a token that has already
 expired, and the video stops.
 
-## Any-platform path: a Custom HTML block
+## Custom HTML block (portable to other platforms)
 
 Use this path for any other site or page builder, or when you cannot install a
 plugin. It works with the **Gutenberg editor** and any theme.
