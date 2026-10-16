@@ -160,8 +160,8 @@ What stops depends on the plan:
 - **Free, Starter and Pilot:** uploads stop at the limit, and playback stops at
   the watched-minutes limit. Starter's wall is watch time.
 - **Pro and Agency:** uploads stop at the limit. Playback never stops: past the
-  included minutes, extra watch time is cheap pay-as-you-go and is added to your
-  next invoice. No "call sales" wall and no sudden stop.
+  included minutes, extra watch time is 5 SAR per 1,000 watched minutes before
+  VAT and is added to your next invoice. No "call sales" wall and no sudden stop.
 
 For Free, Starter and Pilot playback we stop issuing **new** playback links. A
 link that was already issued keeps working until it expires (4 hours by

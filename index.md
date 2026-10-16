@@ -73,3 +73,9 @@ We only document features that are **available**. Where a feature is **Beta** or
 [Feature status](/status).
 
 The website uses the same labels and the same meanings.
+
+## Get support
+
+Questions, a bug, or a billing problem? E-mail
+[support@segmnt.cloud](mailto:support@segmnt.cloud) and we will answer. segmnt is
+based in Saudi Arabia.
