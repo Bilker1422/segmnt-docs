@@ -134,8 +134,8 @@ tags:
     description: |
       Internal routes for our team (A12 abuse/review and A13 bans). Not for
       customers. The page is at `/admin` behind Cloudflare Access. Every admin
-      route is gated by `adminAccess` (a Cloudflare Access JWT, or the TEST
-      `ADMIN_TOKEN`). Internal helper routes are called by our own Workers with
+      route is gated by `adminAccess` (a Cloudflare Access JWT, or a shared
+      admin token). Internal helper routes are called by our own Workers with
       `internalSecret`.
     x-internal: true
   - name: System
@@ -340,11 +340,10 @@ paths:
         with `country`; without `country` a local number is treated as Saudi.
 
         At most 5 codes per account per hour. A phone number or account under an
-        active ban is refused. SMS is sent through the board-approved provider
-        (BudgetSMS; Msegat or Twilio can be used instead); when none is
-        configured this route answers `503`. In the
-        TEST environment only, the `test` provider also returns the code in
-        `testCode` so the automated end-to-end test can finish the flow.
+        active ban is refused. SMS is sent through our SMS provider; when none
+        is configured this route answers `503`. In our test environment only,
+        the `test` provider also returns the code in `testCode` so the
+        automated end-to-end test can finish the flow.
       security:
         - session: []
       requestBody:
@@ -439,8 +438,8 @@ paths:
       operationId: listBans
       summary: List bans
       description: |
-        Internal admin route (task A13). The admin page (A12, behind Cloudflare
-        Access) and the board use it. Phone numbers and fingerprints are never
+        Internal admin route for our team. The admin page (behind Cloudflare
+        Access) uses it. Phone numbers and fingerprints are never
         returned, only whether a ban names one.
       security:
         - adminAccess: []
@@ -466,7 +465,7 @@ paths:
       operationId: createBan
       summary: Ban an account, a phone and/or a device
       description: |
-        **Every ban needs board approval.** The request must carry a
+        **Every ban needs an approval reference.** The request must carry a
         `boardApprovalRef`; without one this answers `403 board_approval_required`
         and nothing is written. A ban blocks the account (`banned_at`), the phone
         number and the device fingerprint. Sessions stop at once: session lookups
@@ -500,7 +499,7 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
-          description: No board approval reference (`code` is `board_approval_required`).
+          description: No approval reference was supplied (`code` is `board_approval_required`).
           content:
             application/problem+json:
               schema:
@@ -1309,13 +1308,13 @@ paths:
       operationId: createCheckout
       summary: Start a checkout (paused)
       description: |
-        **Paid billing is paused** (board decision, 14 Oct 2026): every payment
+        **Paid billing is paused**: every payment
         gateway is blocked, so no provider is active. This call cannot start a
         payment and cannot change a plan; it answers `503 billing_paused` before it
         reaches any provider. Ask the customer to join the paid-plan whitelist
         (`POST /v1/billing/whitelist`) instead.
 
-        When the board turns billing on (`BILLING_PROVIDER=moyasar|polar`), this
+        When billing is turned on (`BILLING_PROVIDER=moyasar|polar`), this
         returns the provider's hosted checkout page, and the plan changes only when
         the provider's payment webhook confirms the payment.
       security:
@@ -1446,7 +1445,7 @@ paths:
 
         The webhook body is never trusted. A verified event is used only to find
         the provider invoice; the invoice is then read back from the provider API,
-        and its amount and currency are checked against the plan's board-fixed
+        and its amount and currency are checked against the plan's fixed
         price. Only then is the plan applied: the payment, the VAT invoice, the
         subscription and the account plan are written in one batch, so the same
         event can be replayed safely (a provider retries). A refunded invoice
@@ -1609,15 +1608,16 @@ paths:
       operationId: runOverageBilling
       summary: Bill one account's watched-minute overage (internal)
       description: |
-        A14 follow-up (YAH-586). Records the watched-minute overage for one
-        whole, CLOSED UTC calendar month at the board-fixed rate plus VAT, in
-        SAR. Bills every STARTED minute past the plan's included minutes
-        (`ceil`), built from the raw watched seconds, so a partial minute is not
-        lost. A month that has not closed yet is refused, and an early run
-        cannot lock it. TEST only: no payment provider is charged. Idempotent:
-        one overage invoice per account per month, so a retried run records
-        nothing new. A `null` board rate means nothing is billed
-        (`reason: no_price`). Free, Starter and Pilot are never billed.
+        Records the watched-minute overage for one whole, CLOSED UTC calendar
+        month at the plan's overage rate plus VAT, in SAR. The published rate is
+        5 SAR per 1,000 watched minutes before VAT, on Pro and Agency only.
+        Bills every STARTED minute past the plan's included minutes (`ceil`),
+        built from the raw watched seconds, so a partial minute is not lost. A
+        month that has not closed yet is refused, and an early run cannot lock
+        it. No payment provider is charged. Idempotent: one overage invoice per
+        account per month, so a retried run records nothing new. A `null` rate
+        means nothing is billed (`reason: no_price`). Free, Starter and Pilot are
+        never billed.
       security:
         - internalSecret: []
       requestBody:
@@ -1880,8 +1880,8 @@ paths:
       x-excluded: true
       x-internal: true
       operationId: proposeAdminBan
-      summary: Propose a ban (needs board approval)
-      description: Records the proposal and raises an alert. It never bans an account; a ban runs only after board approval.
+      summary: Propose a ban (needs approval)
+      description: Records the proposal and raises an alert. It never bans an account; a ban runs only after an approval reference is supplied.
       security:
         - adminAccess: []
       requestBody:
@@ -2188,7 +2188,7 @@ components:
       description: |
         Admin credential (task A12). Either a Cloudflare Access JWT (sent as the
         `Cf-Access-Jwt-Assertion` header when the request passed the Access
-        policy) or the TEST `ADMIN_TOKEN` as a bearer token. Never a customer key.
+        policy) or a shared admin token as a bearer token. Never a customer key.
     internalSecret:
       type: http
       scheme: bearer
@@ -2478,9 +2478,9 @@ components:
         testCode:
           type: string
           description: |
-            Present ONLY in the TEST environment (`TEST_SINK=1`), so the
-            automated end-to-end test can finish the flow without a real SMS.
-            Never present in production.
+            Present only in our test environment, so the automated end-to-end
+            test can finish the flow without a real SMS. Never present in
+            production.
 
     PhoneVerifyInput:
       type: object
@@ -2518,7 +2518,7 @@ components:
         boardApprovalRef:
           type: string
           minLength: 1
-          description: Reference to the board approval. A ban cannot be written without it.
+          description: Reference to the approval. A ban cannot be written without it.
           examples: ['APPR-42']
         accountId:
           type: string
@@ -3008,7 +3008,7 @@ components:
 
     PlanId:
       type: string
-      description: Plan names and prices are set by the board. Examples are not real plans.
+      description: Plan names and prices are subject to change. Examples are not real plans.
       examples: [free]
     PlanLimits:
       type: object
@@ -3023,10 +3023,10 @@ components:
         watchedMinutesPerPeriod:
           type: [integer, 'null']
           description: |
-            Included watched minutes per period. Free, Starter and Pilot playback
-            stops at this limit; Pro and Agency continue past it and the extra
-            time is cheap pay-as-you-go on the next invoice (YAH-28 rule 5,
-            board decision 14 Oct 2026; billing is A14).
+            Included watched minutes per period. Free, Starter and Pilot
+            playback stops at this limit; Pro and Agency continue past it and
+            the extra time is billed at 5 SAR per 1,000 watched minutes before
+            VAT on the next invoice.
         verifiedDomains:
           type: [integer, 'null']
         projects:
@@ -3101,13 +3101,13 @@ components:
             overageMinutes:
               type: integer
               description: |
-                Watched minutes past the plan's included minutes in this period,
-                billed as cheap pay-as-you-go on the next invoice (YAH-28 rule 5;
-                billing is A14). `0` when under the limit, when the plan has no
-                limit, or when the plan is not billed overage: Free, Starter and
-                Pilot stop playback at the limit, so they always report `0`.
-                Pro and Agency never stop playback at this point (board decision
-                14 Oct 2026).
+                Watched minutes past the plan's included minutes in this
+                period, billed at 5 SAR per 1,000 watched minutes before VAT on
+                the next invoice (Pro and Agency only). `0` when under the
+                limit, when the plan has no limit, or when the plan is not
+                billed overage: Free, Starter and Pilot stop playback at the
+                limit, so they always report `0`. Pro and Agency never stop
+                playback at this point.
     Checkout:
       type: object
       required: [id, checkoutUrl, expiresAt]
@@ -3156,7 +3156,7 @@ components:
         reason:
           type: string
           description: |
-            Why nothing was recorded: `no_price` (no board rate fixed yet),
+            Why nothing was recorded: `no_price` (no overage rate set),
             `no_overage`, `duplicate`, `unknown_account`, `not_paid`, or
             `not_closed` (the month has not ended).
         planId:

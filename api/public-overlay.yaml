@@ -48,8 +48,8 @@ actions:
     remove: true
   - target: $.tags[10]
     remove: true
-  # YAH-796 per-video public access mode is on main (TEST) only: no release tag
-  # contains it, and production v0.8.0 has no accessMode. Hide it from the
+  # Per-video public access mode is not released yet: no release tag contains
+  # it, and the current production release has no accessMode. Hide it from the
   # published reference until it ships. The pages that describe it carry the
   # "Coming soon" label.
   - target: $.paths['/v1/projects/{projectId}/videos/{videoId}'].patch.requestBody.content['application/json'].schema.properties.accessMode
