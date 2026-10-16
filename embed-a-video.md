@@ -49,6 +49,55 @@ real token never leaks into what you copy.
 The video page (**Add to your website**) shows the same flow as two numbered
 steps: **1** get a token for this video, **2** put the token in the embed code.
 
+## The JavaScript embed (player script in your `<head>`)
+
+The block above is the **iframe** embed. It is the easy path, and it needs
+nothing in your page's `<head>`.
+
+If your page builder wants a script instead of raw HTML, use the
+**JavaScript** embed. The player file comes from the **player CDN host**, so
+its `<script>` goes in your page's `<head>`:
+
+```html
+<!doctype html>
+<html lang="en">
+  <head>
+    <script src="https://cdn.segmnt.cloud/segmnt-player.js" defer></script>
+  </head>
+  <body>
+    <div id="segmnt-vid_9xR4tL"></div>
+    <script>
+      SegmntPlayer.embed(document.getElementById("segmnt-vid_9xR4tL"), {
+        videoId: "vid_9xR4tL",
+        baseUrl: "https://cdn.segmnt.cloud",
+        token: "YOUR_PLAYBACK_TOKEN",
+        locale: "en",
+      });
+    </script>
+  </body>
+</html>
+```
+
+- The `<script src>` must point at the **player CDN host**
+  (`https://cdn.segmnt.cloud`), the same host the video streams from. On TEST
+  it is `https://test-cdn.segmnt.cloud`.
+- Keep it in the `<head>`, with `defer`. The browser opens the connection to
+  the CDN while the rest of the page loads, so the first play is faster.
+- `SegmntPlayer.embed(...)` builds the same player as the iframe block, inside
+  your own page.
+- Replace `vid_9xR4tL` and `YOUR_PLAYBACK_TOKEN` exactly as above.
+
+### Add the player CDN to your `<head>` early (optional)
+
+The player and the video both come from the player CDN host. Add these two
+lines to your `<head>` and the browser opens that connection before the player
+asks for the video:
+
+```html
+<link rel="preconnect" href="https://cdn.segmnt.cloud">
+<link rel="dns-prefetch" href="https://cdn.segmnt.cloud">
+```
+
 ## Step 1: Copy the code
 
 Copy the block above, or click **Copy code** in the dashboard's guided setup.
@@ -113,3 +162,6 @@ Checked on 15 Oct 2026:
   script is live).
 - The token check, the domain check and the playlist rewrite are covered by the
   playback Worker tests (`playback-worker/src/*.test.ts`).
+- The JavaScript embed loads the same `/e/{videoId}` page and
+  `/segmnt-player.js` as the iframe path. `SegmntPlayer.embed` / `jsEmbed` are
+  covered by `player/src/embed.test.ts`.
