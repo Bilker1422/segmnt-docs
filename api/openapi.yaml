@@ -121,6 +121,11 @@ tags:
     description: Uploaded videos and their processing status.
   - name: Playback
     description: Signed playback tokens.
+  - name: Demo
+    description: |
+      The public marketing `/demo` page. It fetches a fresh, short-lived
+      playback token on load so the page holds no key and no long-lived token.
+      No authentication; one protected demo video, fixed by configuration.
   - name: Webhooks
     description: |
       HTTPS endpoints that receive video events. The MVP has no "send test event"
@@ -1055,6 +1060,52 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
+
+  /v1/demo/playback:
+    get:
+      tags: [Demo]
+      operationId: getDemoPlayback
+      summary: Create a demo playback token
+      description: |
+        Public and unauthenticated. The marketing `/demo` page calls this on load
+        to play one protected demo video with a fresh signed token, so the page
+        holds no key and no long-lived token. The video and the allowed domain
+        are fixed by configuration; a caller cannot choose either. The response
+        is rate limited per client IP.
+      security: []
+      responses:
+        '200':
+          description: A fresh, short-lived playback token for the demo video.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DemoPlayback'
+        '404':
+          description: The configured demo video does not exist (`code` is `not_found`).
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '405':
+          description: Method not allowed. This route is `GET` only.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '409':
+          description: The demo video is not `ready` yet, or it is held for review (`code` is `video_not_ready`).
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '503':
+          description: The demo is not configured in this environment, or playback signing keys are not set (`code` is `demo_not_configured` or `playback_not_configured`).
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
 
   /v1/projects/{projectId}/videos/{videoId}/playback-tokens:
     parameters:
@@ -2869,6 +2920,23 @@ components:
             $ref: '#/components/schemas/Video'
         nextCursor:
           type: [string, 'null']
+
+    DemoPlayback:
+      type: object
+      required: [cdnUrl, videoId, token, expiresAt]
+      properties:
+        cdnUrl:
+          type: string
+          format: uri
+          description: Base media URL. Append `/v/{videoId}/master.m3u8` for the HLS playlist.
+          examples: ['https://cdn.segmnt.cloud']
+        videoId:
+          type: string
+        token:
+          type: string
+          description: Opaque. Do not parse it; the format can change.
+        expiresAt:
+          $ref: '#/components/schemas/Timestamp'
 
     PlaybackTokenInput:
       type: object
