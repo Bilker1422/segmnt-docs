@@ -93,6 +93,35 @@ receive these events only if your webhook endpoint subscribed to them.
 A hold does not delete your file or reset your usage. To stop a video forever,
 ask us to remove it.
 
+### A notice when we hold or remove (Coming soon)
+
+> **Status: Coming soon.** The steps below are built, but they are **not on** for
+> customers yet. See [Feature status](/status).
+
+When this is on, we tell you what we did and why:
+
+- When we **hold** or **remove** a video, we e-mail the account owner with the
+  reason.
+- When we **remove** a video, we also send the `video.removed` webhook, so your
+  app learns at once. The body carries the **reason** in `data.reason`:
+
+  ```json
+  {
+    "id": "evt_1qA7zP",
+    "type": "video.removed",
+    "createdAt": "2026-10-16T12:00:00.000Z",
+    "projectId": "prj_Xy99Zw88",
+    "data": {
+      "video": { "id": "vid_9xR4tL", "status": "ready" },
+      "reason": "copyright claim"
+    }
+  }
+  ```
+
+- For a **legal matter**, or where the law requires it, we keep the file and the
+  review frames and we do **not** notify you. You may still see the video stop
+  playing.
+
 ## 4. New accounts and automatic moderation
 
 > **Status: Coming soon.** The automatic frame check and the free-plan review

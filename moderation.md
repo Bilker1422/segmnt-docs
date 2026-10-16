@@ -134,6 +134,10 @@ Our team reviews held videos on an internal page:
   and sends no webhook.
 - You **cannot** release a video yourself. If you think a hold is wrong, contact
   us.
+- **Coming soon:** when we hold or remove a video we notify the account owner
+  with the reason (a removal also sends `video.removed`). For a legal matter we
+  keep the file and frames and do not notify you. See
+  [Reports and video review](/reports-and-review).
 
 ## 6. Errors
 

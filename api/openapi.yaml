@@ -2209,7 +2209,30 @@ webhooks:
       tags: [Webhooks]
       operationId: onVideoHeld
       summary: Our team held the video and it does not play
-      description: When the hold ends, `video.ready` is sent again.
+      description: |
+        When the hold ends, `video.ready` is sent again. `data.reason` says why we
+        held it, when we have one.
+      parameters:
+        - $ref: '#/components/parameters/WebhookSignature'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookEvent'
+      responses:
+        '200':
+          $ref: '#/components/responses/WebhookReceived'
+  video.removed:
+    post:
+      tags: [Webhooks]
+      operationId: onVideoRemoved
+      summary: Our team removed the video and it no longer plays
+      description: |
+        We removed the video. It is deleted, so `GET
+        /v1/projects/{projectId}/videos/{videoId}` answers `404` and playback
+        stops. `data.reason` says why we removed it, when we have one. For a legal
+        matter we do not send this event.
       parameters:
         - $ref: '#/components/parameters/WebhookSignature'
       requestBody:
@@ -3005,7 +3028,7 @@ components:
 
     WebhookEventType:
       type: string
-      enum: [video.ready, video.failed, video.held]
+      enum: [video.ready, video.failed, video.held, video.removed]
     WebhookEndpoint:
       type: object
       required: [id, url, events, createdAt]
@@ -3051,6 +3074,11 @@ components:
           properties:
             video:
               $ref: '#/components/schemas/Video'
+            reason:
+              type: string
+              description: |
+                Why we held or removed the video. Only on `video.held` and
+                `video.removed`, and only when we have a reason to give.
 
     ProjectUsage:
       type: object

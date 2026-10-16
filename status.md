@@ -35,6 +35,7 @@ A page with no label is **Available**.
 | Phone verification at sign-up | Coming soon | The API is available, but the sign-up step is not on. See [Phone verification](/phone-verification). |
 | Automatic video review (frame check) | Coming soon | There is no automatic frame check on a live account yet. |
 | Free-plan review hold | Coming soon | A new free video is not held for review today. |
+| Removal notice and the `video.removed` webhook | Coming soon | We will e-mail the account owner with the reason when we hold or remove a video, and send `video.removed` on a removal. A legal matter is not notified. |
 | Paid plans, checkout and overage | Coming soon | Plans and prices are listed; checkout is paused. See [Plans and payment](/billing). |
 | White-label player | Coming soon | Built, and it needs a paid plan. Paid plans are not on sale yet. |
 | Original-file download | Coming soon | The original stays with us; there is no download button yet. |
