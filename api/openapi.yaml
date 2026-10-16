@@ -346,9 +346,9 @@ paths:
 
         At most 5 codes per account per hour. A phone number or account under an
         active ban is refused. SMS is sent through our SMS provider; when none
-        is configured this route answers `503`. In our test environment only,
-        the `test` provider also returns the code in `testCode` so the
-        automated end-to-end test can finish the flow.
+        is configured this route answers `503`. When the `test` provider is
+        configured, it also returns the code in `testCode` so an automated
+        end-to-end test can finish the flow.
       security:
         - session: []
       requestBody:
@@ -2529,9 +2529,9 @@ components:
         testCode:
           type: string
           description: |
-            Present only in our test environment, so the automated end-to-end
-            test can finish the flow without a real SMS. Never present in
-            production.
+            Present only when the `test` provider is configured, so an
+            automated end-to-end test can finish the flow without a real SMS.
+            Never present in production.
 
     PhoneVerifyInput:
       type: object
