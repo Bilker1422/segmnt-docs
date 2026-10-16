@@ -49,7 +49,7 @@ a course platform or any product that needs video. These guides are in
 ## Status of this site
 
 These are the production docs for segmnt. A production release starts only after
-the board approves it.
+the CTO's sign-off, with a board card for a real-risk release.
 
 We only document features that are released. Embed codes (iframe and
 JavaScript), signed playback tokens and domain-locked playback are released in
