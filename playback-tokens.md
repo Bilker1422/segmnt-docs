@@ -12,6 +12,14 @@ request.
 > anyone with the key can play your videos anywhere. Tokens are safe in a page.
 > Keys are not.
 
+## Public videos need no token
+
+A video whose access mode is **Public** plays with no token, so you do **not**
+call this endpoint for it. Build the embed URL with no `?token=...`:
+`https://cdn.segmnt.cloud/e/{videoId}`. See
+[Protected and public videos](/playback-protection#protected-and-public-videos).
+Protected is still the default; this page is about protected videos.
+
 ## The call
 
 `POST /v1/projects/{projectId}/videos/{videoId}/playback-tokens`

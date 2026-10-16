@@ -1014,6 +1014,11 @@ paths:
       tags: [Videos]
       operationId: updateVideo
       summary: Update a video
+      description: |
+        Rename the video and/or change its playback access mode. Provide at least
+        one of `title` or `accessMode`. Switching a video to `public` makes it
+        play without a token; switching back to `protected` (the default) needs a
+        signed, video-specific token again.
       requestBody:
         required: true
         content:
@@ -1024,6 +1029,8 @@ paths:
               properties:
                 title:
                   $ref: '#/components/schemas/VideoTitle'
+                accessMode:
+                  $ref: '#/components/schemas/VideoAccessMode'
       responses:
         '200':
           description: Video updated.
@@ -1062,7 +1069,11 @@ paths:
         Call this from your server each time you show the video to a viewer.
         The token is signed (HMAC) and holds the video ID, the expiry and the
         allowed domain. The CDN refuses requests whose `Origin` or `Referer` is
-        another domain.
+        another domain, and refuses a token whose video ID is another video.
+
+        A `protected` video (the default) needs this token. A `public` video
+        plays without one, so you may skip this call for it. If you do mint a
+        token for a public video it still works; the extra token changes nothing.
       requestBody:
         required: true
         content:
@@ -2790,9 +2801,21 @@ components:
       type: string
       enum: ['360p', '720p', '1080p', '1440p', '2160p']
       description: 1440p and 2160p are only on the Pro and Agency plans, and never above the source.
+    VideoAccessMode:
+      type: string
+      enum: [protected, public]
+      default: protected
+      description: |
+        How the video can play (YAH-796):
+        - `protected` (default): the player needs a signed, video-specific token
+          from `POST .../playback-tokens`. A token for one video never plays
+          another video.
+        - `public`: no token is needed. Any site may embed it, and the media is
+          served from our CDN with the same moderation and plan-limit checks.
+          Use it only for content that is really meant to be public.
     Video:
       type: object
-      required: [id, projectId, title, status, durationSeconds, qualities, sizeBytes, failure, createdAt, updatedAt, readyAt]
+      required: [id, projectId, title, status, accessMode, durationSeconds, qualities, sizeBytes, failure, createdAt, updatedAt, readyAt]
       properties:
         id:
           type: string
@@ -2803,6 +2826,8 @@ components:
           $ref: '#/components/schemas/VideoTitle'
         status:
           $ref: '#/components/schemas/VideoStatus'
+        accessMode:
+          $ref: '#/components/schemas/VideoAccessMode'
         durationSeconds:
           type: [number, 'null']
           description: Known after encoding.

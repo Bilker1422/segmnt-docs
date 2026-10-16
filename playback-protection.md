@@ -16,6 +16,26 @@ This page explains the two parts and what happens when someone copies a link.
 - A copied link does not play, because the other site's domain does not match
   the token.
 
+## Protected and public videos
+
+Every video has an **access mode**:
+
+- **Protected** is the default. The video plays only with a signed, video-specific
+  token on your verified domains. Nothing changes for your existing videos.
+- **Public** is an opt-in you turn on per video, in the video page of the
+  dashboard ("Playback access") or with
+  `PATCH /v1/projects/{projectId}/videos/{videoId}` and
+  `{"accessMode":"public"}`. A public video plays **with no token**, on any site
+  that embeds it — not only your verified domains.
+
+A public video still goes through us: it is served from our CDN (never `r2.dev`
+and never an R2 pre-signed playback URL), and it keeps the moderation and
+plan-limit checks.
+
+**Risk:** once a video is public, anyone who has the link can share and embed it.
+Make a video public only when that is what you want. Switch it back to
+**Protected** at any time to require a token again.
+
 ## Part 1: Playback tokens
 
 A playback token is a string that starts with `v1.`. It is signed with
@@ -57,8 +77,10 @@ Setup details are in
 
 Each playback request goes through the same gate, in this order:
 
-1. **Token present?** Missing → `403 token_missing`.
-2. **Signature valid, and for this video?** No → `403 token_invalid`.
+1. **Token present?** Missing on a **protected** video → `403 token_missing`. A
+   **public** video plays with no token.
+2. **Signature valid, and for this video?** No → `403 token_invalid`. The token
+   names one video, so a token for another video never plays this one.
 3. **Not expired?** Expired → `403 token_expired`.
 4. **Domain.** The request's `Origin` header (or the origin of its `Referer`)
    must be exactly `https://` + the token's domain. Missing → `403 origin_missing`;
@@ -127,3 +149,13 @@ Checked on 15 Oct 2026:
   `frame-ancestors` policy and the playlist rewrite are covered by the playback
   Worker tests (`playback-worker/src/token.test.ts`,
   `playback-worker/src/security.test.ts`, `playback-worker/src/embed.ts`).
+- **Per-video binding (YAH-796):** a token minted for one video does not play
+  another. Since the token carries `v = videoId`, the CDN answers
+  `403 token_invalid` for a video id that is not the token's, on the media path
+  and on the embed page. Tests: `playback-worker/src/index.test.ts`
+  ("YAH-796: per-video token binding").
+- **Public videos (YAH-796):** a public video plays with no token and any origin;
+  a protected video still answers `403 token_missing` with no token; the
+  moderation/quality checks still apply, and the CDN gate fails closed. Tests:
+  `playback-worker/src/index.test.ts` ("YAH-796: public video mode"); API access
+  mode tests: `api/src/videos.test.ts` ("PATCH accessMode (YAH-796)").

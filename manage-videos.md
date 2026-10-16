@@ -52,6 +52,36 @@ Notes:
   `404 not_found`.
 - Renaming bumps `updatedAt`.
 
+## Make a video public or protected
+
+Every video is **protected** by default: it plays only with a signed,
+video-specific token on your verified domains. You can switch one video to
+**public** so it plays with no token on any site. See
+[Protected and public videos](/playback-protection#protected-and-public-videos).
+
+`PATCH /v1/projects/{projectId}/videos/{videoId}`
+
+Body:
+
+| Field | Required | Notes |
+| --- | --- | --- |
+| `accessMode` | No | `protected` (default) or `public`. |
+
+```bash
+curl -X PATCH "$BASE/v1/projects/$PROJECT_ID/videos/$VIDEO_ID" \
+  -H "Authorization: Bearer $SEGMNT_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"accessMode":"public"}'
+```
+
+Answer (`200`): the full `Video`, with the new `accessMode`.
+
+- `protected` needs a signed, video-specific token. A token for one video never
+  plays another. Public plays with no token — anyone with the link can share and
+  embed it. Switch back to `protected` at any time.
+- A missing body, an empty body, or a value that is not `protected` or `public`
+  is `400 invalid_request`. Nothing changes.
+
 ## Delete a video
 
 `DELETE /v1/projects/{projectId}/videos/{videoId}`
