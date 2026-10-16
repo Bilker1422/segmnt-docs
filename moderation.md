@@ -1,6 +1,6 @@
 ---
-title: Moderation and held videos
-description: How the automatic check works, why a video is held for review, what your app sees, and how a held video is released.
+title: Moderation and held videos (coming soon)
+description: How the planned automatic check will work, why a video will be held for review, what your app sees, and how a held video is released.
 icon: "shield-check"
 ---
 
