@@ -27,7 +27,8 @@ looks like `vid_9xR4tL`.
 Copy this block into your page's HTML. Replace two things:
 
 - `vid_9xR4tL` with your video id.
-- `YOUR_PLAYBACK_TOKEN` with a token from your server.
+- `YOUR_PLAYBACK_TOKEN` with the `token` your server gets for this video from
+  [`POST .../playback-tokens`](/playback-tokens).
 
 ```html
 <div style="position:relative;width:100%;aspect-ratio:16 / 9;">
@@ -45,9 +46,8 @@ first-run wizard, the step "Test your video and copy the embed code"), click
 **Copy code**. It leaves `YOUR_PLAYBACK_TOKEN` in the code **on purpose**, so a
 real token never leaks into what you copy.
 
-> The video page's own embed panel ("Add to your website") ships with the
-> dashboard redesign (YAH-703). Until then, use the guided setup, or copy the
-> block above.
+The video page (**Add to your website**) shows the same flow as two numbered
+steps: **1** get a token for this video, **2** put the token in the embed code.
 
 ## Step 1: Copy the code
 

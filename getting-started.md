@@ -81,7 +81,12 @@ Notes for a new free account:
 - When SMS is live, a new free account verifies a phone number before its first
   upload. This is not part of the current onboarding version.
 
-## Step 4: Get a playback token
+## Step 4: Get a token and put it in the embed code
+
+This is one flow in two parts: your server gets a token for the video, then
+your page puts that token in the iframe.
+
+### 4a. Get a token for the video
 
 When the video is `ready`, ask for a **playback token** for your verified
 domain. Call this from your **server** each time you show the video:
@@ -114,11 +119,24 @@ Notes:
 - The token expires at `expiresAt` (4 hours by default). Ask for a new token for
   each viewing session.
 
-> **Next step: embed code.** The player's iframe embed page is live, so
-> this step no longer ends at the token. Copy the iframe from
-> [Embed a video on any website](/embed-a-video), put your token in it, and paste
-> it into your page. For WordPress, see
-> [Add segmnt to WordPress](/wordpress).
+### 4b. Put the token in the embed code
+
+Replace `YOUR_PLAYBACK_TOKEN` with the `token` from 4a, then paste the code into
+your page:
+
+```html
+<div style="position:relative;width:100%;aspect-ratio:16 / 9;">
+  <iframe src="https://cdn.segmnt.cloud/e/vid_9xR4tL?token=YOUR_PLAYBACK_TOKEN"
+    style="position:absolute;inset:0;width:100%;height:100%;border:0"
+    allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
+    allowfullscreen referrerpolicy="origin"></iframe>
+</div>
+```
+
+The video page in the dashboard (**Add to your website**) shows the same two
+parts, already filled in for that video. For more options, see
+[Embed a video on any website](/embed-a-video). For WordPress, see
+[Add segmnt to WordPress](/wordpress).
 
 ## Step 5: Know the free-tier limits
 
