@@ -163,5 +163,7 @@ Checked on 15 Oct 2026:
 - The token check, the domain check and the playlist rewrite are covered by the
   playback Worker tests (`playback-worker/src/*.test.ts`).
 - The JavaScript embed loads the same `/e/{videoId}` page and
-  `/segmnt-player.js` as the iframe path. `SegmntPlayer.embed` / `jsEmbed` are
-  covered by `player/src/embed.test.ts`.
+  `/segmnt-player.js` as the iframe path. The embed builders `iframeEmbed` and
+  `jsEmbed` (`player/src/embed.ts`) are covered by `player/src/embed.test.ts`;
+  the browser bundle's `SegmntPlayer.embed` (`embedIframe`,
+  `player/src/browser.ts`) is not covered by that test file.
