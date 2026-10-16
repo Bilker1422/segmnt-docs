@@ -57,6 +57,10 @@
           {
             "group": "Trust & safety",
             "pages": ["moderation", "reports-and-review"]
+          },
+          {
+            "group": "Legal",
+            "pages": ["legal"]
           }
         ]
       },
