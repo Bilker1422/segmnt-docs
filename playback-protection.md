@@ -149,9 +149,8 @@ Checked on 15 Oct 2026:
 - `GET https://cdn.segmnt.cloud/v/{videoId}/master.m3u8` with no token →
   `403`.
 - The token check, the expiry, the `Origin`/`Referer` domain check, the
-  `frame-ancestors` policy and the playlist rewrite are covered by the playback
-  Worker tests (`playback-worker/src/token.test.ts`,
-  `playback-worker/src/security.test.ts`, `playback-worker/src/embed.ts`).
+  `frame-ancestors` policy and the playlist rewrite are covered by our playback
+  Worker tests.
 - **Per-video binding:** a token made for one video does not play another. The
   token carries the video id, so the CDN answers `403 token_invalid` for a
   different video, on the media path and on the embed page.

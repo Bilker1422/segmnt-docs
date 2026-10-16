@@ -217,7 +217,7 @@ phone-verification routes were released:
 - `POST /v1/me/phone/verify` with no session → `401 unauthorized`.
 - `GET /v1/me/phone/start` → `405 method_not_allowed` (both routes are `POST`).
 
-The full flow is proved by our API tests in `api/src/phone.test.ts`: Saudi and
+The full flow is proved by our API tests: Saudi and
 GCC E.164 normalization, an unknown `country` (`400 invalid_country`), start and
 verify, the rate limit, the 10-minute expiry, the 5 wrong codes, the idempotent
 retry, the upload gate, the ban checks, and a failed SMS send (`502

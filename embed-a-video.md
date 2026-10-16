@@ -159,10 +159,8 @@ Checked on 15 Oct 2026:
   `X-Segmnt-Error: token_missing`.
 - `GET https://cdn.segmnt.cloud/segmnt-player.js` → `200` (the player
   script is live).
-- The token check, the domain check and the playlist rewrite are covered by the
-  playback Worker tests (`playback-worker/src/*.test.ts`).
+- The token check, the domain check and the playlist rewrite are covered by our
+  playback Worker tests.
 - The JavaScript embed loads the same `/e/{videoId}` page and
-  `/segmnt-player.js` as the iframe path. The embed builders `iframeEmbed` and
-  `jsEmbed` (`player/src/embed.ts`) are covered by `player/src/embed.test.ts`;
-  the browser bundle's `SegmntPlayer.embed` (`embedIframe`,
-  `player/src/browser.ts`) is not covered by that test file.
+  `/segmnt-player.js` as the iframe path. Our tests cover the embed builders;
+  the browser bundle's `SegmntPlayer.embed` is not covered by them yet.

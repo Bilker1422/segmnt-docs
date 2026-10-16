@@ -129,7 +129,7 @@ Notes:
 ## Code examples
 
 > The rename, delete, retry-delete and error paths are covered by our test
-> suite (`api/src/videos.test.ts`).
+> suite.
 
 ### Node.js (18+)
 
@@ -227,8 +227,8 @@ rename/delete route was released:
 - `PATCH` and `DELETE .../videos/{videoId}` with no key answer
   `401 unauthorized`.
 - `PUT` on the same URL answers `405 method_not_allowed`.
-- The full path with a project key is proved by our API tests
-  (`api/src/videos.test.ts`): `200` for a rename (and the trimmed title on
+- The full path with a project key is proved by our API tests:
+  `200` for a rename (and the trimmed title on
   `200` characters), `400 invalid_request` for a missing, empty, too-long or
   non-string title, `204` for a delete, `404` for the next `GET`, the second
   `DELETE` and an unknown or other-project video, and the deleted video is

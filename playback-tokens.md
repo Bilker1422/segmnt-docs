@@ -154,7 +154,7 @@ Checked on 15 Oct 2026:
 - `POST /v1/projects/{projectId}/videos/{videoId}/playback-tokens` with no key →
   `401 unauthorized` (the route is live).
 - The route, the verified-domain check, the token TTL and the held-video `409`
-  are covered by `api/src/playback-tokens.test.ts`.
+  are covered by our API tests.
 
 ## Where to go next
 

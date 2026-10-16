@@ -231,6 +231,6 @@ Checked on 15 Oct 2026:
   `token_missing`; `GET /segmnt-player.js` → `200`.
 - The playback-tokens route is live: with no key it answers `401 unauthorized`.
 - The plugin shortcode mints through the same route as the cURL example, which
-  is covered by `api/src/playback-tokens.test.ts`.
+  is covered by our API tests.
 - The manual-path shortcode uses the public WordPress HTTP API
   (`wp_remote_post`), the same call as the cURL example.

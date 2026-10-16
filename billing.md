@@ -389,10 +389,10 @@ Checked on 14 Oct 2026:
 - `POST /v1/billing/checkout` with an unknown plan (billing on) -> `400
   invalid_request` (unit test).
 
-The pause and the whitelist are proved by the API tests in
-`api/src/billing.test.ts`: checkout answers `503 billing_paused` with **no**
-provider call and no plan change, and the whitelist is idempotent per
-account+plan and account-scoped. The same tests keep the retained payment path
+The pause and the whitelist are proved by our API tests: checkout answers
+`503 billing_paused` with **no** provider call and no plan change, and the
+whitelist is idempotent per account+plan and account-scoped. The same tests keep
+the retained payment path
 covered for the day paid plans go on sale: a verified invoice applies the plan
 and the 15% VAT invoice, sequential invoice numbers, idempotent replay, and every
 `400` refusal path. The live Moyasar sandbox run needs sandbox keys, so the
