@@ -121,8 +121,7 @@ are not deleted. After the first videos, new uploads start `none` (playable when
 
 ## 5. How a held video is released
 
-Our team reviews held videos on an internal page at `/admin` on the dashboard
-host, in the **Moderation** tab:
+Our team reviews held videos on an internal page:
 
 | Action | Result | What happens |
 | --- | --- | --- |
@@ -133,44 +132,10 @@ host, in the **Moderation** tab:
 - Our team's release sends the `video.ready` webhook; our team's hold sends
   `video.held`. A clean check that clears a free hold makes the video playable
   and sends no webhook.
-- You **cannot** release a video yourself. `/v1/admin/**` is for our team only.
-  If you think a hold is wrong, contact us.
+- You **cannot** release a video yourself. If you think a hold is wrong, contact
+  us.
 
-## 6. The AI provider (our side)
-
-An AI provider costs money, so the provider is not chosen yet. Today only a
-built-in, no-cost **stub** can be enabled (`MODERATION_PROVIDER=stub`). Any
-other value is ignored, so nothing paid can be switched on by config alone.
-
-Until a paid provider is approved, the pipeline still works: a free account's
-first videos are held and wait for a person in the review queue, exactly as
-"held until checked" requires.
-
-Config (our side):
-
-| Variable | Meaning | Default |
-| --- | --- | --- |
-| `MODERATION_PROVIDER` | The AI provider. Only `stub` is accepted today. | unset (no AI check) |
-| `FREE_MODERATION_HOLD_VIDEOS` | How many of a free account's first videos are held. Clamped to 0-5. | `3` |
-| `MODERATION_MAX_FRAMES` | Review frames sent to the provider per video. | `20` |
-| `MODERATION_STUB_FLAG` | Internal testing only: `1` makes the stub flag every video. | unset |
-
-The state lives in migration `0013_moderation.sql`.
-
-Admin API (our team only, under the **Admin** tag in the API reference):
-
-| Route | What it does |
-| --- | --- |
-| `GET /v1/admin/moderation` | The human review queue: held and awaiting-check videos, oldest first. |
-| `POST /v1/admin/moderation/scan` | Run the check now (safe any time; a video is checked once). |
-| `GET /v1/admin/videos?moderationState=...` | Filter the admin video list by state (`none`, `pending`, `cleared`, `flagged`). |
-| `POST /v1/admin/videos/{videoId}/hold` and `.../unhold` | Hold or release a video. Each is audited as a human decision. |
-
-The admin page `/admin` has a **Moderation** tab that lists this queue and can
-Approve or Hold a video. These routes sit behind Cloudflare Access and are not
-for customers.
-
-## 7. Errors
+## 6. Errors
 
 Errors use `application/problem+json`. Use the `code` field in your code, not
 the text.
@@ -183,24 +148,5 @@ the text.
 
 ## Tested against the current release
 
-This behaviour is not on for customers yet. It is covered by our own tests.
-
-The behaviour is proved by our API test suite:
-
-- `api/src/moderation.test.ts` — only `none` and `cleared` play; the free hold
-  counts the account's videos and is clamped to 0-5; the check flags and holds a
-  video and audits it; a clean check releases a free hold; a second run is
-  skipped; a failed check is retried; only `stub` can be enabled; the scan is a
-  no-op with no provider.
-- `api/src/uploads.test.ts` — a free account's first 3 videos are `pending` (and
-  each hold is audited); the 4th is `none`; a paid account's first video is
-  `none`.
-- `api/src/playback-tokens.test.ts` — `409` for `pending` and for `flagged`,
-  `201` for `cleared`. (The test asserts the status only; the `detail`
-  difference in section 3 comes from the guard order in `playback-tokens.ts`.)
-- `api/src/admin.test.ts` — the review queue lists `pending`/held videos, a
-  release clears the hold and writes the audit row, and the scan route answers.
-
-A live check needs a held video and a
-verified domain. The API tests above cover the behaviour; we re-run them after
-every change.
+This behaviour is not on for customers yet. Our own tests cover it, and we
+re-run them after every change.

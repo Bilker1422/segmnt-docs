@@ -70,22 +70,6 @@ Notes:
 - Our review tools are internal. They are not part of this API and customers
   cannot call them.
 
-### Our review page is internal
-
-Our team reads reports on an internal review page at `/admin` on the dashboard
-host. It sits behind **Cloudflare Access**, and it is not part of this API.
-
-- The page is served only at the real `/admin` path. There is no `#/admin` hash
-  route, so the Access policy on `/admin` covers the page. The API under
-  `/v1/admin/**` is a second door to the same data and shares the same gate.
-- When a reviewer is already signed in through Access, the page opens with no
-  extra token. A shared admin token is only a fallback for our own tools:
-  without an Access session the API answers `401` and the page shows a token
-  form.
-- The videos list shows the account **name**, not the raw account id.
-
-Do not call `/v1/admin/**` from your app. It is for our team only.
-
 ## 3. When we hold or remove a video
 
 We can change a video from our side:
@@ -123,7 +107,7 @@ When the check is on, a video also gets an **automatic moderation check** after
 it is ready, and a free account's first videos are held until a person checks
 them. A held video does not play: a playback token is refused with
 `409 video_not_ready` and the detail `The video is held for review.` Our team
-releases it from the same review page. See
+releases it from our review tools. See
 [Moderation and held videos](/moderation).
 
 ## 5. Errors
@@ -146,9 +130,9 @@ route was released:
 - `POST .../reports` with no key, and with a wrong key, both answer
   `401 unauthorized`.
 - `GET .../reports` answers `405 method_not_allowed`.
-- The full path with a project key is proved by our API tests
-  (`api/src/alerts.test.ts`): `201` for a new report, `200` for a retry with the
-  same `Idempotency-Key`, `400 invalid_request` for a missing `reason`, and
-  `404 not_found` for a key of another project.
+- The full path with a project key is proved by our own tests: `201` for a new
+  report, `200` for a retry with the same `Idempotency-Key`, `400
+  invalid_request` for a missing `reason`, and `404 not_found` for a key of
+  another project.
 
 We re-run these checks after every change to the route.
