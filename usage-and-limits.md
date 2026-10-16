@@ -96,8 +96,10 @@ Notes:
   of each month. The `start` is inclusive and the `end` is exclusive.
 - In `limits`, `null` means **no limit**.
 - `maxQuality` is the highest height you may play (`720` = 720p, `1080` = 1080p,
-  `2160` = 4K): Free plays up to 720p, Starter up to 1080p, Pro and Agency up to
-  4K. `whiteLabel` tells you if you may hide our logo.
+  `2160` = 4K): Free plays up to 720p, Starter up to 1080p. Pro and Agency are
+  set to allow up to 4K, but 4K playback is **Coming soon** and not reachable
+  today. See [Feature status](/status). `whiteLabel` tells you if you may hide
+  our logo.
 - `usage` is for the whole account: stored seconds now, watched minutes in the
   current period, and verified domains.
 - This call needs the session cookie. An API key cannot read it.
@@ -113,7 +115,7 @@ Notes:
 | Watched minutes | 2,000 per month | 20,000 | Per plan |
 | Verified domains | 1 | 3 | Per plan |
 | Projects | 1 | 3 | Per plan |
-| Highest quality | 720p | 1080p | Per plan |
+| Highest quality | 720p | 1080p | Per plan (4K is Coming soon) |
 | Our logo on the player | Shown | Hidden | Per plan |
 
 - The monthly counters (new uploads and watched minutes) reset at the start of
@@ -172,8 +174,8 @@ Pilot**: those plans stop playback at the watched-minutes limit, so they are
 never billed for overage. The pay-as-you-go amount applies only to **Pro and
 Agency**, where you can see it here before the next invoice. The overage is
 billed per **started minute** past the limit, from the raw watched seconds, and
-it appears on your **next invoice**. In TEST the overage record is written now;
-adding it to the payment provider's invoice is a later step.
+it appears on your **next invoice**. The overage record is written now; adding
+it to the payment provider's invoice is a later step.
 
 You do not lose data. Delete videos or remove domains to go back under a limit,
 or upgrade to raise it. When the month (or the pilot) ends, the counters reset.
@@ -191,7 +193,7 @@ the text. The `type` field links to `https://docs.segmnt.cloud/errors/{code}`.
 | 405 | `method_not_allowed` | Wrong method for the URL | Use `GET`. |
 | 404 | `not_found` | Wrong project id, or the key is for another project | Check the ids. |
 
-## Tested in TEST
+## Tested against the current release
 
 Checked on 14 Oct 2026:
 
@@ -201,5 +203,5 @@ Checked on 14 Oct 2026:
 
 The full path (a project key and a session, the weighted stored total, watched
 minutes, the plan limits and the `403 plan_limit_reached` cases on upload,
-playback link, project and domain) is proved against TEST by our end-to-end tests.
+playback link, project and domain) is proved end to end by our tests.
 The route behaviour and the limit checks are also covered by our API unit tests.

@@ -79,8 +79,7 @@ its `<script>` goes in your page's `<head>`:
 ```
 
 - The `<script src>` must point at the **player CDN host**
-  (`https://cdn.segmnt.cloud`), the same host the video streams from. On TEST
-  it is `https://test-cdn.segmnt.cloud`.
+  (`https://cdn.segmnt.cloud`), the same host the video streams from.
 - Keep it in the `<head>`, with `defer`. The browser opens the connection to
   the CDN while the rest of the page loads, so the first play is faster.
 - `SegmntPlayer.embed(...)` builds the same player as the iframe block, inside
@@ -152,7 +151,7 @@ The API key is not.
 - [Add segmnt to WordPress](/wordpress)
 - [How playback protection works](/playback-protection)
 
-## Tested in TEST
+## Tested against the current release
 
 Checked on 15 Oct 2026:
 

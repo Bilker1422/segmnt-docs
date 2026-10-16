@@ -14,11 +14,15 @@ request.
 
 ## Public videos need no token
 
-A video whose access mode is **Public** plays with no token, so you do **not**
-call this endpoint for it. Build the embed URL with no `?token=...`:
-`https://cdn.segmnt.cloud/e/{videoId}`. See
+> **Status: Coming soon.** The per-video **public** access mode is not released
+> yet, so every video needs a token today. This section describes how it will
+> work. See [Feature status](/status).
+
+When the mode ships, a video whose access mode is **Public** will play with no
+token, so you will **not** call this endpoint for it. Build the embed URL with no
+`?token=...`: `https://cdn.segmnt.cloud/e/{videoId}`. See
 [Protected and public videos](/playback-protection#protected-and-public-videos).
-Protected is still the default; this page is about protected videos.
+Protected is the default today; the rest of this page is about protected videos.
 
 ## The call
 
@@ -143,7 +147,7 @@ the text.
 | 409 | `video_not_ready` | The video is not `ready`, or it is held for review | Wait, or ask support. |
 | 403 | `plan_limit_reached` | The account is over its watched-minutes limit for the month | Free, Starter and Pilot stop here. Upgrade to keep playing. |
 
-## Tested in TEST
+## Tested against the current release
 
 Checked on 15 Oct 2026:
 

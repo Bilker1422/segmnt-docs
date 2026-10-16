@@ -29,36 +29,52 @@
         "tab": "Guides",
         "groups": [
           {
-            "group": "Start here",
-            "pages": ["index", "getting-started"]
+            "group": "Get started",
+            "pages": ["index", "quickstart", "getting-started", "status"]
           },
           {
-            "group": "Guides",
+            "group": "Integrate",
             "pages": [
-              "accounts-and-projects",
               "direct-upload",
-              "manage-videos",
-              "phone-verification",
-              "usage-and-limits",
-              "billing",
-              "reports-and-review",
-              "moderation"
-            ]
-          },
-          {
-            "group": "Embed and playback",
-            "pages": [
               "embed-a-video",
               "playback-tokens",
-              "wordpress",
-              "playback-protection"
+              "wordpress"
             ]
+          },
+          {
+            "group": "Concepts",
+            "pages": ["playback-protection", "glossary"]
+          },
+          {
+            "group": "Account & billing",
+            "pages": [
+              "accounts-and-projects",
+              "phone-verification",
+              "usage-and-limits",
+              "billing"
+            ]
+          },
+          {
+            "group": "Trust & safety",
+            "pages": ["moderation", "reports-and-review"]
           }
         ]
       },
       {
         "tab": "API reference",
-        "openapi": "api/openapi.yaml"
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": ["api-overview", "errors", "changelog"]
+          },
+          {
+            "group": "Endpoints",
+            "openapi": {
+              "source": "api/openapi.yaml",
+              "overlays": ["api/public-overlay.yaml"]
+            }
+          }
+        ]
       }
     ]
   }

@@ -1,0 +1,71 @@
+overlay: 1.1.0
+info:
+  title: Hide internal and admin endpoints from the public reference
+  version: 1.0.0
+extends: ./openapi.yaml
+actions:
+  - target: $.paths['/v1/admin/bans']
+    remove: true
+  - target: $.paths['/v1/admin/bans/{banId}/lift']
+    remove: true
+  - target: $.paths['/v1/billing/providers/{provider}/webhook']
+    remove: true
+  - target: $.paths['/v1/internal/block']
+    remove: true
+  - target: $.paths['/v1/internal/security-events']
+    remove: true
+  - target: $.paths['/v1/internal/billing/overage']
+    remove: true
+  - target: $.paths['/v1/admin/overview']
+    remove: true
+  - target: $.paths['/v1/admin/scan']
+    remove: true
+  - target: $.paths['/v1/admin/alerts']
+    remove: true
+  - target: $.paths['/v1/admin/alerts/{alertId}/ack']
+    remove: true
+  - target: $.paths['/v1/admin/accounts']
+    remove: true
+  - target: $.paths['/v1/admin/accounts/{accountId}']
+    remove: true
+  - target: $.paths['/v1/admin/accounts/{accountId}/review']
+    remove: true
+  - target: $.paths['/v1/admin/accounts/{accountId}/ban-proposal']
+    remove: true
+  - target: $.paths['/v1/admin/videos']
+    remove: true
+  - target: $.paths['/v1/admin/videos/{videoId}']
+    remove: true
+  - target: $.paths['/v1/admin/videos/{videoId}/hold']
+    remove: true
+  - target: $.paths['/v1/admin/videos/{videoId}/unhold']
+    remove: true
+  - target: $.paths['/v1/admin/videos/{videoId}/frames/{name}']
+    remove: true
+  - target: $.paths['/v1/admin/moderation']
+    remove: true
+  - target: $.paths['/v1/admin/moderation/scan']
+    remove: true
+  - target: $.tags[10]
+    remove: true
+  # YAH-796 per-video public access mode is on main (TEST) only: no release tag
+  # contains it, and production v0.8.0 has no accessMode. Hide it from the
+  # published reference until it ships. The pages that describe it carry the
+  # "Coming soon" label.
+  - target: $.paths['/v1/projects/{projectId}/videos/{videoId}'].patch.requestBody.content['application/json'].schema.properties.accessMode
+    remove: true
+  - target: $.paths['/v1/projects/{projectId}/videos/{videoId}'].patch.description
+    update: |
+      Rename the video. Provide `title`.
+  - target: $.paths['/v1/projects/{projectId}/videos/{videoId}/playback-tokens'].post.description
+    update: |
+      Call this from your server each time you show the video to a viewer.
+      The token is signed (HMAC) and holds the video ID, the expiry and the
+      allowed domain. The CDN refuses requests whose `Origin` or `Referer` is
+      another domain, and refuses a token whose video ID is another video.
+  - target: $.components.schemas.Video.properties.accessMode
+    remove: true
+  - target: $.components.schemas.Video.required[?(@ == 'accessMode')]
+    remove: true
+  - target: $.components.schemas.VideoAccessMode
+    remove: true

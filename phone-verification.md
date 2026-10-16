@@ -180,9 +180,9 @@ gate stays off; the ban check still applies.
   yourself.
 - **A device list.** You cannot list the devices of an account yet.
 
-In the TEST environment only, and only when the test sink is on, the code also
-comes back as `testCode` in the start answer so our automated tests can finish
-the flow without a real SMS. `testCode` is **never** present in production.
+For our own automated tests only, and only when a test sink is on, the start
+answer can include `testCode` so the flow can finish without a real SMS. A
+customer never receives `testCode`.
 
 ## Errors
 
@@ -208,10 +208,10 @@ the text. The `type` field links to `https://docs.segmnt.cloud/errors/{code}`.
 | 503 | `not_configured` | both | Phone verification is off in this environment | Nothing to fix on your side. |
 | 503 | `sms_not_configured` | both | No SMS provider is approved yet | Nothing to fix on your side. |
 
-## Tested in TEST
+## Tested against the current release
 
 Checked on 14 Oct 2026, after the
-phone-verification release reached TEST:
+phone-verification routes were released:
 
 - `POST /v1/me/phone/start` with no session → `401 unauthorized`.
 - `POST /v1/me/phone/verify` with no session → `401 unauthorized`.

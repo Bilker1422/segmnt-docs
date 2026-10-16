@@ -52,11 +52,16 @@ Notes:
   `404 not_found`.
 - Renaming bumps `updatedAt`.
 
-## Make a video public or protected
+## Make a video public or protected (Coming soon)
 
-Every video is **protected** by default: it plays only with a signed,
-video-specific token on your verified domains. You can switch one video to
-**public** so it plays with no token on any site. See
+> **Status: Coming soon.** The per-video **public** access mode is not released
+> yet. Today every video is **protected**, and the `accessMode` field below does
+> not work on a live account. This section describes how it will work. See
+> [Feature status](/status).
+
+Every video is **protected** today: it plays only with a signed, video-specific
+token on your verified domains. When the mode ships, you will be able to switch
+one video to **public** so it plays with no token on any site. See
 [Protected and public videos](/playback-protection#protected-and-public-videos).
 
 `PATCH /v1/projects/{projectId}/videos/{videoId}`
@@ -65,7 +70,7 @@ Body:
 
 | Field | Required | Notes |
 | --- | --- | --- |
-| `accessMode` | No | `protected` (default) or `public`. |
+| `accessMode` | No | Coming soon. `protected` (default) or `public`. |
 
 ```bash
 curl -X PATCH "$BASE/v1/projects/$PROJECT_ID/videos/$VIDEO_ID" \
@@ -77,8 +82,8 @@ curl -X PATCH "$BASE/v1/projects/$PROJECT_ID/videos/$VIDEO_ID" \
 Answer (`200`): the full `Video`, with the new `accessMode`.
 
 - `protected` needs a signed, video-specific token. A token for one video never
-  plays another. Public plays with no token — anyone with the link can share and
-  embed it. Switch back to `protected` at any time.
+  plays another. Public will play with no token — anyone with the link can share
+  and embed it. You will be able to switch back to `protected` at any time.
 - A missing body, an empty body, or a value that is not `protected` or `public`
   is `400 invalid_request`. Nothing changes.
 
@@ -214,10 +219,10 @@ the text.
 | any | 404 | `not_found` | Unknown video, another project's video, or an already deleted video | Check the id. A second `DELETE` lands here. |
 | any | 405 | `method_not_allowed` | Wrong method for the URL | Use `PATCH` to rename, `DELETE` to delete. |
 
-## Tested in TEST
+## Tested against the current release
 
 Checked on 14 Oct 2026, after the
-rename/delete route was on TEST:
+rename/delete route was released:
 
 - `PATCH` and `DELETE .../videos/{videoId}` with no key answer
   `401 unauthorized`.

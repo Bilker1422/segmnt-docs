@@ -4,7 +4,7 @@ description: How the automatic check works, why a video is held for review, what
 icon: "shield-check"
 ---
 
-A moderation check runs on every video after it is ready. It looks at the
+When the check is on, it runs on every video after it is ready. It looks at the
 **review frames** our encoder writes (1 frame every 10 seconds). If the check
 flags a video, or a free account's first videos still wait for a check, the
 video is **held**: it does not play. Our team releases it from an internal
@@ -13,7 +13,9 @@ queue.
 This page shows the moderation states, what your app sees when a video is held,
 and how a held video is released.
 
-> **Status.** This page is **TEST only**. See the "Tested in TEST" section below.
+> **Status: Coming soon.** The automatic frame check and the free-plan review
+> hold are not on for customers yet. This page describes how moderation is
+> designed to work. See [Feature status](/status).
 
 This guide is written in simple English.
 
@@ -104,8 +106,9 @@ person acts (section 5) or a check releases the video.
 
 ## 4. Free accounts: the first videos
 
-- A free account's **first videos** are held until checked. The default is
-  **3**, and our config allows 0 to 5.
+- When the review hold is on, a free account's **first videos** are held until a
+  person checks them. Today the hold is **off** for customers, so a new free
+  video is not held.
 - A **paid** account's first video is not held.
 - Phone verification is available but not required in this version, so it does
   not hold or block the first upload. See
@@ -135,10 +138,9 @@ host, in the **Moderation** tab:
 
 ## 6. The AI provider (our side)
 
-The AI provider costs money, so choosing or using one needs **board approval**
-first. Today only the **no-cost `stub` provider** can be enabled
-(`MODERATION_PROVIDER=stub`). Any other value is ignored, so nothing paid can be
-switched on by config alone.
+An AI provider costs money, so the provider is not chosen yet. Today only a
+built-in, no-cost **stub** can be enabled (`MODERATION_PROVIDER=stub`). Any
+other value is ignored, so nothing paid can be switched on by config alone.
 
 Until a paid provider is approved, the pipeline still works: a free account's
 first videos are held and wait for a person in the review queue, exactly as
@@ -151,7 +153,7 @@ Config (our side):
 | `MODERATION_PROVIDER` | The AI provider. Only `stub` is accepted today. | unset (no AI check) |
 | `FREE_MODERATION_HOLD_VIDEOS` | How many of a free account's first videos are held. Clamped to 0-5. | `3` |
 | `MODERATION_MAX_FRAMES` | Review frames sent to the provider per video. | `20` |
-| `MODERATION_STUB_FLAG` | TEST only: `1` makes the stub flag every video. | unset |
+| `MODERATION_STUB_FLAG` | Internal testing only: `1` makes the stub flag every video. | unset |
 
 The state lives in migration `0013_moderation.sql`.
 
@@ -179,9 +181,9 @@ the text.
 | 403 | `video_unavailable` | A playback link was used after the video was held or deleted (from the CDN) | Stop playback. Wait for `video.ready`. |
 | 404 | `not_found` | Unknown video, or the key belongs to another project | Check the ids. |
 
-## Tested in TEST
+## Tested against the current release
 
-It is **TEST only**; no paid provider is called. TEST deploys from `main`.
+This behaviour is not on for customers yet. It is covered by our own tests.
 
 The behaviour is proved by our API test suite:
 

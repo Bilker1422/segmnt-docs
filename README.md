@@ -1,9 +1,8 @@
 # segmnt developer docs
 
 Public developer documentation for segmnt, built and hosted on
-[Mintlify](https://mintlify.com). Live at <https://docs.segmnt.cloud> — the
-production domain the board confirmed on 14 Oct 2026 (YAH-530). The Mintlify
-preview host is <https://segmnt.mintlify.site>.
+[Mintlify](https://mintlify.com). Live at https://docs.segmnt.cloud. The
+Mintlify preview host is https://segmnt.mintlify.site.
 
 **This repository is synced automatically.** The source of truth is the private
 `Bilker1422/segmnt` repository, folder `mintlify-docs/`. The
@@ -19,14 +18,26 @@ Mintlify builds this repo and serves the site, including the agent tools
 | Path | What it is |
 |---|---|
 | `docs.json` | Mintlify site config: theme, colours, logo, favicon, fonts, navigation, and the API reference (`api/openapi.yaml`). |
-| `index.md`, `accounts-and-projects.md`, `direct-upload.md`, `manage-videos.md`, `phone-verification.md`, `usage-and-limits.md`, `billing.md`, `reports-and-review.md`, `moderation.md`, `embed-a-video.md`, `playback-tokens.md`, `wordpress.md`, `playback-protection.md` | English guide pages. This is the **source of truth** for the English docs. Every customer page that ships must land here, or CI fails. |
+| `index.md`, `quickstart.md`, `getting-started.md`, `status.md` | Get started: welcome, the end-to-end tutorial, the setup how-to, and the public status labels. |
+| `direct-upload.md`, `embed-a-video.md`, `playback-tokens.md`, `wordpress.md` | Integrate: upload, embed, playback tokens and WordPress. |
+| `playback-protection.md`, `glossary.md` | Concepts: how protection works, and the words we use. |
+| `accounts-and-projects.md`, `phone-verification.md`, `usage-and-limits.md`, `billing.md` | Account and billing. |
+| `moderation.md`, `reports-and-review.md` | Trust and safety. |
+| `api-overview.md`, `errors.md`, `changelog.md` | Reference: base URL and every public endpoint, the error codes, and the changelog. |
+| `CONTRIBUTING.md` | The docs style guide and contribution process. Not a published page. |
+
+These pages are the **source of truth** for the English docs. Every customer
+page that ships must land here, or CI fails.
+
+| Path | What it is |
+|---|---|
 | `logo/` | segmnt logos (`segmnt-logo.svg` light, `segmnt-logo-dark.svg` dark). |
 | `favicon.svg` | segmnt symbol mark. |
 | `api/openapi.yaml` | Copy of the segmnt API contract (`api/openapi.yaml` in the private repo). |
 
-English only. The board decided (YAH-530) not to host the Arabic docs, so the
-English pages do not link to an Arabic docs site. Arabic is supported in the
-product (UI and player), but Arabic is a feature, not the pitch.
+English only. There is no Arabic docs site, so the English pages do not link to
+one. Arabic is supported in the product (UI and player), but Arabic is a
+feature, not the pitch.
 
 ## Run it locally
 
@@ -42,4 +53,4 @@ npx mintlify@latest broken-links    # checks internal links
 login. The agent tools only exist on the hosted site, so they return 404 from
 the local preview.
 
-The JSON schema for `docs.json` is at <https://mintlify.com/docs.json>.
+The JSON schema for `docs.json` is at https://mintlify.com/docs.json.

@@ -79,8 +79,9 @@ host. It sits behind **Cloudflare Access**, and it is not part of this API.
   route, so the Access policy on `/admin` covers the page. The API under
   `/v1/admin/**` is a second door to the same data and shares the same gate.
 - When a reviewer is already signed in through Access, the page opens with no
-  extra token. A shared `ADMIN_TOKEN` is only the TEST fallback: without an
-  Access session the API answers `401` and the page shows a token form.
+  extra token. A shared admin token is only a fallback for our own tools:
+  without an Access session the API answers `401` and the page shows a token
+  form.
 - The videos list shows the account **name**, not the raw account id.
 
 Do not call `/v1/admin/**` from your app. It is for our team only.
@@ -110,15 +111,20 @@ ask us to remove it.
 
 ## 4. New accounts and automatic moderation
 
+> **Status: Coming soon.** The automatic frame check and the free-plan review
+> hold are **not on** for customers yet. This section describes how they are
+> designed to work. See [Feature status](/status).
+
 Every new account is checked by a person on our team. This runs in the
 background: you never see it, and you do not have to do anything. If we find a
 problem, we may hold or remove a video (section 3).
 
-A video also gets an **automatic moderation check** after it is ready, and a
-free account's first videos are held until a person checks them. A held video
-does not play: a playback token is refused with `409 video_not_ready` and the
-detail `The video is held for review.` Our team releases it from the same review
-page. See [Moderation and held videos](/moderation).
+When the check is on, a video also gets an **automatic moderation check** after
+it is ready, and a free account's first videos are held until a person checks
+them. A held video does not play: a playback token is refused with
+`409 video_not_ready` and the detail `The video is held for review.` Our team
+releases it from the same review page. See
+[Moderation and held videos](/moderation).
 
 ## 5. Errors
 
@@ -132,10 +138,10 @@ the text.
 | 404 | `not_found` | Unknown video, or the key belongs to another project | Check the ids. |
 | 405 | `method_not_allowed` | Wrong method for the URL | Use `POST`. |
 
-## Tested in TEST
+## Tested against the current release
 
 Checked on 14 Oct 2026, once the report
-route was on TEST:
+route was released:
 
 - `POST .../reports` with no key, and with a wrong key, both answer
   `401 unauthorized`.

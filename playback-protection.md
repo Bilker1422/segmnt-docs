@@ -18,23 +18,27 @@ This page explains the two parts and what happens when someone copies a link.
 
 ## Protected and public videos
 
-Every video has an **access mode**:
+> **Status: Coming soon.** Today every video is **protected**. The per-video
+> **public** access mode is designed but not released yet, so the setting below
+> does not work on a live account. See [Feature status](/status).
 
-- **Protected** is the default. The video plays only with a signed, video-specific
-  token on your verified domains. Nothing changes for your existing videos.
-- **Public** is an opt-in you turn on per video, in the video page of the
-  dashboard ("Playback access") or with
-  `PATCH /v1/projects/{projectId}/videos/{videoId}` and
-  `{"accessMode":"public"}`. A public video plays **with no token**, on any site
-  that embeds it — not only your verified domains.
+Every video is **protected** today. The video plays only with a signed,
+video-specific token on your verified domains. Nothing changes for your existing
+videos.
 
-A public video still goes through us: it is served from our CDN (never `r2.dev`
-and never an R2 pre-signed playback URL), and it keeps the moderation and
-plan-limit checks.
+When the public access mode ships, a video will also be able to be **public**: an
+opt-in you turn on per video, in the video page of the dashboard ("Playback
+access") or with
+`PATCH /v1/projects/{projectId}/videos/{videoId}` and
+`{"accessMode":"public"}`. A public video will play **with no token**, on any site
+that embeds it — not only your verified domains.
+
+A public video will still go through us: it is served from our CDN, never from a
+raw storage URL, and it keeps the plan-limit checks.
 
 **Risk:** once a video is public, anyone who has the link can share and embed it.
-Make a video public only when that is what you want. Switch it back to
-**Protected** at any time to require a token again.
+Make a video public only when that is what you want. You can switch it back to
+**Protected** at any time.
 
 ## Part 1: Playback tokens
 
@@ -77,8 +81,7 @@ Setup details are in
 
 Each playback request goes through the same gate, in this order:
 
-1. **Token present?** Missing on a **protected** video → `403 token_missing`. A
-   **public** video plays with no token.
+1. **Token present?** Missing → `403 token_missing`.
 2. **Signature valid, and for this video?** No → `403 token_invalid`. The token
    names one video, so a token for another video never plays this one.
 3. **Not expired?** Expired → `403 token_expired`.
@@ -137,7 +140,7 @@ colour. The plan and branding travel inside the signed token.
 - [Accounts, projects, API keys and domains](/accounts-and-projects) — add and
   verify a domain.
 
-## Tested in TEST
+## Tested against the current release
 
 Checked on 15 Oct 2026:
 
@@ -149,13 +152,6 @@ Checked on 15 Oct 2026:
   `frame-ancestors` policy and the playlist rewrite are covered by the playback
   Worker tests (`playback-worker/src/token.test.ts`,
   `playback-worker/src/security.test.ts`, `playback-worker/src/embed.ts`).
-- **Per-video binding (YAH-796):** a token minted for one video does not play
-  another. Since the token carries `v = videoId`, the CDN answers
-  `403 token_invalid` for a video id that is not the token's, on the media path
-  and on the embed page. Tests: `playback-worker/src/index.test.ts`
-  ("YAH-796: per-video token binding").
-- **Public videos (YAH-796):** a public video plays with no token and any origin;
-  a protected video still answers `403 token_missing` with no token; the
-  moderation/quality checks still apply, and the CDN gate fails closed. Tests:
-  `playback-worker/src/index.test.ts` ("YAH-796: public video mode"); API access
-  mode tests: `api/src/videos.test.ts` ("PATCH accessMode (YAH-796)").
+- **Per-video binding:** a token made for one video does not play another. The
+  token carries the video id, so the CDN answers `403 token_invalid` for a
+  different video, on the media path and on the embed page.

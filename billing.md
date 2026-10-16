@@ -139,7 +139,7 @@ Notes:
   and `discountCode` is an optional code (see [Discount codes](#discount-codes)).
 - `503 billing_unavailable` (no provider configured) and `502
   billing_provider_error` (the provider did not answer) apply again only after
-  the board turns billing on.
+  paid plans go on sale.
 
 ## 3. Join the paid-plan whitelist
 
@@ -195,7 +195,7 @@ curl "$BASE/v1/billing/whitelist" \
 ## Discount codes
 
 Discount codes apply at checkout, so they are **not usable while billing is
-paused**. This section is a reference for when the board turns billing on.
+paused**. This section is a reference for when paid plans go on sale.
 
 `POST /v1/billing/checkout` takes an optional `discountCode`. A code is applied
 when it has been **issued to you**; creating a code is an internal segmnt action,
@@ -241,7 +241,7 @@ curl -X POST "$BASE/v1/billing/checkout" \
 
 Billing is paused, so no provider calls this route today. A valid event that
 arrived anyway is acknowledged with `204` and changes no plan. This section is a
-reference for when the board turns billing on.
+reference for when paid plans go on sale.
 
 When the customer pays, Moyasar calls
 `POST /v1/billing/providers/moyasar/webhook`. This route is for the provider,
@@ -352,9 +352,9 @@ The stored invoice **lines** carry the VAT: each line has `unitAmount` (net),
   the [paid-plan whitelist](#3-join-the-paid-plan-whitelist) and we contact them.
 - **The annual plan.** Only the monthly plan is planned.
 - **The watched-minute overage on the provider invoice.** Pro and Agency are
-  never stopped at the watched-minutes limit. The overage is now recorded in
-  TEST (see [Usage and plan limits](/usage-and-limits)); folding it into the
-  payment provider's invoice is a later step.
+  never stopped at the watched-minutes limit. The overage is recorded now (see
+  [Usage and plan limits](/usage-and-limits)); folding it into the payment
+  provider's invoice is a later step.
 - **The invoice PDF.** The 15% VAT invoice is written, but its PDF file is not
   built yet.
 
@@ -375,7 +375,7 @@ the text. The `type` field links to `https://docs.segmnt.cloud/errors/{code}`.
 | 503 | `billing_paused` | Paid plans are not on sale yet (billing is paused) | Join the paid-plan whitelist. Nothing was charged. |
 | 503 | `billing_unavailable` | Online payment or webhooks are not configured | Use a manual invoice, or ask us to configure the provider. |
 
-## Tested in TEST
+## Tested against the current release
 
 Checked on 14 Oct 2026:
 
@@ -393,7 +393,7 @@ The pause and the whitelist are proved by the API tests in
 `api/src/billing.test.ts`: checkout answers `503 billing_paused` with **no**
 provider call and no plan change, and the whitelist is idempotent per
 account+plan and account-scoped. The same tests keep the retained payment path
-covered for when the board turns billing on: a verified invoice applies the plan
+covered for the day paid plans go on sale: a verified invoice applies the plan
 and the 15% VAT invoice, sequential invoice numbers, idempotent replay, and every
 `400` refusal path. The live Moyasar sandbox run needs sandbox keys, so the
-end-to-end provider call is not run on TEST while billing is paused.
+end-to-end provider call is not run while billing is paused.

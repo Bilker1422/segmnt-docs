@@ -58,9 +58,9 @@ Notes:
   e-mail is verified. Sign in with Google and GitHub using the same verified
   e-mail and you land in one account. A provider that gives no verified e-mail
   makes a new account.
-- **Apple** and **Reddit** come later. Apple waits for the board to approve the
-  paid Apple Developer account; Reddit waits for Reddit to approve our OAuth
-  app. Adding a provider is a small change on our side.
+- **Apple** and **Reddit** come later. Apple waits for a paid Apple Developer
+  account; Reddit waits for Reddit to approve our OAuth app. Adding a provider
+  is a small change on our side.
 
 ## 2. Your session
 
@@ -212,8 +212,7 @@ Plan limit: a **free** account can verify **1** domain. More gives
 already used, you get `409 hostname_taken`. Removing a domain refuses new tokens
 for it. Tokens already issued keep working until they expire.
 
-> The domain routes are live in TEST now. The customer-facing parts - the
-> dashboard flow and the playback domain check - ship with the domains release.
+> The domain routes are live.
 
 ## 6. Errors
 
@@ -236,7 +235,7 @@ the text. The `type` field links to `https://docs.segmnt.cloud/errors/{code}`.
 | 502 | `provider_error` | The sign-in provider returned an error | Try again. |
 | 503 | `not_configured` | Sign-in is off in this environment | Nothing to fix on your side. |
 
-## Tested in TEST
+## Tested against the current release
 
 Checked on 12 Oct 2026:
 
@@ -248,17 +247,17 @@ Checked on 12 Oct 2026:
 - `POST /auth/logout` with no cookie → `204`.
 - `GET /auth/google/callback` with no `state` → `400 invalid_state`.
 - `GET /v1/projects/{projectId}/domains` with no cookie → `401` (the domain
-  routes are live in TEST; a route that is not deployed answers `404`).
+  routes are live; a route that is not deployed answers `404`).
 
-We also ran the session routes end-to-end in TEST with a real session. That run
+We also ran the session routes end-to-end with a real session. That run
 checked: `/v1/me`; create, list, rename and delete a project; the
 non-empty-project `409`; key format `sk_{8}_{64 hex}`; the secret is not in the
 list; the key works for that project's uploads; a key from another project gets
 `404`; a revoked key gets `401`; no session gets `401`; and the domain routes
 (add a pending domain with its TXT record, verify stays `pending` without DNS,
 remove gets `204`). The run aborts the open upload with the API key and asserts
-that both project deletes answer `204`, so it leaves no video row and no R2
-multipart upload behind.
+that both project deletes answer `204`, so it leaves no video row and no
+partial upload behind.
 
 The route behaviour for projects, API keys and SSO is also covered by our API
 unit tests.

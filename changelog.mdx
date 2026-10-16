@@ -1,0 +1,89 @@
+---
+title: Changelog
+description: What changed in each segmnt release, newest first.
+icon: "clock-rotate-left"
+---
+
+This is the product changelog. It lists the changes that a customer can see, or
+that change the API. Newest first.
+
+For what is live right now, see [Feature status](/status). For the endpoint list,
+see the [API overview](/api-overview).
+
+## 0.8.0 — 16 October 2026
+
+- **Player.** The video now fills the screen in fullscreen.
+- **Player.** The player script loads while the page is still parsing, so the
+  first play starts sooner.
+- **Player.** The player bundle is cached, so a repeat visit does not download it
+  again.
+- **Dashboard.** **Add to your website** is now one flow in two steps: get a
+  token for the video, then put the token in the embed code.
+
+## 0.7.1 — 15 October 2026
+
+- Docs: the WordPress guide links the versioned plugin download.
+- Small dashboard and pricing-page fixes. No API change.
+
+## 0.7.0 — 15 October 2026
+
+- **WordPress plugin v1 (1.0.0).** Install the zip, save a playback key and the
+  project id once, then add `[segmnt id="vid_..."]` to a page. See
+  [Add segmnt to WordPress](/wordpress).
+- **API: playback-only API key scope.** An API key now has a `scope`: `full` or
+  `playback`. A `playback` key can only create playback tokens, so a key on a
+  web server cannot upload, delete, read account data or spend money. The key
+  list and create answers return the scope.
+- **API:** the `preview-token` route (for the dashboard's first-run preview) now
+  returns `thumbnailUrl`.
+
+## 0.6.2 — 15 October 2026
+
+Not released to production. Its two changes are in 0.7.0:
+
+- **API:** a new `preview-token` route for the dashboard's first-run preview.
+- **Embed page:** the iframe now carries a white-label plan's branding.
+
+## 0.6.1 — 14 October 2026
+
+- Scheduling and notification e-mail infrastructure. No customer API change.
+
+## 0.6.0 — 14 October 2026
+
+- **Billing:** pay-as-you-go watched-minute overage for Pro and Agency.
+  *Coming soon* — checkout is paused.
+- **Billing:** discount codes at checkout. *Coming soon*.
+- **Billing:** watched-minutes e-mails at 80% and at 100% of the period limit.
+  *Coming soon*.
+
+## 0.5.0 — 14 October 2026
+
+- **Docs:** the English docs move to https://docs.segmnt.cloud.
+- **API:** rename and delete a video —
+  `PATCH` and `DELETE /v1/projects/{projectId}/videos/{videoId}`. See
+  [Manage videos](/manage-videos).
+- **Storage:** deleting a video also removes its HLS renditions and thumbnail.
+- **Phone verification:** now optional in this version. See
+  [Phone verification](/phone-verification).
+
+## 0.4.0 — 14 October 2026
+
+- **Reports:** file a viewer report on a video. See
+  [Reports and video review](/reports-and-review).
+- **Phone verification and bans:** the routes and the Saudi / GCC number rules.
+- **Billing:** a verified payment applies the paid plan. *Coming soon*.
+
+## 0.3.0 — 14 October 2026
+
+- **Usage:** the routes for stored and watched time. See
+  [Usage and plan limits](/usage-and-limits).
+
+## 0.2.0 — 14 October 2026
+
+- Marketing pages and the public "Get started free" entry.
+
+## 0.1.0 — 13 October 2026
+
+- First release: SSO sign-in, projects, API keys and domains, direct upload,
+  encoding to HLS, signed playback tokens, domain lock, thumbnails and review
+  frames, and video webhooks.

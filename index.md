@@ -4,10 +4,6 @@ description: segmnt is video infrastructure. Upload through one API and we encod
 icon: "house"
 ---
 
-segmnt is video infrastructure. Upload through one API and we encode, store,
-secure and stream it on your own domain. Use it for a course platform — or any
-product that needs video.
-
 Your viewers watch on **your** site, from **your** domain. Every playback link
 is signed, so a copied link does not work anywhere else.
 
@@ -15,46 +11,65 @@ This site is for developers who build with segmnt — agencies, and teams buildi
 a course platform or any product that needs video. These guides are in
 **English**.
 
-## Start here
+## The three pages to start with
 
-- [Getting started](/getting-started) — sign up with SSO, create a project,
-  upload your first video, get a signed playback token, and see the free-tier
-  limits.
-- [Accounts, projects, API keys and domains](/accounts-and-projects) —
-  sign in (SSO only), create a project, make an API key, verify a domain.
+1. **[Quickstart](/quickstart)** — the full path in one sitting: sign up, upload,
+   wait for `ready`, create a playback token, embed, and prove the `403` off your
+   domain.
+2. **[Direct upload](/direct-upload)** — the four upload calls, with Node.js,
+   Python and PHP/Laravel examples.
+3. **[Create playback tokens on your server](/playback-tokens)** — cURL, Node.js
+   and PHP.
+
+## Get started
+
+- [Quickstart: play one protected video](/quickstart) — the tutorial.
+- [Set up your first project](/getting-started) — accounts, projects, API keys
+  and domains.
+- [Feature status](/status) — the meaning of Available, Beta and Coming soon.
+
+## Integrate
+
 - [Direct upload](/direct-upload) — send a video straight to storage with
-  pre-signed URLs. Examples in Node.js, Python and PHP/Laravel.
-- [Manage videos](/manage-videos) — rename a video or delete it to free stored
-  hours. Examples in curl, Node.js, Python and PHP/Laravel.
-- [Phone verification](/phone-verification) — verify a Saudi or GCC mobile
-  number (available, not required in this version).
-- [Usage and plan limits](/usage-and-limits) — read stored and watched usage,
-  see your plan limits, and know what happens when you reach a limit.
-- [Plans, payment and the paid-plan whitelist](/billing) — list the plans and
-  prices in SAR, join the paid-plan whitelist while paid plans are not on sale,
-  and see how a confirmed payment changes the plan when billing is on.
-- [Reports and video review](/reports-and-review) — file a viewer report, and
-  know what a hold or a remove does to playback.
-- [Moderation and held videos](/moderation) — how the automatic check works,
-  why a video is held for review, and how a held video is released.
-- [Embed a video on any website](/embed-a-video) — copy the embed code, replace
-  the token, paste it. The short path for non-developers.
-- [Create playback tokens on your server](/playback-tokens) — cURL, Node.js and
-  PHP examples. Keep the API key on your server, never in a page.
-- [Add segmnt to WordPress](/wordpress) — the easy plugin path, and the
-  Custom HTML block with a token from your server.
+  pre-signed URLs.
+- [Embed a video on any website](/embed-a-video) — the iframe and JavaScript
+  embeds. The short path for non-developers.
+- [Create playback tokens on your server](/playback-tokens) — keep the API key on
+  your server, never in a page.
+- [Add segmnt to WordPress](/wordpress) — the plugin path, and a Custom HTML
+  block.
+
+## Concepts
+
 - [How playback protection works](/playback-protection) — tokens and verified
   domains, and why a copied link does not play.
+- [Glossary](/glossary) — the words we use, defined in one line each.
 
-## Status of this site
+## Account & billing
 
-These are the production docs for segmnt. A production release starts only after
-the CTO's sign-off, with a board card for a real-risk release.
+- [Accounts, projects, API keys and domains](/accounts-and-projects).
+- [Phone verification](/phone-verification) — available, not required in this
+  version.
+- [Usage and plan limits](/usage-and-limits).
+- [Plans and payment](/billing).
 
-We only document features that are released. Embed codes (iframe and
-JavaScript), signed playback tokens and domain-locked playback are released in
-TEST; their guides are above.
+## Trust & safety
 
-This page comes later, when the feature ships:
+- [Moderation and held videos](/moderation).
+- [Reports and video review](/reports-and-review).
 
-- Webhooks and the encoding pipeline — when the encode pipeline ships.
+## API reference
+
+- [API overview](/api-overview) — base URL, authentication and every public
+  endpoint.
+- [Errors](/errors) — every error code, with the `403` and `409` causes and the
+  rate limits.
+- [Changelog](/changelog) — what changed in each release.
+
+## Status of this feature set
+
+We only document features that are **available**. Where a feature is **Beta** or
+**Coming soon**, the page says so. Read the one-line meaning of each label on
+[Feature status](/status).
+
+The website uses the same labels and the same meanings.

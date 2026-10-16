@@ -10,7 +10,7 @@ the file. The upload has 4 steps:
 1. **Create** the upload. You get one pre-signed URL for each part.
 2. **PUT** each part to its URL. Keep the `ETag` header of each answer.
 3. **Complete** the upload with the list of part numbers and ETags.
-4. We encode the video. Poll the video until it is `ready` (the `video.ready` webhook ships with the encode release).
+4. We encode the video. Poll the video until it is `ready`, or subscribe to the `video.ready` webhook.
 
 The pre-signed URLs are for upload only. Playback uses separate signed playback
 tokens: see [Create playback tokens on your server](/playback-tokens) and
@@ -111,13 +111,14 @@ the current video.
 ## Step 4: Wait for the result
 
 The video goes `processing` then `ready` (or `failed`). Poll
-`GET /v1/projects/{projectId}/videos/{videoId}` until the status changes. The
-`video.ready` webhook is not live yet; it ships with the encode release, and this
-guide will show it then.
+`GET /v1/projects/{projectId}/videos/{videoId}` until the status changes, or
+subscribe to the `video.ready` webhook. The webhook is **live**: register your
+own HTTPS endpoint and we send the event when a video becomes ready. No customer
+endpoint has received one yet, so test with your own receiver. See
+[Feature status](/status).
+
 In rare cases our team can hold a video for review (status `held`). It does not
-play until the hold ends. A free account's first videos are also held until an
-automatic check runs and a person releases them. See
-[Moderation and held videos](/moderation).
+play until the hold ends. See [Moderation and held videos](/moderation).
 
 ## Cancel an upload
 
@@ -165,7 +166,8 @@ Do not retry `400`, `401`, `403` and `404` from the API without a change.
 
 ## Code examples
 
-> These examples were run against TEST. The Node, Python and PHP examples each
+> These examples were run against the current release. The Node, Python and PHP
+> examples each
 > uploaded a 250 MiB file (3 parts) and the video reached `processing`.
 > The create, complete, cancel and error paths are also covered by our test
 > suite.

@@ -21,7 +21,7 @@ for the page (from a short cache, and re-mints it before it expires). It ships
 no second player: it frames the same player we use everywhere (hls.js,
 automatic quality, Arabic RTL).
 
-> **Availability:** the plugin is **v1.0.0**. Download it from
+> **Status: Available.** The plugin is version 1.0.0. Download it from
 > [segmnt-video-1.0.0.zip](https://segmnt.cloud/downloads/segmnt-video-1.0.0.zip).
 > It is not in the WordPress.org directory yet — that is a later phase.
 
@@ -220,12 +220,12 @@ viewer who already loaded the page keeps playing until that token expires.
 - [Create playback tokens on your server](/playback-tokens)
 - [How playback protection works](/playback-protection)
 
-## Tested in TEST
+## Tested against the current release
 
 Checked on 15 Oct 2026:
 
-- The **segmnt video** plugin v1 was verified on a real WordPress site in TEST,
-  in English and Arabic (RTL), including the "the key never leaves the server"
+- The **segmnt video** plugin v1 was verified on a real WordPress site, in
+  English and Arabic (RTL), including the "the key never leaves the server"
   and "revoke the key" checks.
 - The embed host serves the player: `GET /e/{videoId}` with no token → `403`
   `token_missing`; `GET /segmnt-player.js` → `200`.
