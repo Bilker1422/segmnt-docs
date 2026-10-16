@@ -93,12 +93,11 @@ receive these events only if your webhook endpoint subscribed to them.
 A hold does not delete your file or reset your usage. To stop a video forever,
 ask us to remove it.
 
-### A notice when we hold or remove (Coming soon)
+### A notice when we hold or remove
 
-> **Status: Coming soon.** The steps below are built, but they are **not on** for
-> customers yet. See [Feature status](/status).
+> **Status: Available.** See [Feature status](/status).
 
-When this is on, we tell you what we did and why:
+We tell you what we did and why:
 
 - When we **hold** or **remove** a video, we e-mail the account owner with the
   reason.

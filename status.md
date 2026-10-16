@@ -24,7 +24,8 @@ A page with no label is **Available**.
 | Domain-locked playback | Available | A copied link returns `403` on another domain. |
 | Embed codes (iframe and JavaScript) | Available | See [Embed a video on any website](/embed-a-video). |
 | Thumbnails and review frames | Available | A thumbnail at 2 seconds, and one review frame every 10 seconds. |
-| Video events (webhooks) | Available | `video.ready`, `video.failed` and `video.held`. No customer endpoint has received one yet: register your own receiver and upload a short video. |
+| Video events (webhooks) | Available | `video.ready`, `video.failed`, `video.held` and `video.removed`. No customer endpoint has received one yet: register your own receiver and upload a short video. |
+| Hold and removal notice | Available | When we hold or remove a video we e-mail the account owner with the reason, and a removal also sends the `video.removed` webhook. A legal matter is not notified. See [Reports and video review](/reports-and-review). |
 
 ## What is coming soon
 
@@ -35,7 +36,6 @@ A page with no label is **Available**.
 | Phone verification at sign-up | Coming soon | The API is available, but the sign-up step is not on. See [Phone verification](/phone-verification). |
 | Automatic video review (frame check) | Coming soon | There is no automatic frame check on a live account yet. |
 | Free-plan review hold | Coming soon | A new free video is not held for review today. |
-| Removal notice and the `video.removed` webhook | Coming soon | We will e-mail the account owner with the reason when we hold or remove a video, and send `video.removed` on a removal. A legal matter is not notified. |
 | Paid plans, checkout and overage | Coming soon | Plans and prices are listed; checkout is paused. See [Plans and payment](/billing). |
 | White-label player | Coming soon | Built, and it needs a paid plan. Paid plans are not on sale yet. |
 | Original-file download | Coming soon | The original stays with us; there is no download button yet. |
