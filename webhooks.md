@@ -25,6 +25,19 @@ This page shows the events we send, the payload, how to check the
 Subscribe only to the events you handle. We send an event only to the endpoints
 that subscribed to it.
 
+### Are videos held, and does a bulk import change it?
+
+A video can be **held** for review. A held video does not play, and we send
+`video.held`; when the hold ends we send `video.ready` again.
+
+- The **free-plan review hold** is **Coming soon** and **off** today, so a new
+  video is not held for it. A **paid** plan (**Starter**, **Pro** and **Agency**)
+  is **never** held for it.
+- A **team hold**, or a video the **automatic check** flags, can affect any plan.
+  See [Moderation and held videos](/moderation).
+- **A bulk import has no separate rule.** Every video in the import is one
+  upload, so the same rule above applies to each one.
+
 ## Create and manage endpoints
 
 > **Status: Available.** Today you create endpoints with the API. The dashboard

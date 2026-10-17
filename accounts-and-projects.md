@@ -199,9 +199,38 @@ or domains):
 | `POST` | `/v1/projects/{projectId}/api-keys` | `{"name": "Course site backend"}` → `201`, with `secret` once |
 | `DELETE` | `/v1/projects/{projectId}/api-keys/{keyId}` | revoke → `204` |
 
-A list entry has `id`, `name`, `prefix`, `createdAt` and `lastUsedAt`. The
-secret is not in the list. **A revoked key gets `401` right away.** A key works
-only for its own project's routes (for example uploads).
+A list entry has `id`, `name`, `prefix`, `scope`, `createdAt` and `lastUsedAt`.
+The secret is not in the list. **A revoked key gets `401` right away.** A key
+works only for its own project's routes (for example uploads).
+
+### Key scopes (`full` and `playback`)
+
+Every key has a **scope**. You choose it when you create the key, and the create
+and list answers return it.
+
+| Scope | What the key may call |
+| --- | --- |
+| `full` (default) | Every `/v1` route of its project. |
+| `playback` | **Only** `POST /v1/projects/{projectId}/videos/{videoId}/playback-tokens`. |
+
+A `playback` key **can create playback tokens** — that is the one route it may
+call. Any other route gets `403` with `code: insufficient_scope`.
+
+Use `playback` for a key on a server that only shows videos, for example the
+[WordPress plugin](/wordpress). If that key leaks, it cannot upload, delete or
+read your data.
+
+Create a `playback` key:
+
+```bash
+curl -X POST "https://api.segmnt.cloud/v1/projects/$PROJECT/api-keys" \
+  -b "segmnt_session=<your session cookie>" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"WordPress","scope":"playback"}'
+```
+
+Omit `scope` for a normal `full` key. A value that is not `full` or `playback`
+gets `400 invalid_request`.
 
 ## 5. Domains
 
@@ -238,6 +267,26 @@ already used, you get `409 hostname_taken`. Removing a domain refuses new tokens
 for it. Tokens already issued keep working until they expire.
 
 > The domain routes are live.
+
+### Local and staging hosts
+
+A verified domain must be a **real public host**, and we match the **exact**
+host. This is the answer for local and staging use:
+
+- **`localhost` cannot be verified.** It is not a public host, so it is refused
+  with `400 invalid_request`, and there is no DNS record to check. You cannot use
+  a verified domain for local development.
+- **A staging host needs its own verified domain.** Add and verify the staging
+  host itself, for example `staging.example.com`, with its own TXT record. It
+  does not cover another host such as `www.example.com` or the parent host.
+- **Plan limit.** A **free** account and a **Starter** account can each verify
+  **1** domain, so a staging host uses that one slot on both. Use **Pro** (10
+  domains) or **Agency** (50 domains) if you need the live host and a staging
+  host at the same time.
+
+The `domain` you send when you create a playback token must be a verified domain
+of the project, and the page's `Origin` must match the same host. So a page on
+`http://localhost:3000` cannot play a video locked to `courses.example.com`.
 
 ## 6. Errors
 

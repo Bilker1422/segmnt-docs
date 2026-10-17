@@ -30,6 +30,9 @@ Rules:
 - A revoked key answers `401` immediately.
 - Account routes (projects, API keys, domains, billing) accept only the session.
   An API key cannot manage keys, projects or domains.
+- A key has a **scope**: `full` (every route of its project) or `playback` (only
+  the playback-token route). See
+  [Accounts, projects, API keys and domains](/accounts-and-projects).
 - Sign-in is SSO only: Google and GitHub. We never store a password.
 
 Full detail: [Accounts, projects, API keys and domains](/accounts-and-projects).

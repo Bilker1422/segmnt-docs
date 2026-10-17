@@ -106,18 +106,29 @@ person acts (section 5) or a check releases the video.
 
 ## 4. Free accounts: the first videos
 
-- When the review hold is on, a free account's **first videos** are held until a
-  person checks them. Today the hold is **off** for customers, so a new free
-  video is not held.
-- A **paid** account's first video is not held.
-- Phone verification is available but not required in this version, so it does
-  not hold or block the first upload. See
-  [Phone verification](/phone-verification).
-- Until the AI check runs, these videos wait for a person in our review queue.
+The free-plan review hold is **not on** today (it is **Coming soon**). When it is
+on:
 
-The count is per account, across all of its projects, and it counts videos that
-are not deleted. After the first videos, new uploads start `none` (playable when
-`ready`).
+- A free account's **first videos** are held until a person checks them.
+- A **paid** plan (**Starter**, **Pro** and **Agency**) is **never** held for
+  this reason. A paid plan's first video is not held.
+- The count is per account, across all of its projects, and it counts videos that
+  are not deleted. After the first videos, new uploads start `none` (playable
+  when `ready`).
+- Until a person checks them, these videos wait in our review queue.
+
+### Bulk imports
+
+An upload through the API is treated the same as any other upload. There is **no
+separate rule for a bulk import**: every video in the import is one upload, so the
+rule above applies to each one. A bulk import does not raise the number of videos
+held, and it does not skip the hold.
+
+Phone verification is available but not required in this version, so it does not
+hold or block the first upload. See [Phone verification](/phone-verification).
+
+A **team hold**, or a video the **automatic check** flags, is different: it can
+affect any plan and starts with our team. See section 3.
 
 ## 5. How a held video is released
 
