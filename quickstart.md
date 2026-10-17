@@ -128,6 +128,10 @@ the token with your own values:
 
 Open your page. The video plays. That is your first protected video.
 
+The page needs nothing in the `<head>`. To make the first frame start sooner,
+you can add the two optional lines in
+[Open the CDN connection early](/embed-a-video#open-the-cdn-connection-early-optional).
+
 ## Step 9: Prove it is locked to your domain
 
 Now try to use the video somewhere else. Ask for the video with a **different**

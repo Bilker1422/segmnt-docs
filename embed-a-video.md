@@ -49,6 +49,11 @@ real token never leaks into what you copy.
 The video page (**Add to your website**) shows the same flow as two numbered
 steps: **1** get a token for this video, **2** put the token in the embed code.
 
+Your page needs **nothing in your `<head>`** for this embed to work. If you want
+the first frame to appear sooner, you can add two optional lines that open the
+connection to the player CDN early. See
+[Open the CDN connection early](#open-the-cdn-connection-early-optional).
+
 ## The JavaScript embed (player script in your `<head>`)
 
 The block above is the **iframe** embed. It is the easy path, and it needs
@@ -86,11 +91,12 @@ its `<script>` goes in your page's `<head>`:
   your own page.
 - Replace `vid_9xR4tL` and `YOUR_PLAYBACK_TOKEN` exactly as above.
 
-### Add the player CDN to your `<head>` early (optional)
+## Open the CDN connection early (optional)
 
-The player and the video both come from the player CDN host. Add these two
-lines to your `<head>` and the browser opens that connection before the player
-asks for the video:
+Both embeds load the player and the video from the same **player CDN host**.
+This step is optional: the video plays without it. If you add these two lines to
+your `<head>`, the browser opens the connection to that host while the rest of
+the page loads, so the first frame can start sooner:
 
 ```html
 <link rel="preconnect" href="https://cdn.segmnt.cloud">
@@ -152,6 +158,16 @@ The API key is not.
 - [How playback protection works](/playback-protection)
 
 ## Tested against the current release
+
+Checked on 17 Oct 2026:
+
+- The optional `<head>` lines are the same two tags we use on our own pages: the
+  dashboard adds `preconnect` and `dns-prefetch` for the player CDN
+  (`dashboard/src/config.ts`), and the demo page adds the same `preconnect`
+  (`site/src/pages/demo.ts`). Both are asserted in their tests
+  (`dashboard/src/config.test.ts`, `site/src/site.test.ts`).
+- The two lines only open a connection. A page that never contacts the CDN is
+  not affected, and the video plays with or without them.
 
 Checked on 15 Oct 2026:
 
