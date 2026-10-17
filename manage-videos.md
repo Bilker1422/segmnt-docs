@@ -108,7 +108,7 @@ What happens:
 
 | Item | When |
 | --- | --- |
-| The original file in storage | Removed immediately. |
+| The original file in storage | Removed promptly. We keep it if the law requires, or for a legal matter. |
 | Playback (also tokens issued before the delete) | Stops within about a minute. |
 | Derived HLS renditions and thumbnails | Cleaned up shortly after. |
 | The video list and `GET .../videos/{videoId}` | Hide the video right away. |
