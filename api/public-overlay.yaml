@@ -90,12 +90,5 @@ actions:
     update: |
       Rename a project and/or update its white-label branding. At least one field is required.
   # Webhook secret rotation, the delivery log and the send-test-event call are
-  # built but not in a production release yet (YAH-1050). The Webhooks guide
-  # carries the "Coming soon" label, and the unreleased routes are hidden from
-  # the published reference until they ship.
-  - target: $.paths['/v1/projects/{projectId}/webhook-endpoints/{endpointId}/rotate-secret']
-    remove: true
-  - target: $.paths['/v1/projects/{projectId}/webhook-endpoints/{endpointId}/deliveries']
-    remove: true
-  - target: $.paths['/v1/projects/{projectId}/webhook-endpoints/{endpointId}/test']
-    remove: true
+  # live in production as of v0.15.0 (YAH-1099), so they render in the published
+  # reference. Do not re-add a `remove` overlay for these three routes.

@@ -40,8 +40,8 @@ A video can be **held** for review. A held video does not play, and we send
 
 ## Create and manage endpoints
 
-> **Status: Available.** Today you create endpoints with the API. The dashboard
-> screen for webhooks is **Coming soon**. See [Feature status](/status).
+> **Status: Available.** Create and manage endpoints with the API or in the
+> dashboard (**Project settings → Webhooks**). See [Feature status](/status).
 
 | Method | Path | What it does |
 | --- | --- | --- |
@@ -80,9 +80,10 @@ Rules:
 | Events | A non-empty list, no repeats, from the table above. An unknown event gets `400`. |
 | `signingSecret` | Returned **only** in this answer. Store it like an API key, and never log it. |
 
-If you lose the signing secret, delete the endpoint and add a new one. The old
-secret keeps working until you delete the endpoint. Secret rotation without
-recreating the endpoint is **Coming soon**.
+If you lose the signing secret, delete the endpoint and add a new one, or
+replace it with `rotate-secret` without recreating the endpoint (the dashboard
+has no rotate button today) - see
+[Rotate, inspect and test](#rotate-inspect-and-test).
 
 ## The payload
 
@@ -209,11 +210,11 @@ the same way.
   retry with a growing wait, up to about 8 tries, then mark that delivery
   failed.
 
-## Rotate, inspect and test (Coming soon)
+## Rotate, inspect and test
 
-> **Status: Coming soon.** The three calls below are planned. They are **not**
-> live today, so do not build on them yet. We add them to the API reference when
-> they ship.
+> **Status: Available.** All three calls below are live. Add/list/delete, the
+> delivery log and send test event are also in the dashboard; rotation is
+> **API only** today. See [Feature status](/status).
 
 ### Rotate the signing secret
 
@@ -256,11 +257,18 @@ log. The body we `POST` to your endpoint is:
 }
 ```
 
-### Also coming soon
+### In the dashboard
 
-- A dashboard screen to add, list and remove endpoints, and to show the signing
-  secret once.
-- A "send test event" button in the dashboard.
+The dashboard covers most of these calls:
+
+- **Project settings → Webhooks** adds, lists and removes endpoints, and shows
+  the signing secret **once** when you add one.
+- The **delivery log** shows each send attempt with its status and the last HTTP
+  status your endpoint returned.
+- **Send test event** queues one signed `webhook.test` to the endpoint.
+
+Rotating the signing secret is **API only** today: there is no rotate button in
+the dashboard yet.
 
 ## Test your endpoint today
 
