@@ -112,7 +112,7 @@ the current video.
 
 The video goes `processing` then `ready` (or `failed`). Poll
 `GET /v1/projects/{projectId}/videos/{videoId}` until the status changes, or
-subscribe to the `video.ready` webhook. The webhook is **live**: register your
+subscribe to the [`video.ready` webhook](/webhooks). The webhook is **live**: register your
 own HTTPS endpoint and we send the event when a video becomes ready. No customer
 endpoint has received one yet, so test with your own receiver. See
 [Feature status](/status).

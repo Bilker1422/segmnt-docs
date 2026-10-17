@@ -2596,8 +2596,9 @@ components:
             $ref: '#/components/schemas/Problem'
     WebhookReceived:
       description: |
-        Return any 2xx within 10 seconds. Other answers are retried with backoff
-        for up to 24 hours. Events can arrive more than once and out of order:
+        Return any 2xx within 10 seconds. Other answers are retried with a
+        growing wait, up to about 8 attempts, then we mark that delivery failed.
+        Events can arrive more than once and out of order:
         use `id` to skip duplicates, and ignore an event whose
         `data.video.updatedAt` is older than the one you have (or call
         `GET` video for the current state).

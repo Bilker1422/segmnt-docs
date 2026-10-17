@@ -38,6 +38,7 @@
               "direct-upload",
               "embed-a-video",
               "playback-tokens",
+              "webhooks",
               "wordpress"
             ]
           },

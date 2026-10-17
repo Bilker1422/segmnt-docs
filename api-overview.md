@@ -101,6 +101,9 @@ Over a limit you get `429` with `Retry-After`. See [Errors](/errors).
 
 ### Webhooks, usage and billing
 
+For the events we send, the payload, and how to check `Segmnt-Signature`, see
+[Webhooks](/webhooks).
+
 | Method | Path |
 | --- | --- |
 | `GET` `POST` | `/v1/projects/{projectId}/webhook-endpoints` |
@@ -114,6 +117,7 @@ Over a limit you get `429` with `Retry-After`. See [Errors](/errors).
 ## Where to go next
 
 - [Quickstart](/quickstart) — the end-to-end path, from upload to a `403` off-domain.
+- [Webhooks](/webhooks) — get a signed event when a video changes.
 - [Errors](/errors) — every code, with the `403` and `409` causes.
 - [Changelog](/changelog) — what changed and when.
 - [Glossary](/glossary) — the words used here.

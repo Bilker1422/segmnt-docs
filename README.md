@@ -19,7 +19,7 @@ Mintlify builds this repo and serves the site, including the agent tools
 |---|---|
 | `docs.json` | Mintlify site config: theme, colours, logo, favicon, fonts, navigation, and the API reference (`api/openapi.yaml`). |
 | `index.md`, `quickstart.md`, `getting-started.md`, `status.md` | Get started: welcome, the end-to-end tutorial, the setup how-to, and the public status labels. |
-| `direct-upload.md`, `embed-a-video.md`, `playback-tokens.md`, `wordpress.md` | Integrate: upload, embed, playback tokens and WordPress. |
+| `direct-upload.md`, `embed-a-video.md`, `playback-tokens.md`, `webhooks.md`, `wordpress.md` | Integrate: upload, embed, playback tokens, webhooks and WordPress. |
 | `playback-protection.md`, `glossary.md` | Concepts: how protection works, and the words we use. |
 | `accounts-and-projects.md`, `phone-verification.md`, `usage-and-limits.md`, `billing.md` | Account and billing. |
 | `moderation.md`, `reports-and-review.md` | Trust and safety. |
