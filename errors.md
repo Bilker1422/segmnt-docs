@@ -80,6 +80,7 @@ This is the most useful code to handle. Read `code` to know which 403 you have.
 | `token_missing` | CDN | No `token` query parameter on a protected video. | Send a token. |
 | `token_invalid` | CDN | The token is fake, or it is for another video. | Send a token made for this video. |
 | `token_expired` | CDN | The token is past its `expiresAt`. | Ask your server for a new token. |
+| `ip_mismatch` | CDN | Coming soon: the project has IP binding on and this request is from another network (or the viewer IP cannot be checked). | Play from the network the token was made for, or ask your server for a token from this network. |
 | `origin_missing` | CDN | The request has no `Origin` and no `Referer` header. | Play from a browser page, not a bare request. |
 | `domain_mismatch` | CDN | The request's origin is not the token's domain. | Play from your verified domain. |
 | `video_unavailable` | CDN | The video is held or deleted. | Stop playback. Wait for `video.ready`. |
@@ -88,6 +89,9 @@ This is the most useful code to handle. Read `code` to know which 403 you have.
 The CDN also sends the same value in the `X-Segmnt-Error` header, so a player can
 read the cause without parsing the body. See
 [How playback protection works](/playback-protection).
+
+`ip_mismatch` applies when a project turns on viewer network binding, which is
+**Coming soon**. See [Feature status](/status).
 
 ### 404 — not found
 

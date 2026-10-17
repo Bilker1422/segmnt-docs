@@ -137,8 +137,12 @@ The player shows a short message. The answer also carries a code:
 | `token_missing` | The `token=` value is empty. |
 | `token_invalid` | The token is fake, or it is for another video. |
 | `token_expired` | The token is past its `expiresAt`. Ask your server for a new one. |
+| `ip_mismatch` | Coming soon: the project has IP binding on and this page is not on the token's network. |
 | `domain_mismatch` | The page's domain is not the token's domain. |
 | `video_unavailable` | The video was removed or is held. |
+
+`ip_mismatch` applies when the project turns on viewer network binding, which is
+**Coming soon**. See [Feature status](/status).
 
 ## Keep the API key secret
 

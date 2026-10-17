@@ -38,6 +38,7 @@ Body:
 | Field | Required | Notes |
 | --- | --- | --- |
 | `domain` | Yes | A verified domain of the project. A host name only: `courses.example.com`. No `https://`, no path. |
+| `viewerIp` | Only with IP binding | Coming soon. The viewer's IP address. Will be required when the project has IP binding on; ignored otherwise. Send the viewer's IP, not your server's. |
 | `expiresInSeconds` | No | 60 to 86400. Default `14400` (4 hours). Make it longer than the video so playback does not stop. |
 
 Answer (`201`):
@@ -61,6 +62,39 @@ On a plan with **white-label** (Pro and Agency), the answer also has
 Put `embedUrl` in an iframe, or `playlistUrl` in your own player. See
 [Embed a video on any website](/embed-a-video).
 
+## Bind a token to the viewer's network (optional)
+
+> **Status: Coming soon.** See [Feature status](/status).
+
+A project will be able to turn on **network binding** (`ipBinding`, off by
+default). Then each new token is bound to the **viewer's** network, so a link
+that is shared to another network stops working. See
+[Viewer network binding](/playback-protection#part-3-viewer-network-binding-optional).
+
+You will pass the viewer's IP address as `viewerIp`. Our API sees **your
+server's** IP, not the viewer's, so your server is the one that knows the
+viewer's address: read it from the request socket or a trusted proxy header, and
+put it here.
+
+Send the viewer's own address, never your server's:
+
+```js
+// Node.js
+createPlaybackToken(videoId, domain, undefined, viewerIp);
+```
+
+```php
+// PHP / Laravel
+segmntPlaybackToken($videoId, $domain, viewerIp: $viewerIp);
+```
+
+On a bound project a token will never be minted without it: a missing or invalid
+`viewerIp` will be `400 invalid_request`. When `ipBinding` is off, `viewerIp` is
+ignored, so sending it is always safe. The setting applies to tokens you create
+after you change it; a token created earlier keeps working (or stays bound) until
+it expires. The CDN keeps only the viewer's **network prefix** (IPv4 `/24`,
+IPv6 `/64`) and refuses another network with `403 ip_mismatch`.
+
 ## cURL
 
 ```bash
@@ -80,13 +114,16 @@ curl -X POST "https://api.segmnt.cloud/v1/projects/$PROJECT_ID/videos/$VIDEO_ID/
 const BASE = "https://api.segmnt.cloud";
 const { SEGMNT_KEY, PROJECT_ID } = process.env;
 
-export async function createPlaybackToken(videoId, domain, expiresInSeconds) {
+export async function createPlaybackToken(videoId, domain, expiresInSeconds, viewerIp) {
+  const body = { domain };
+  if (expiresInSeconds) body.expiresInSeconds = expiresInSeconds;
+  if (viewerIp) body.viewerIp = viewerIp; // needed only when the project has ipBinding on
   const res = await fetch(
     `${BASE}/v1/projects/${PROJECT_ID}/videos/${videoId}/playback-tokens`,
     {
       method: "POST",
       headers: { Authorization: `Bearer ${SEGMNT_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify(expiresInSeconds ? { domain, expiresInSeconds } : { domain }),
+      body: JSON.stringify(body),
     },
   );
   if (!res.ok) throw new Error(`playback token failed: ${res.status} ${await res.text()}`);
@@ -100,13 +137,20 @@ export async function createPlaybackToken(videoId, domain, expiresInSeconds) {
 ```php
 use Illuminate\Support\Facades\Http;
 
-function segmntPlaybackToken(string $videoId, string $domain, ?int $expiresInSeconds = null): array
-{
+function segmntPlaybackToken(
+    string $videoId,
+    string $domain,
+    ?int $expiresInSeconds = null,
+    ?string $viewerIp = null,
+): array {
     $api = 'https://api.segmnt.cloud/v1/projects/' . config('services.segmnt.project');
 
     $body = ['domain' => $domain];
     if ($expiresInSeconds !== null) {
         $body['expiresInSeconds'] = $expiresInSeconds;
+    }
+    if ($viewerIp !== null) {
+        $body['viewerIp'] = $viewerIp; // the viewer's IP; needed only when ipBinding is on
     }
 
     return Http::withToken(config('services.segmnt.key'))
@@ -142,6 +186,7 @@ the text.
 | --- | --- | --- | --- |
 | 400 | `invalid_request` | `domain` is missing or not a host name, or `expiresInSeconds` is out of range | Fix the body. |
 | 400 | `invalid_request` | `domain` is not a **verified** domain of the project | Verify the domain first. |
+| 400 | `invalid_request` | Coming soon: IP binding is on and `viewerIp` is missing or not an IP address | Send the viewer's IP address. |
 | 401 | `unauthorized` | Missing, wrong or revoked key | Check the key. |
 | 404 | `not_found` | Unknown video, or a key from another project | Check the ids. |
 | 409 | `video_not_ready` | The video is not `ready`, or it is held for review | Wait, or ask support. |

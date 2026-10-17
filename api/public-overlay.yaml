@@ -69,3 +69,22 @@ actions:
     remove: true
   - target: $.components.schemas.VideoAccessMode
     remove: true
+  # Viewer network (IP) binding is not released yet (YAH-995 / YAH-1002): the
+  # pages carry the "Coming soon" label, and the unreleased fields are hidden
+  # from the published reference until it ships. The PATCH project and the
+  # playback-token request bodies use `$ref` schemas, so the fields are removed
+  # on the component that defines them.
+  - target: $.components.schemas.Project.properties.ipBinding
+    remove: true
+  - target: $.components.schemas.Project.required[?(@ == 'ipBinding')]
+    remove: true
+  - target: $.components.schemas.ProjectUpdateInput.properties.ipBinding
+    remove: true
+  - target: $.components.schemas.PlaybackTokenInput.properties.viewerIp
+    remove: true
+  # The description still advertised network binding after the field was hidden
+  # (same leak the accessMode precedent closed by rewriting the video PATCH
+  # description).
+  - target: $.components.schemas.ProjectUpdateInput.description
+    update: |
+      Rename a project and/or update its white-label branding. At least one field is required.

@@ -33,6 +33,7 @@ A page with no label is **Available**.
 | --- | --- | --- |
 | 1440p and 4K renditions | Coming soon | The higher ladder is built, but no customer can reach it in production today. |
 | 4K playback through the CDN | Coming soon | 4K is not reachable while paid plans are not on sale. |
+| Viewer network binding (IP binding) | Coming soon | An opt-in project setting that binds a playback token to the viewer's network (IPv4 `/24`, IPv6 `/64`). Built and being checked; not on a live account yet. Not DRM: viewers on the same network can still share a link. See [How playback protection works](/playback-protection#part-3-viewer-network-binding-optional). |
 | Phone verification at sign-up | Coming soon | The API is available, but the sign-up step is not on. See [Phone verification](/phone-verification). |
 | Automatic video review (frame check) | Coming soon | There is no automatic frame check on a live account yet. |
 | Free-plan review hold | Coming soon | A new free video is not held for review today. |

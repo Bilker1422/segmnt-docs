@@ -57,6 +57,18 @@ info:
     embed page only loads inside a frame on the token's domain
     (`Content-Security-Policy: frame-ancestors`).
 
+    **Viewer network (optional). Coming soon.** A project will be able to turn
+    on `ipBinding` (default off). Then every new playback token is bound to the
+    viewer's network (IPv4 `/24`, IPv6 `/64`) and the CDN will refuse a request
+    from another network with `403 ip_mismatch`. Because our API sees your
+    server's IP, not the viewer's, your server will pass the viewer's IP as
+    `viewerIp` when it creates the token. Without `ipBinding` the field is
+    ignored. This is not DRM: two viewers on the same `/24`, or behind one
+    mobile-carrier NAT, can still share. The setting applies to tokens you
+    create after you change it: tokens you created before the change keep
+    working (or stay bound) until they expire. Use a short `expiresInSeconds`
+    when you turn binding on.
+
     **Expiry.** A token is expired when the CDN clock is at or after
     `expiresAt`. There is no clock skew allowance. Note: browsers keep segments
     in their cache for 1 day and playlists for 30 seconds, so test expiry with a
@@ -72,6 +84,7 @@ info:
     | `403` | `token_missing` | No `token` query parameter. |
     | `403` | `token_invalid` | Bad format or signature, or the token is for another video. |
     | `403` | `token_expired` | Token is past `expiresAt`. |
+    | `403` | `ip_mismatch` | Coming soon. The token is bound to the viewer's network (project `ipBinding`) and this request is from another network (or the viewer IP cannot be checked). |
     | `403` | `origin_missing` | No `Origin` and no `Referer` header. |
     | `403` | `domain_mismatch` | `Origin` / `Referer` is not `https://{domain}`. |
     | `403` | `video_unavailable` | Video is held or deleted. |
@@ -1124,6 +1137,12 @@ paths:
         A `protected` video (the default) needs this token. A `public` video
         plays without one, so you may skip this call for it. If you do mint a
         token for a public video it still works; the extra token changes nothing.
+
+        Coming soon: when the project has `ipBinding` on, `viewerIp` will be
+        required. Pass the viewer's own IP address (our API sees your server's
+        IP, not the viewer's). The token is then bound to the viewer's network
+        and the CDN refuses another network with `403 ip_mismatch`. This applies
+        to tokens you create after you change the setting.
       requestBody:
         required: true
         content:
@@ -2644,7 +2663,7 @@ components:
 
     Project:
       type: object
-      required: [id, name, createdAt, whiteLabel, branding]
+      required: [id, name, createdAt, whiteLabel, branding, ipBinding]
       properties:
         id:
           type: string
@@ -2661,6 +2680,17 @@ components:
             (Pro and Agency; Free and Starter always keep our logo and brand colour).
         branding:
           $ref: '#/components/schemas/ProjectBranding'
+        ipBinding:
+          type: boolean
+          default: false
+          description: |
+            Coming soon. When true, new playback tokens for this project are
+            bound to the viewer's network (IPv4 `/24`, IPv6 `/64`): create
+            tokens with `viewerIp`, and the CDN refuses another network with
+            `403 ip_mismatch`. Off by default. Tokens created before the change
+            keep working (or stay bound) until they expire. Not DRM: two
+            viewers on the same `/24`, or behind one mobile-carrier NAT, can
+            still share.
     ProjectBranding:
       type: object
       required: [hideLogo, primaryColor, logoUrl]
@@ -2694,13 +2724,19 @@ components:
     ProjectUpdateInput:
       type: object
       minProperties: 1
-      description: Rename a project and/or update its white-label branding. At least one field is required.
+      description: Rename a project, update its white-label branding and/or turn playback network binding on or off. At least one field is required.
       properties:
         name:
           type: string
           minLength: 1
           maxLength: 100
           examples: [Client A courses]
+        ipBinding:
+          type: boolean
+          description: |
+            Coming soon. Turn playback network binding on or off (default off).
+            Available on every plan. The change applies to tokens you create
+            after you change it.
         branding:
           type: object
           minProperties: 1
@@ -2970,6 +3006,15 @@ components:
           format: hostname
           description: A verified domain of the project, where the player runs.
           examples: [courses.example.com]
+        viewerIp:
+          type: string
+          description: |
+            Coming soon. The viewer's IP address. Will be required when the
+            project has `ipBinding` on; ignored otherwise. Send the viewer's IP,
+            not your server's: our API only sees your server. The token is bound
+            to the viewer's network (IPv4 `/24`, IPv6 `/64`), so the CDN refuses
+            another network with `403 ip_mismatch`.
+          examples: [203.0.113.7]
         expiresInSeconds:
           type: integer
           minimum: 60
