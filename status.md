@@ -40,6 +40,9 @@ A page with no label is **Available**.
 | Paid plans, checkout and overage | Coming soon | Plans and prices are listed; checkout is paused. See [Plans and payment](/billing). |
 | White-label player | Coming soon | Built, and it needs a paid plan. Paid plans are not on sale yet. |
 | Original-file download | Coming soon | The original stays with us; there is no download button yet. |
+| Webhook secret rotation | Coming soon | Replace an endpoint's signing secret without recreating the endpoint. See [Webhooks](/webhooks#rotate-the-signing-secret). |
+| Webhook delivery log | Coming soon | Read each send attempt with its status and the last HTTP status your endpoint returned. See [Webhooks](/webhooks#read-the-delivery-log). |
+| Send a test event | Coming soon | Send one signed `webhook.test` event to your endpoint and see the result in the delivery log. See [Webhooks](/webhooks#send-a-test-event). |
 
 > The website uses this same legend. If a page and this table disagree, this
 > table is right — tell us and we will fix the page.
