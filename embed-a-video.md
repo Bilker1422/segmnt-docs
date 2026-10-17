@@ -161,11 +161,8 @@ The API key is not.
 
 Checked on 17 Oct 2026:
 
-- The optional `<head>` lines are the same two tags we use on our own pages: the
-  dashboard adds `preconnect` and `dns-prefetch` for the player CDN
-  (`dashboard/src/config.ts`), and the demo page adds the same `preconnect`
-  (`site/src/pages/demo.ts`). Both are asserted in their tests
-  (`dashboard/src/config.test.ts`, `site/src/site.test.ts`).
+- The optional `<head>` lines are the same two tags we use on our own pages, and
+  our tests cover them.
 - The two lines only open a connection. A page that never contacts the CDN is
   not affected, and the video plays with or without them.
 
