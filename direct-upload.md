@@ -87,7 +87,8 @@ Cut the file into pieces of `partSizeBytes`. `PUT` the raw bytes of piece N to
 the URL for `partNumber` N. No other header is needed.
 
 Read the `ETag` response header and keep it with the part number.
-Browsers can read `ETag` because our storage exposes it in CORS.
+Browsers can read `ETag` because our storage exposes it in CORS. See
+[Browser](#browser) for what a browser can and cannot do on your own domain.
 
 You can send parts in parallel (4 at a time is a good start) and in any order.
 
@@ -119,6 +120,9 @@ endpoint has received one yet, so test with your own receiver. See
 
 In rare cases our team can hold a video for review (status `held`). It does not
 play until the hold ends. See [Moderation and held videos](/moderation).
+
+Cancel only stops an upload that has **not** finished. To delete a video you
+have already completed, see [Manage videos](/manage-videos#delete-a-video).
 
 ## Cancel an upload
 
@@ -328,7 +332,28 @@ PHP `memory_limit` of at least 512 MB, or stream the part.
 
 ## Browser
 
-In a browser, call "create" and "complete" from your **server** (the API key must
-stay secret). Give the browser the `parts` list. The browser then `PUT`s each
-`file.slice(start, end)` to its URL and reads `res.headers.get("ETag")`, and sends
-the ETags back to your server.
+Two things happen in a browser, and they do **not** work the same way today.
+
+**The part upload works from your own domain.** In your page you can `PUT` each
+`file.slice(start, end)` to its pre-signed part URL and read
+`res.headers.get("ETag")`. Our storage allows the `PUT` from any origin and
+exposes the `ETag` header, so the browser can read it. Do not send the API key to
+the part URL.
+
+**The `create` and `complete` calls do not work from your own domain today.**
+Those are API calls (`/v1/...`), and the API allows our **dashboard's origin
+only**. From any other origin the browser is stopped before the call is sent: the
+preflight check comes back with no permission, so the browser blocks the request.
+Keep the API key on your **server** and make these two calls there. The key must
+stay secret in any case: it can create playback tokens.
+
+So the browser flow today is:
+
+1. Your **server** calls `create` and gives the browser the `parts` list.
+2. The **browser** `PUT`s each part to its pre-signed URL and reads the `ETag`.
+3. The browser sends the ETags back to your **server**.
+4. Your **server** calls `complete`.
+
+The part URLs are the only upload step that leaves your server, and they are for
+upload only. Playback is separate: see
+[Create playback tokens on your server](/playback-tokens).

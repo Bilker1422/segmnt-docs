@@ -125,6 +125,8 @@ See [Usage and plan limits](/usage-and-limits) for the full rules.
 
 - [Quickstart](/quickstart) — upload, token, embed, `403`.
 - [Direct upload](/direct-upload) — the four upload calls.
+- [Manage videos](/manage-videos) — rename or delete a video, and free its stored
+  hours.
 - [Accounts, projects, API keys and domains](/accounts-and-projects) — the setup
   behind every project.
 - [Errors](/errors) — the codes, including `403` and `409`.

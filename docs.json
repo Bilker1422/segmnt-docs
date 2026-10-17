@@ -36,6 +36,7 @@
             "group": "Integrate",
             "pages": [
               "direct-upload",
+              "manage-videos",
               "embed-a-video",
               "playback-tokens",
               "webhooks",

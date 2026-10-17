@@ -119,8 +119,9 @@ Notes:
 - Deleting a video **does not reset watched minutes**. It lowers your stored
   hours **shortly after** the delete, not instantly: we remove the original at
   once, and clean up the HLS renditions and the thumbnail in the background.
-- Deleting a video **does not delete the moderation review frames** we keep.
-  They stay on our side for human review and appeals.
+- Deleting a video **deletes the review frames with it**. We keep frames only
+  while the video is under review, in an abuse report or in a legal matter;
+  after the delete we keep no frame longer than **30 days**.
 - Deleted videos are hidden from
   `GET /v1/projects/{projectId}/videos` and from the single-video `GET`
   immediately, and `PATCH` on them answers `404`.

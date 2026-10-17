@@ -122,6 +122,10 @@ Notes:
   each UTC month. Stored hours do not reset; they fall when you delete a video.
   A pilot is different: its new uploads are capped for the **whole** pilot, not
   per month.
+- The new-upload counter counts the videos you created in the month. An upload
+  that is created but never completed does **not** count (it records no length).
+  A video that is completed and then deleted **does** count in the month it was
+  created: deleting frees stored hours, not the new-upload counter.
 - The pilot runs for 30 days and needs no credit card. When it ends, the account
   returns to its plan (usually Free).
 - Paid plan numbers come from the plan catalog. Paid plans are not on sale yet;
@@ -177,8 +181,9 @@ billed per **started minute** past the limit, from the raw watched seconds, and
 it appears on your **next invoice**. The overage record is written now; adding
 it to the payment provider's invoice is a later step.
 
-You do not lose data. Delete videos or remove domains to go back under a limit,
-or upgrade to raise it. When the month (or the pilot) ends, the counters reset.
+You do not lose data. [Delete videos](/manage-videos#delete-a-video) or remove
+domains to go back under a limit, or upgrade to raise it. When the month (or the
+pilot) ends, the counters reset.
 
 ## 6. Errors
 

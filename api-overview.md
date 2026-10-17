@@ -102,6 +102,9 @@ Over a limit you get `429` with `Retry-After`. See [Errors](/errors).
 | `POST` | `/v1/projects/{projectId}/videos/{videoId}/preview-token` |
 | `POST` | `/v1/projects/{projectId}/videos/{videoId}/reports` |
 
+To upload a video, see [Direct upload](/direct-upload). To rename it or **delete**
+it, see [Manage videos](/manage-videos).
+
 ### Webhooks, usage and billing
 
 For the events we send, the payload, and how to check `Segmnt-Signature`, see
@@ -120,6 +123,7 @@ For the events we send, the payload, and how to check `Segmnt-Signature`, see
 ## Where to go next
 
 - [Quickstart](/quickstart) — the end-to-end path, from upload to a `403` off-domain.
+- [Manage videos](/manage-videos) — rename or delete a video.
 - [Webhooks](/webhooks) — get a signed event when a video changes.
 - [Errors](/errors) — every code, with the `403` and `409` causes.
 - [Changelog](/changelog) — what changed and when.
