@@ -130,6 +130,11 @@ tags:
     description: Sites allowed to play the project's videos. A domain must be verified with a DNS TXT record.
   - name: Uploads
     description: Direct upload from the client to storage with pre-signed multipart URLs.
+  - name: Upload tokens
+    description: |
+      Short-lived, single-use tokens for uploading from a browser. Your server
+      mints one with the project API key; the browser uses it for exactly one
+      upload and never sees the key.
   - name: Videos
     description: Uploaded videos and their processing status.
   - name: Playback
@@ -856,6 +861,56 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
+  /v1/projects/{projectId}/upload-tokens:
+    parameters:
+      - $ref: '#/components/parameters/ProjectId'
+    post:
+      tags: [Upload tokens]
+      operationId: createUploadToken
+      summary: Create a browser upload token
+      description: |
+        Call this from your server when a user uploads a file from the browser.
+        The token is short-lived and single-use: it allows exactly two calls,
+        one create and the matching complete, and nothing else. It cannot read,
+        list, delete or play.
+
+        The key stays on your server. Send the returned `token` to the browser,
+        which calls the upload routes with `Authorization: Bearer <token>` and
+        the `Origin` of the verified domain.
+
+        The token carries a maximum size and the allowed content type, and we
+        enforce both. It is also bound to one verified domain of the project: a
+        browser on any other domain is refused. Origin is not a substitute for
+        the token, so a leaked token is limited by its size cap, one-shot use
+        and short life.
+
+        Requires a full-scope project API key.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UploadTokenInput'
+      responses:
+        '201':
+          description: Token created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadToken'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '503':
+          description: Upload signing keys are not configured (`upload_not_configured`).
+
   /v1/projects/{projectId}/uploads:
     parameters:
       - $ref: '#/components/parameters/ProjectId'
@@ -868,6 +923,12 @@ paths:
         per part. The client sends each part straight to storage, keeps the `ETag`
         response header of each part, then calls the complete route.
 
+        Two ways to authenticate: a project API key or session from your server,
+        or a single-use upload token from `POST /v1/projects/{projectId}/upload-tokens`
+        for a browser. With a token, the browser must send the token's verified
+        domain as its `Origin`; the token's `maxSizeBytes` and content type are
+        enforced here and on complete.
+
         Part upload: `PUT` the raw bytes to the part URL. No auth header and no
         other headers are needed (`Content-Type` is not checked). Storage CORS
         allows `PUT` from any origin and exposes `ETag`, so a browser can read it.
@@ -878,6 +939,10 @@ paths:
         Plan limits are checked here with `sizeBytes`, and again later: on complete
         (real file size) and before encoding (real duration). A file over the limit
         ends as `failed` with `failure.code` = `plan_limit_reached` and is removed.
+      security:
+        - apiKey: []
+        - session: []
+        - uploadToken: []
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
@@ -935,6 +1000,13 @@ paths:
         Joins the parts and starts encoding. The video moves to `processing`.
         Safe to retry: if the upload was already completed, it returns `202` with
         the current video.
+
+        A browser calls this with its upload token, and only for the upload that
+        token created. A token cannot complete another upload.
+      security:
+        - apiKey: []
+        - session: []
+        - uploadToken: []
       requestBody:
         required: true
         content:
@@ -2423,6 +2495,13 @@ components:
       in: cookie
       name: segmnt_session
       description: Dashboard session cookie, set after SSO sign-in.
+    uploadToken:
+      type: http
+      scheme: bearer
+      description: |
+        Browser upload token from `POST /v1/projects/{projectId}/upload-tokens`.
+        Short-lived and single-use. Accepted only on the upload create and
+        complete routes, and only from the token's verified domain.
     adminAccess:
       type: http
       scheme: bearer
@@ -3041,6 +3120,67 @@ components:
                 description: Pre-signed `PUT` URL for this part. Do not log it.
         expiresAt:
           $ref: '#/components/schemas/Timestamp'
+
+    UploadTokenInput:
+      type: object
+      required: [domain]
+      properties:
+        domain:
+          type: string
+          format: hostname
+          description: A verified domain of the project, where the browser runs.
+          examples: [courses.example.com]
+        maxSizeBytes:
+          type: integer
+          minimum: 1
+          description: |
+            Hard cap on the uploaded file size, in bytes. Defaults to the plan
+            maximum and is never allowed above it.
+          examples: [2147483648]
+        contentType:
+          type: string
+          enum: [video/mp4, video/quicktime, video/webm, video/x-matroska]
+          description: |
+            The one content type the upload may declare. Omit it to allow any
+            supported type.
+        title:
+          $ref: '#/components/schemas/VideoTitle'
+        expiresInSeconds:
+          type: integer
+          minimum: 300
+          maximum: 7200
+          default: 3600
+          description: How long the token lives. Keep it short; it is single-use.
+    UploadToken:
+      type: object
+      required: [token, expiresAt, projectId, domain, maxSizeBytes, contentTypes]
+      properties:
+        token:
+          type: string
+          description: |
+            Opaque signed token. Send it to the browser, which uses it as
+            `Authorization: Bearer <token>`. Never send your API key to a
+            browser. Do not log the token.
+        expiresAt:
+          $ref: '#/components/schemas/Timestamp'
+        projectId:
+          type: string
+          description: The project the token may upload to.
+          examples: [prj_2bN6rD]
+        domain:
+          type: string
+          description: The verified domain the token is bound to.
+          examples: [courses.example.com]
+        maxSizeBytes:
+          type: integer
+          description: Hard cap on the uploaded file size, in bytes.
+        contentTypes:
+          type: array
+          items:
+            type: string
+          description: The content types the upload may declare.
+        title:
+          $ref: '#/components/schemas/VideoTitle'
 
     VideoTitle:
       type: string
