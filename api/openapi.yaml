@@ -1295,6 +1295,154 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
+  /v1/projects/{projectId}/webhook-endpoints/{endpointId}/rotate-secret:
+    parameters:
+      - $ref: '#/components/parameters/ProjectId'
+      - name: endpointId
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: '^whe_[A-Za-z0-9]+$'
+    post:
+      tags: [Webhooks]
+      operationId: rotateWebhookEndpointSecret
+      summary: Rotate the signing secret of an endpoint
+      description: |
+        Makes a new signing secret for the endpoint and returns it once. The
+        endpoint, its URL and its event list do not change. The previous secret
+        stops working as soon as this call returns, so update your server first.
+      responses:
+        '200':
+          description: New secret. `signingSecret` is shown only in this response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookEndpointWithSecret'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /v1/projects/{projectId}/webhook-endpoints/{endpointId}/deliveries:
+    parameters:
+      - $ref: '#/components/parameters/ProjectId'
+      - name: endpointId
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: '^whe_[A-Za-z0-9]+$'
+    get:
+      tags: [Webhooks]
+      operationId: listWebhookDeliveries
+      summary: List delivery attempts for an endpoint
+      description: |
+        Newest first. A row has the event type, the time we created it, the
+        status (`pending`, `delivered` or `failed`), the number of attempts and
+        the last HTTP status the endpoint returned.
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          description: Page size.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: cursor
+          in: query
+          required: false
+          description: Pass the `nextCursor` from the previous page.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: One page of deliveries.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, nextCursor]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/WebhookDelivery'
+                  nextCursor:
+                    type: [string, 'null']
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /v1/projects/{projectId}/webhook-endpoints/{endpointId}/test:
+    parameters:
+      - $ref: '#/components/parameters/ProjectId'
+      - name: endpointId
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: '^whe_[A-Za-z0-9]+$'
+    post:
+      tags: [Webhooks]
+      operationId: sendWebhookTestEvent
+      summary: Send a test event to an endpoint
+      description: |
+        Queues one `webhook.test` event for this endpoint. We sign and retry it
+        exactly like a real event, whatever events the endpoint is subscribed
+        to. The result appears in the delivery log.
+
+        The body we POST to your endpoint is:
+
+        ```json
+        {
+          "id": "evt_1qA7zP",
+          "type": "webhook.test",
+          "createdAt": "2026-10-17T12:00:00.000Z",
+          "projectId": "prj_C4LqLAGX",
+          "data": { "test": true }
+        }
+        ```
+
+        It carries the same `Segmnt-Signature` header as every other event.
+      responses:
+        '202':
+          description: Test event queued for delivery.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id, type, endpointId, url, createdAt]
+                properties:
+                  id:
+                    type: string
+                    description: The event id. Same for every retry of this test.
+                    examples: [evt_1qA7zP]
+                  type:
+                    type: string
+                    enum: [webhook.test]
+                  endpointId:
+                    type: string
+                    examples: [whe_5mJ8kV]
+                  url:
+                    type: string
+                    format: uri
+                  createdAt:
+                    $ref: '#/components/schemas/Timestamp'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
   /v1/projects/{projectId}/usage:
     parameters:
       - $ref: '#/components/parameters/ProjectId'
@@ -3124,6 +3272,39 @@ components:
               description: |
                 Why we held or removed the video. Only on `video.held` and
                 `video.removed`, and only when we have a reason to give.
+
+    WebhookDelivery:
+      type: object
+      required: [id, eventId, eventType, status, attempts, lastHttpStatus, nextAttemptAt, createdAt]
+      properties:
+        id:
+          type: string
+          examples: [whd_7Qp2Xr]
+        eventId:
+          type: string
+          description: The id of the event this attempt belongs to.
+          examples: [evt_1qA7zP]
+        eventType:
+          type: string
+          description: The event type, for example `video.ready` or `webhook.test`.
+        status:
+          type: string
+          enum: [pending, delivered, failed]
+          description: |
+            `pending` while we still retry, `delivered` on a 2xx reply, and
+            `failed` when we stop.
+        attempts:
+          type: integer
+          description: How many times we have called the endpoint for this event.
+        lastHttpStatus:
+          type: [integer, 'null']
+          description: The last HTTP status the endpoint returned, or null on a connection error.
+        nextAttemptAt:
+          type: [string, 'null']
+          format: date-time
+          description: When the next retry is due, or null when there is none.
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
 
     ProjectUsage:
       type: object
