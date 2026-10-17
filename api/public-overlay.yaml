@@ -69,9 +69,10 @@ actions:
     remove: true
   - target: $.components.schemas.VideoAccessMode
     remove: true
-  # Viewer network (IP) binding is not released yet (YAH-995 / YAH-1002): the
-  # pages carry the "Coming soon" label, and the unreleased fields are hidden
-  # from the published reference until it ships. The PATCH project and the
+  # Viewer network (IP) binding is built and runs in production, but it is not
+  # offered publicly yet (YAH-995 / YAH-1002; wording fix YAH-1084): the pages
+  # carry the "Coming soon" label, and the fields stay hidden from the published
+  # reference until the CTO opens the public claim. The PATCH project and the
   # playback-token request bodies use `$ref` schemas, so the fields are removed
   # on the component that defines them.
   - target: $.components.schemas.Project.properties.ipBinding

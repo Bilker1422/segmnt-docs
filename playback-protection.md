@@ -79,8 +79,8 @@ Setup details are in
 
 ## Part 3: Viewer network binding (optional)
 
-> **Status: Coming soon.** Network binding is built, but no customer can use it
-> on a live account yet. This section explains how it will work. See
+> **Status: Coming soon.** Network binding is built; we have not offered it
+> publicly yet. This section explains how it will work. See
 > [Feature status](/status).
 
 By default a playback link works from **any** network, so anyone on your verified
