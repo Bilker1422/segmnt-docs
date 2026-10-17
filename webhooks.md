@@ -196,15 +196,60 @@ the same way.
   retry with a growing wait, up to about 8 tries, then mark that delivery
   failed.
 
-## What is not available yet
+## Rotate, inspect and test (Coming soon)
 
-> **Status: Coming soon.** These are **not** live today.
+> **Status: Coming soon.** The three calls below are planned. They are **not**
+> live today, so do not build on them yet. We add them to the API reference when
+> they ship.
+
+### Rotate the signing secret
+
+```
+POST /v1/projects/{projectId}/webhook-endpoints/{endpointId}/rotate-secret
+```
+
+Returns a new `whsec_...` **once**. The endpoint, its URL and its event list stay
+the same. The old secret stops working as soon as the call returns, so update
+your server with the new secret before you call this route.
+
+### Read the delivery log
+
+```
+GET /v1/projects/{projectId}/webhook-endpoints/{endpointId}/deliveries?limit=&cursor=
+```
+
+Newest first. Each row has the event type, the time we created it, the status
+(`pending`, `delivered` or `failed`), the number of attempts, and the last HTTP
+status your endpoint returned. `limit` sets the page size (1 to 100, default
+20). For the next page, pass the `nextCursor` value back as `cursor`.
+
+### Send a test event
+
+```
+POST /v1/projects/{projectId}/webhook-endpoints/{endpointId}/test
+```
+
+Queues one signed `webhook.test` event to that endpoint. It uses the same
+signature header as every other event, and the result appears in the delivery
+log. The body we `POST` to your endpoint is:
+
+```json
+{
+  "id": "evt_1qA7zP",
+  "type": "webhook.test",
+  "createdAt": "2026-10-17T12:00:00.000Z",
+  "projectId": "prj_C4LqLAGX",
+  "data": { "test": true }
+}
+```
+
+### Also coming soon
 
 - A dashboard screen to add, list and remove endpoints, and to show the signing
   secret once.
-- Secret rotation without recreating the endpoint.
-- A delivery log (status code, time, tries).
-- A "send test event" button.
+- A "send test event" button in the dashboard.
+
+## Test your endpoint today
 
 To test your endpoint today, register your own HTTPS receiver and upload a short
 video. Watch for the `video.ready` POST and check the signature with the code
