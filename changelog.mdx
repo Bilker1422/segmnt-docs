@@ -10,6 +10,100 @@ that change the API. Newest first.
 For what is live right now, see [Feature status](/status). For the endpoint list,
 see the [API overview](/api-overview).
 
+## 0.14.0 — 17 October 2026
+
+- Internal error-reporting work, so our team finds and fixes a fault sooner. No
+  customer-visible change.
+
+## 0.13.1 — 17 October 2026
+
+- **Encoding.** We can encode more videos at the same time, so a large upload
+  finishes sooner. Encoding speed and quality are unchanged. No API change.
+
+## 0.13.0 — 17 October 2026
+
+- **Playback protection.** Extra protection against link sharing and automated
+  playback now runs behind the scenes. A normal viewer sees no change: a copied
+  link still returns `403`, and playlists and segments are never challenged. See
+  [How playback protection works](/playback-protection).
+
+## 0.12.1 — 17 October 2026
+
+- **Dashboard.** Opening a ready video shows its picture at once while the player
+  finishes loading, instead of a black frame.
+- **Embed page.** A video on your website shows its picture before the player
+  loads, so a visitor does not see a black frame.
+- **Player.** The player is downloaded once and reused, so a second video starts
+  sooner.
+
+## 0.12.0 — 16 October 2026
+
+- **Demo.** https://segmnt.cloud/demo now plays a real protected video. The demo
+  link is short-lived and locked to our domain, so a copied demo link returns
+  `403`.
+- **API:** a new public route, `GET /v1/demo/playback`, returns one short-lived
+  playback token for the demo video.
+- **Dashboard.** The sign-in and sign-up card now links the Privacy Policy and
+  the Terms of Service.
+- **Website.** The plan pages no longer show a "Most chosen" badge, and the site
+  no longer states a VAT charge. See the
+  [Terms of Service](https://segmnt.cloud/terms).
+
+## 0.11.1 — 16 October 2026
+
+- **Security page.** We corrected one sentence on the Security page to match the
+  reviewed wording. No other change.
+
+## 0.11.0 — 16 October 2026
+
+- **Trust pages.** Three new pages are live: Content review and moderation
+  policy, Data retention and deletion, and Security. The docs [Legal](/legal)
+  page links them.
+- **Moderation notice.** Holding or removing a video now tells the account owner
+  by e-mail, with the reason, and sends the `video.held` or `video.removed`
+  webhook with `data.reason`. A legal matter is not notified, and the file is
+  kept as evidence. See [Reports and video review](/reports-and-review).
+- **API:** `video.removed` joins the video events. See [Webhooks](/webhooks).
+
+## 0.10.0 — 16 October 2026
+
+- **Trust pages.** The Privacy Policy, the Terms of Service and the Acceptable
+  Use Policy are live, linked from the footer "Legal" area and from the docs
+  [Legal](/legal) page.
+
+## 0.9.3 — 16 October 2026
+
+- **Website.** The training use-case page now states the same retention rule as
+  the home and pricing pages. No API change.
+
+## 0.9.2 — 16 October 2026
+
+- **Plans.** The plan pages now state the live rules: Starter stops at **20,000**
+  watched minutes, overage is on Pro and Agency only, and stored videos are
+  deleted **30 days** after a paid plan stops. See
+  [Plans and payment](/billing).
+- **Free plan.** Phone verification is no longer listed for the free plan. It
+  stays **Coming soon**. See [Phone verification](/phone-verification).
+
+## 0.9.1 — 16 October 2026
+
+- **Website.** Our pages now match the live product: 4K playback, phone
+  verification at sign-up and the free-plan review hold are **Coming soon**, and
+  encoding, webhooks, embed codes, signed playback, domain lock and review
+  frames are **Available**. See [Feature status](/status).
+- **Plans.** The Pro and Agency overage rate is published: **5 SAR per 1,000
+  watched minutes**. See [Plans and payment](/billing).
+- **Support.** support@segmnt.cloud is in the footer, and the docs say we are
+  based in Saudi Arabia.
+
+## 0.9.0 — 16 October 2026
+
+- **Retention.** Deleting a video also deletes its review frames, and no frame is
+  kept longer than **30 days** after the delete. Frames are kept only while the
+  video is under an open review, an abuse report or a legal hold.
+- **Retention.** If a paid plan stops, the account's stored videos are deleted
+  **30 days** later. Billing is paused, so this does not affect anyone today.
+
 ## 0.8.0 — 16 October 2026
 
 - **Player.** The video now fills the screen in fullscreen.
