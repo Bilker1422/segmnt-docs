@@ -1526,7 +1526,7 @@ paths:
       tags: [Usage]
       operationId: getProjectUsage
       summary: Get project usage
-      description: Account totals and plan limits are in `GET /v1/billing/plan`.
+      description: Project usage for a period, plus the account plan, its limits and the headroom left, so an API key can check them without a dashboard session.
       parameters:
         - name: from
           in: query
@@ -3478,6 +3478,40 @@ components:
         watchedMinutes:
           type: integer
           description: Minutes watched by viewers in the period.
+        planId:
+          $ref: '#/components/schemas/PlanId'
+        planStatus:
+          type: string
+          enum: [active, pilot, past_due, canceled]
+        limits:
+          $ref: '#/components/schemas/PlanLimits'
+        currentPeriod:
+          type: object
+          required: [start, end]
+          description: The billing month that `accountUsage` and `remaining` count.
+          properties:
+            start:
+              $ref: '#/components/schemas/Timestamp'
+            end:
+              $ref: '#/components/schemas/Timestamp'
+        accountUsage:
+          type: object
+          required: [storedSeconds, watchedMinutes]
+          description: Totals for all projects of the account (plan limits are per account).
+          properties:
+            storedSeconds:
+              type: integer
+            watchedMinutes:
+              type: integer
+        remaining:
+          type: object
+          required: [storedSeconds, watchedMinutes]
+          description: Headroom left under the plan limits. `null` means the plan has no limit. Never below `0`.
+          properties:
+            storedSeconds:
+              type: [integer, 'null']
+            watchedMinutes:
+              type: [integer, 'null']
 
     PlanId:
       type: string
