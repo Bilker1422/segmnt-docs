@@ -3260,7 +3260,7 @@ components:
             - type: 'null'
     VideoList:
       type: object
-      required: [data, nextCursor]
+      required: [data, nextCursor, total]
       properties:
         data:
           type: array
@@ -3268,6 +3268,9 @@ components:
             $ref: '#/components/schemas/Video'
         nextCursor:
           type: [string, 'null']
+        total:
+          type: integer
+          description: Count of all matching rows, not just this page.
 
     DemoPlayback:
       type: object
@@ -3775,7 +3778,7 @@ components:
 
     AdminAccountList:
       type: object
-      required: [data, nextCursor]
+      required: [data, nextCursor, total]
       properties:
         data:
           type: array
@@ -3783,6 +3786,9 @@ components:
             $ref: '#/components/schemas/AdminAccount'
         nextCursor:
           type: [string, 'null']
+        total:
+          type: integer
+          description: Count of all matching rows, not just this page.
 
     AdminAccountDetail:
       type: object
@@ -3840,7 +3846,7 @@ components:
 
     AdminVideoList:
       type: object
-      required: [data, nextCursor]
+      required: [data, nextCursor, total]
       properties:
         data:
           type: array
@@ -3848,6 +3854,9 @@ components:
             $ref: '#/components/schemas/AdminVideoSummary'
         nextCursor:
           type: [string, 'null']
+        total:
+          type: integer
+          description: Count of all matching rows, not just this page.
 
     AdminVideoSummary:
       allOf:
