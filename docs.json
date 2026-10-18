@@ -30,7 +30,7 @@
         "groups": [
           {
             "group": "Get started",
-            "pages": ["index", "quickstart", "getting-started", "status"]
+            "pages": ["index", "quickstart", "getting-started", "faq", "status"]
           },
           {
             "group": "Integrate",

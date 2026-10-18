@@ -130,6 +130,7 @@ See [Usage and plan limits](/usage-and-limits) for the full rules.
 - [Accounts, projects, API keys and domains](/accounts-and-projects) — the setup
   behind every project.
 - [Errors](/errors) — the codes, including `403` and `409`.
+- [Common questions](/faq) — short answers to the questions developers ask most.
 - [Feature status](/status) — what is available, beta and coming soon.
 
 ## Tested against the current release
