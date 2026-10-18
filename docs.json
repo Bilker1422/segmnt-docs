@@ -35,6 +35,7 @@
           {
             "group": "Integrate",
             "pages": [
+              "integration-guide",
               "direct-upload",
               "manage-videos",
               "embed-a-video",
