@@ -32,7 +32,7 @@ tokens: see [Create playback tokens on your server](/playback-tokens) and
 | Part size | `partSizeBytes` from the response. At least 100 MiB. |
 | Max parts | 10,000 (the part size grows for very large files) |
 | Last part | Can be smaller. All other parts must be exactly `partSizeBytes`. |
-| URL life | Until `expiresAt` (24 hours after the start) |
+| Part URL life | 4 hours. The upload stays open until `expiresAt` (24 hours after the start). |
 | Title | 1 to 200 characters |
 | File name | 1 to 255 characters |
 
@@ -72,6 +72,8 @@ Answer (`201`):
 
 `Idempotency-Key` is optional but we recommend it. If your request times out,
 send it again with the same key (within 24 hours) and you get the same upload.
+The answer has fresh part URLs, so you can send the parts again after the old
+part URLs expire (part URLs work for 4 hours).
 
 Treat the part URLs like secrets. Do not log them.
 
@@ -84,7 +86,9 @@ returns only when the phone gate is switched on. A blocked account always gets
 ## Step 2: PUT the parts
 
 Cut the file into pieces of `partSizeBytes`. `PUT` the raw bytes of piece N to
-the URL for `partNumber` N. No other header is needed.
+the URL for `partNumber` N. Send the part's exact size as `Content-Length`: the
+part URL signs it, so a different length is refused. `Content-Type` is not
+checked. No auth header is needed.
 
 Read the `ETag` response header and keep it with the part number.
 Browsers can read `ETag` because our storage exposes it in CORS. See
@@ -162,7 +166,7 @@ Errors on the part `PUT` come from storage, not from our API. See the next secti
 | --- | --- | --- |
 | Create | Yes, with `Idempotency-Key` | Same key returns the same upload. Without a key, a retry makes a second video. |
 | Part `PUT` | Yes | Send the same part again. The last one wins. Use the newest ETag. Retry on network errors, `5xx` and `429` with a growing wait (1 s, 2 s, 4 s). |
-| Part `PUT` returns `403` | No | The URL expired. Start a new upload. |
+| Part `PUT` returns `403` | No | The URL expired, or the part size did not match the signed `Content-Length`. Start a new upload. |
 | Complete | Yes | Same body. If the answer was lost, send it again. |
 | Cancel | Yes | Always `204` for a cancelled upload. |
 

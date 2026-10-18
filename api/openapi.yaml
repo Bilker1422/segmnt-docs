@@ -929,12 +929,16 @@ paths:
         domain as its `Origin`; the token's `maxSizeBytes` and content type are
         enforced here and on complete.
 
-        Part upload: `PUT` the raw bytes to the part URL. No auth header and no
-        other headers are needed (`Content-Type` is not checked). Storage CORS
-        allows `PUT` from any origin and exposes `ETag`, so a browser can read it.
+        Part upload: `PUT` the raw bytes to the part URL with the exact size of
+        that part as `Content-Length`. No auth header is needed (`Content-Type`
+        is not checked). The part URL signs the part's `Content-Length`, so a
+        request that declares a different length is refused. Storage CORS allows
+        `PUT` from any origin and exposes `ETag`, so a browser can read it.
 
-        URLs are for upload only. Playback never uses storage URLs. They work
-        until `expiresAt`, at least 24 hours after the start.
+        URLs are for upload only. Playback never uses storage URLs. Part URLs
+        work for 4 hours. The upload itself stays open until `expiresAt`, 24
+        hours after the start; calling create again with the same
+        `Idempotency-Key` returns the same upload with fresh part URLs.
 
         Plan limits are checked here with `sizeBytes`, and again later: on complete
         (real file size) and before encoding (real duration). A file over the limit
