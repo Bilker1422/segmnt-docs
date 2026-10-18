@@ -3249,13 +3249,21 @@ components:
           description: Set only when `status` is `failed`.
           oneOf:
             - type: object
-              required: [code, message]
+              required: [code, message, retryable]
               properties:
                 code:
                   type: string
                   examples: [unsupported_codec]
                 message:
                   type: string
+                retryable:
+                  type: boolean
+                  description: |
+                    `true` when the cause may be temporary, so uploading the same
+                    file again could succeed. `false` when the cause is
+                    permanent (for example the file has no usable video stream,
+                    or it is over the plan limit), so the client must fix the
+                    file or the plan and upload again (YAH-1293).
             - type: 'null'
         createdAt:
           $ref: '#/components/schemas/Timestamp'
