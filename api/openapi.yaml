@@ -2985,7 +2985,7 @@ components:
                 rejected with `400 invalid_request`.
     ProjectList:
       type: object
-      required: [data, nextCursor]
+      required: [data, nextCursor, total]
       properties:
         data:
           type: array
@@ -2993,6 +2993,9 @@ components:
             $ref: '#/components/schemas/Project'
         nextCursor:
           type: [string, 'null']
+        total:
+          type: integer
+          description: Count of all matching rows, not just this page.
 
     ApiKey:
       type: object
