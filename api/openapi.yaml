@@ -3737,7 +3737,7 @@ components:
           type: string
         kind:
           type: string
-          enum: [high_watch_minutes, upload_burst, domain_burst, token_failures, encode_failures, viewer_report, ban_proposed]
+          enum: [high_watch_minutes, upload_burst, domain_burst, token_failures, token_expiry_surge, token_sharing, encode_failures, viewer_report, ban_proposed, plan_warning_undelivered]
         severity:
           type: string
           enum: [info, warning, critical]
