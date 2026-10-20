@@ -1,5 +1,5 @@
 ---
-title: Integration guide: move your videos and go live
+title: "Integration guide: move your videos and go live"
 description: One path from zero to a live integration. Create a project, pick the right API key, verify your domain, move your video library, connect webhooks, and answer the common setup questions.
 icon: "route"
 ---
