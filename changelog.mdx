@@ -10,6 +10,16 @@ that change the API. Newest first.
 For what is live right now, see [Feature status](/status). For the endpoint list,
 see the [API overview](/api-overview).
 
+## 0.18.1 — 20 October 2026
+
+- **No silent deletes.** When a paid plan stops, the account owner now gets a
+  warning e-mail before any video is deleted. It says how many videos will go,
+  the date, and how to keep them. Videos are deleted only 30 days after the
+  plan stopped, and at least 7 days after the warning e-mail.
+- **Webhooks.** `video.removed` is now also sent when you delete a video
+  (`data.reason` is `deleted_by_customer`) and when a video is removed after a
+  plan stops (`plan_ended`). See [Webhooks](/webhooks).
+
 ## 0.14.0 — 17 October 2026
 
 - Internal error-reporting work, so our team finds and fixes a fault sooner. No
