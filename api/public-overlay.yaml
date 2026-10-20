@@ -115,3 +115,20 @@ actions:
   # Webhook secret rotation, the delivery log and the send-test-event call are
   # live in production as of v0.15.0 (YAH-1099), so they render in the published
   # reference. Do not re-add a `remove` overlay for these three routes.
+  # The video list and project list `total` fields are built, but the live API
+  # does not return them yet. The published reference must not promise a field
+  # the live API does not send, so it stays optional and is marked Coming soon
+  # until the release that ships it. The two OpenAPI copies stay in step with
+  # the code and the SDK; only the public projection changes here.
+  - target: $.components.schemas.VideoList.required[?(@ == 'total')]
+    remove: true
+  - target: $.components.schemas.VideoList.properties.total.description
+    update: |
+      Coming soon. Count of all matching videos, not just this page.
+      Not returned yet, so do not rely on it today.
+  - target: $.components.schemas.ProjectList.required[?(@ == 'total')]
+    remove: true
+  - target: $.components.schemas.ProjectList.properties.total.description
+    update: |
+      Coming soon. Count of all matching projects, not just this page.
+      Not returned yet, so do not rely on it today.
