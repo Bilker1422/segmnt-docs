@@ -566,6 +566,13 @@ paths:
         keeps working on non-upload routes; upload routes are gated separately by
         the upload check and answer `403 account_banned`. Safe to call twice: an
         identical active ban is returned, not duplicated.
+
+        An account ban covers more than the account itself: the account's
+        verified e-mail addresses, its SSO identities and the devices it linked
+        are banned with it, so the same person cannot come back through another
+        account. Those are child rows of the ban, not bans of their own: they
+        carry the same reason and the same approval reference, they never show
+        up in the ban list and they are lifted together with the ban.
       security:
         - adminAccess: []
       requestBody:
@@ -611,7 +618,14 @@ paths:
       x-internal: true
       operationId: liftBan
       summary: Lift a ban
-      description: Clears the ban; when it was the account's last active ban, `banned_at` is cleared too.
+      description: |
+        Clears the ban; when it was the account's last active ban, `banned_at` is
+        cleared too. Lifting a ban also lifts the rows that belong to it, so the
+        e-mail addresses, SSO identities and devices it covered are free again.
+
+        Only a ban can be lifted. The child rows are not bans of their own and
+        are never shown in the ban list, so a lift with such an id answers
+        `404 not_found` and changes nothing.
       security:
         - adminAccess: []
       parameters:
