@@ -77,10 +77,8 @@ part URLs expire (part URLs work for 4 hours).
 
 Treat the part URLs like secrets. Do not log them.
 
-In this version phone verification is **not required** to upload: a new free
-account is **not** blocked with `403 phone_verification_required`. That code
-returns only when the phone gate is switched on. A blocked account always gets
-`403 account_banned`, and the ban check always applies. See
+We do **not** ask for a phone number or an SMS code to upload. A blocked account
+always gets `403 account_banned`, and the ban check always applies. See
 [Phone verification](/phone-verification).
 
 ## Step 2: PUT the parts
@@ -118,8 +116,7 @@ the current video.
 The video goes `processing` then `ready` (or `failed`). Poll
 `GET /v1/projects/{projectId}/videos/{videoId}` until the status changes, or
 subscribe to the [`video.ready` webhook](/webhooks). The webhook is **live**: register your
-own HTTPS endpoint and we send the event when a video becomes ready. No customer
-endpoint has received one yet, so test with your own receiver. See
+own HTTPS endpoint and we send the event when a video becomes ready. See
 [Feature status](/status).
 
 In rare cases our team can hold a video for review (status `held`). It does not
@@ -149,13 +146,15 @@ Errors use `application/problem+json`. Use the `code` field in your code, not th
 | any | 401 | `unauthorized` | Missing, wrong or revoked key | Check the key. |
 | any | 405 | `method_not_allowed` | Wrong method for the URL | Check the URL and the HTTP method. |
 | create | 403 | `plan_limit_reached` | File is larger than your plan allows, or you are over your stored-hours or new-upload limit | Use a smaller file, delete a video, or change plan. |
-| create | 403 | `phone_verification_required` | Not returned in this version. When the phone gate is on: a new free account has not verified a phone number yet | Verify a phone number first ([Phone verification](/phone-verification)). |
 | create | 403 | `account_banned` | The account is blocked | Contact us if you think this is a mistake. |
 | any | 404 | `not_found` | Wrong project or upload ID, or the key is for another project | Check the IDs. |
 | complete | 400 | `invalid_request` | `parts` list is not valid | Fix the request. |
 | complete | 400 | `invalid_parts` | Part numbers or ETags do not match what was uploaded | Check that every part was uploaded and the ETags are right. |
 | complete | 409 | `upload_closed` | Upload was cancelled or expired | Start a new upload. |
 | cancel | 409 | `upload_closed` | Upload is already complete | Nothing to cancel. |
+| browser create/complete | 403 | `origin_mismatch` | The upload token is for another domain | Send the request from the verified domain the token names. |
+| browser create/complete | 403 | `content_type_not_allowed` | The upload token does not allow this file type | Upload the content type the token allows. |
+| browser create/complete | 409 | `token_used` | The upload token was already used, or it expired | Ask your server for a new token. |
 | create | 429 | (code not set in the spec yet) | Too many requests | Wait `Retry-After` seconds, then retry. |
 
 Errors on the part `PUT` come from storage, not from our API. See the next section.
@@ -336,28 +335,64 @@ PHP `memory_limit` of at least 512 MB, or stream the part.
 
 ## Browser
 
-Two things happen in a browser, and they do **not** work the same way today.
+A browser can upload **on your own domain** with a **browser upload token**. The
+token is short-lived, single-use and capped in size. Your server creates it; the
+browser never sees your API key.
 
-**The part upload works from your own domain.** In your page you can `PUT` each
-`file.slice(start, end)` to its pre-signed part URL and read
-`res.headers.get("ETag")`. Our storage allows the `PUT` from any origin and
-exposes the `ETag` header, so the browser can read it. Do not send the API key to
-the part URL.
+The flow:
 
-**The `create` and `complete` calls do not work from your own domain today.**
-Those are API calls (`/v1/...`), and the API allows our **dashboard's origin
-only**. From any other origin the browser is stopped before the call is sent: the
-preflight check comes back with no permission, so the browser blocks the request.
-Keep the API key on your **server** and make these two calls there. The key must
-stay secret in any case: it can create playback tokens.
+1. Your **server** calls `POST /v1/projects/{projectId}/upload-tokens` with your
+   `full` API key. The body names the verified `domain`, a `maxSizeBytes` and the
+   `contentType`.
+2. Your **server** sends the returned `token` to the browser.
+3. The **browser** calls `create` and `complete` with
+   `Authorization: Bearer <token>` from that domain. It also `PUT`s each part to
+   its pre-signed URL and reads the `ETag`.
+4. The `PUT` work still goes straight to storage: the file never passes through
+   the API.
 
-So the browser flow today is:
+The token allows exactly one `create` and its matching `complete`, and nothing
+else: it cannot list, delete or play. A second `create` gets
+`409 token_used`. The part `PUT` needs no auth header, and our storage allows
+the `PUT` from any origin and exposes the `ETag` header.
 
-1. Your **server** calls `create` and gives the browser the `parts` list.
-2. The **browser** `PUT`s each part to its pre-signed URL and reads the `ETag`.
-3. The browser sends the ETags back to your **server**.
-4. Your **server** calls `complete`.
+Rules:
 
-The part URLs are the only upload step that leaves your server, and they are for
-upload only. Playback is separate: see
-[Create playback tokens on your server](/playback-tokens).
+| Item | Value |
+| --- | --- |
+| Token life | 1 hour by default (`expiresInSeconds`, 300 to 7200 — 5 minutes to 2 hours) |
+| `maxSizeBytes` | Defaults to your plan maximum. Capped at the plan maximum; larger gets `403 plan_limit_reached`. |
+| `contentType` | The one file type the token allows: `video/mp4`, `video/quicktime`, `video/webm` or `video/x-matroska`. Omit it to allow any of the four. A different type gets `403 content_type_not_allowed`. |
+| `domain` | A **verified** host of the project. A request from another `Origin` gets `403 origin_mismatch`. |
+| Uses | One `create` and its `complete`. |
+
+Create the token on your server:
+
+```bash
+curl -X POST "$BASE/v1/projects/$PROJECT_ID/upload-tokens" \
+  -H "Authorization: Bearer $SEGMNT_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"domain":"courses.example.com","maxSizeBytes":524288000,"contentType":"video/mp4","title":"Lesson 1"}'
+```
+
+Answer (`201`):
+
+```json
+{
+  "token": "utk_...",
+  "expiresAt": "2026-10-19T13:00:00.000Z",
+  "projectId": "prj_...",
+  "domain": "courses.example.com",
+  "maxSizeBytes": 524288000,
+  "contentTypes": ["video/mp4"]
+}
+```
+
+The browser then calls `create` and `complete` with the token instead of a key.
+Bans, plan limits and the review hold (where it is on) still apply.
+
+> If you cannot mint an upload token on your server, the older path still works:
+> your **server** calls `create` and `complete`, and the browser only `PUT`s the
+> parts. The browser cannot call `create` or `complete` with an **API key** from
+> your own domain; only the token path above, or our dashboard origin, is
+> allowed.

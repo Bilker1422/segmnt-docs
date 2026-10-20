@@ -124,8 +124,8 @@ separate rule for a bulk import**: every video in the import is one upload, so t
 rule above applies to each one. A bulk import does not raise the number of videos
 held, and it does not skip the hold.
 
-Phone verification is available but not required in this version, so it does not
-hold or block the first upload. See [Phone verification](/phone-verification).
+Phone verification is **Not planned**, so it does not hold or block the first
+upload. A verified domain is the gate. See [Phone verification](/phone-verification).
 
 A **team hold**, or a video the **automatic check** flags, is different: it can
 affect any plan and starts with our team. See section 3.

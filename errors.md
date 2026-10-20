@@ -40,10 +40,6 @@ Every `/v1/**` and `/auth/**` request is limited by client IP.
 you get `429` with code `rate_limited` and a `Retry-After` header, in seconds.
 Wait that many seconds, then retry.
 
-The phone routes have their own limits: 5 wrong codes close one challenge
-(`too_many_attempts`), and a phone number accepts 5 codes per hour
-(`phone_rate_limited`).
-
 ## All codes
 
 ### 400 — the request is wrong
@@ -51,9 +47,6 @@ The phone routes have their own limits: 5 wrong codes close one challenge
 | `code` | Cause |
 | --- | --- |
 | `invalid_request` | A missing or wrong field, a bad cursor, a bad date range, or a body that is not JSON. |
-| `invalid_phone` | A phone number that is not a Saudi or GCC mobile number. |
-| `invalid_country` | `country` is not `sa`, `ae`, `kw`, `qa`, `bh` or `om`. |
-| `invalid_code` | The phone code is wrong. |
 | `invalid_parts` | The upload `parts` list does not match what was uploaded. |
 | `invalid_state` | The sign-in flow expired or was changed. Start sign-in again. |
 | `auth_denied` | The user cancelled sign-in at the provider. |
@@ -74,9 +67,8 @@ This is the most useful code to handle. Read `code` to know which 403 you have.
 | `plan_limit_reached` | API | You are over a plan limit: stored hours, new uploads, watched minutes, projects, domains, file size, or a quality above your plan's maximum. | Delete something, wait for the period to end, or change plan. |
 | `domain_not_verified` | API | You asked for a playback token for a domain that is not verified on the project. | Verify the domain first. |
 | `insufficient_scope` | API | A playback-only API key called a route it may not use. | Use a full API key, from your server. |
-| `banned` | API | The account, phone number or device is under an active ban. | Contact us if you think this is a mistake. |
+| `banned` | API | The account or device is under an active ban. | Contact us if you think this is a mistake. |
 | `account_banned` | API | The account is blocked. | Contact us if you think this is a mistake. |
-| `phone_verification_required` | API | Not returned in this version. When the phone step is on, a new free account has not verified a phone number. | See [Phone verification](/phone-verification). |
 | `token_missing` | CDN | No `token` query parameter on a protected video. | Send a token. |
 | `token_invalid` | CDN | The token is fake, or it is for another video. | Send a token made for this video. |
 | `token_expired` | CDN | The token is past its `expiresAt`. | Ask your server for a new token. |
@@ -98,7 +90,6 @@ read the cause without parsing the body. See
 | `code` | Cause |
 | --- | --- |
 | `not_found` | A wrong id, an id in another account, or a video that was deleted. A route that is not deployed also answers `404`. |
-| `challenge_not_found` | A phone challenge that is unknown, already used, or belongs to another account. |
 
 ### 409 — the resource is in the wrong state
 
@@ -111,12 +102,6 @@ A `409` means the request is valid, but the resource is not ready for it.
 | `video_not_ready` | Playback token | The video is not `ready`, or it is held. | Wait for `video.ready`. Do not retry in a loop. |
 | `upload_closed` | Upload complete / cancel | The upload was cancelled, expired, or already completed. | Start a new upload. |
 
-### 410 — gone
-
-| `code` | Cause |
-| --- | --- |
-| `code_expired` | The phone code passed its 10 minutes. Start a new code. |
-
 ### 422 — the request conflicts with an earlier one
 
 | `code` | Cause |
@@ -128,8 +113,6 @@ A `409` means the request is valid, but the resource is not ready for it.
 | `code` | Cause |
 | --- | --- |
 | `rate_limited` | Over the per-minute limit. Wait `Retry-After` seconds. |
-| `too_many_attempts` | 5 wrong phone codes on one challenge. Start a new code. |
-| `phone_rate_limited` | More than 5 phone codes in an hour for one number. |
 
 ### 500, 502, 503 — our side
 
@@ -137,10 +120,9 @@ A `409` means the request is valid, but the resource is not ready for it.
 | --- | --- | --- | --- |
 | 500 | `internal_error` | We could not complete the request. | Try again. |
 | 502 | `provider_error` | The sign-in provider rejected the request. | Try again. |
-| 502 | `sms_send_failed` | The SMS provider could not send the code. Nothing was stored. | Try again in a moment. |
 | 502 | `billing_provider_error` | The payment provider did not answer. | Try again. A webhook is retried by the provider. |
 | 503 | `not_configured` | The feature is off in this environment. | Nothing to fix on your side. |
-| 503 | `sms_not_configured` | Phone verification has no provider yet. | Nothing to fix on your side. |
+| 503 | `sms_not_configured` | The old phone endpoints have no SMS service behind them. Phone verification is not planned. | Nothing to build. See [Phone verification](/phone-verification). |
 | 503 | `billing_paused` | Paid plans are not on sale yet. | Join the paid-plan whitelist. Nothing was charged. |
 | 503 | `billing_unavailable` | Online payment is not configured. | Ask us for a manual invoice. |
 

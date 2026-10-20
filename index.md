@@ -48,8 +48,8 @@ a course platform or any product that needs video. These guides are in
 ## Account & billing
 
 - [Accounts, projects, API keys and domains](/accounts-and-projects).
-- [Phone verification](/phone-verification) — available, not required in this
-  version.
+- [Phone verification](/phone-verification) — **Not planned**. We do not ask for
+  a phone number or an SMS code; a verified domain is the gate.
 - [Usage and plan limits](/usage-and-limits).
 - [Plans and payment](/billing).
 

@@ -97,18 +97,13 @@ and never returns any hidden account field:
     "name": "...",
     "planId": "free",
     "planStatus": "active",
-    "createdAt": "...",
-    "phoneVerified": false,
-    "phoneVerificationRequired": false
+    "createdAt": "..."
   }
 }
 ```
 
-`phoneVerified` is `true` once a phone number is verified.
-`phoneVerificationRequired` is always `false` in this version (phone verification
-is available but not required), and becomes `true` only when the phone gate is
-on: a new free account that has not verified yet. See
-[Phone verification](/phone-verification).
+We do **not** ask for a phone number or an SMS code, at sign-up or at upload.
+See [Phone verification](/phone-verification).
 
 A visitor who is not signed in gets `401 unauthorized`.
 
@@ -122,8 +117,12 @@ Answer `204`. Safe to call twice.
 
 ## 3. Projects
 
-Use one project per client, site or course. An account can have many projects,
-so an agency can keep each client separate.
+Use one project per client, site or course. How many projects an account can
+have depends on its plan: **Free** and **Starter** allow **1**, **Pro** and the
+30-day **Pilot** allow **3**, and **Agency** allows **25**. An agency can keep
+each client separate across projects. Creating a project past your plan's cap
+answers `403 plan_limit_reached`; remove one or upgrade first. See
+[Plans and payment](/billing) for the full ladder.
 
 In the dashboard you can create, rename and delete a project. **Delete works
 only for an empty project.** Delete the videos first, or you get
@@ -138,6 +137,10 @@ REST endpoints (all use the session cookie):
 | `GET` | `/v1/projects/{projectId}` | one project |
 | `PATCH` | `/v1/projects/{projectId}` | `{"name": "New name"}` → `200`. Also `ipBinding` (`true`/`false`) to bind new playback tokens to the viewer's network (Coming soon). |
 | `DELETE` | `/v1/projects/{projectId}` | empty project → `204`; not empty → `409 project_not_empty` |
+
+Plan limit: the project cap depends on your plan (see the start of this
+section). Creating one past the cap answers `403 plan_limit_reached`; remove
+one or upgrade first.
 
 A list page looks like this. Pass `nextCursor` back as `cursor` to get the next
 page:
@@ -265,8 +268,10 @@ Endpoints (all use the session cookie):
 
 Plan limit: a **free** account can verify **1** domain. More gives
 `403 plan_limit_reached`; remove the old one or upgrade first. If the host is
-already used, you get `409 hostname_taken`. Removing a domain refuses new tokens
-for it. Tokens already issued keep working until they expire.
+already **verified** by someone else, you get `409 hostname_taken`. A host that
+is only **pending** (added but not yet verified) does not block you: you can add
+the same host and verify it yourself. Removing a domain refuses new tokens for
+it. Tokens already issued keep working until they expire.
 
 > The domain routes are live.
 

@@ -8,7 +8,7 @@ The segmnt API is a REST API. Every request and answer is JSON.
 
 **Base URL:** `https://api.segmnt.cloud`
 
-This reference covers **39 public endpoints across 30 paths**. Every public
+This reference covers **42 public endpoints across 33 paths**. Every public
 endpoint has an entry in the sidebar, with its request and response shapes.
 
 ## Authentication
@@ -18,7 +18,7 @@ There are two ways to authenticate.
 | Method | Header or cookie | Use it for |
 | --- | --- | --- |
 | **API key** | `Authorization: Bearer sk_...` | Server-to-server calls for one project: uploads, videos, playback tokens, webhooks, usage. |
-| **Session** | `segmnt_session` cookie | Account and dashboard calls: projects, API keys, domains, billing, phone. It comes from SSO sign-in. |
+| **Session** | `segmnt_session` cookie | Account and dashboard calls: projects, API keys, domains, billing. It comes from SSO sign-in. |
 
 Rules:
 
@@ -40,7 +40,7 @@ Full detail: [Accounts, projects, API keys and domains](/accounts-and-projects).
 ## Conventions
 
 - **IDs** are strings with a type prefix: `acc_`, `usr_`, `prj_`, `vid_`,
-  `upl_`, `key_`, `dom_`, `whe_`, `evt_`.
+  `upl_`, `utk_`, `key_`, `dom_`, `whe_`, `evt_`, `rep_`.
 - **Times** are RFC 3339 in UTC.
 - **Pagination** is by cursor. Pass the `nextCursor` from an answer back as
   `cursor` to get the next page.
@@ -74,8 +74,6 @@ Over a limit you get `429` with `Retry-After`. See [Errors](/errors).
 | `GET` | `/auth/{provider}/callback` |
 | `POST` | `/auth/logout` |
 | `GET` | `/v1/me` |
-| `POST` | `/v1/me/phone/start` |
-| `POST` | `/v1/me/phone/verify` |
 
 ### Projects, keys and domains
 
@@ -93,17 +91,20 @@ Over a limit you get `429` with `Retry-After`. See [Errors](/errors).
 
 | Method | Path |
 | --- | --- |
+| `POST` | `/v1/projects/{projectId}/upload-tokens` |
 | `POST` | `/v1/projects/{projectId}/uploads` |
 | `DELETE` | `/v1/projects/{projectId}/uploads/{uploadId}` |
 | `POST` | `/v1/projects/{projectId}/uploads/{uploadId}/complete` |
 | `GET` | `/v1/projects/{projectId}/videos` |
 | `GET` `PATCH` `DELETE` | `/v1/projects/{projectId}/videos/{videoId}` |
+| `GET` | `/v1/demo/playback` |
 | `POST` | `/v1/projects/{projectId}/videos/{videoId}/playback-tokens` |
 | `POST` | `/v1/projects/{projectId}/videos/{videoId}/preview-token` |
 | `POST` | `/v1/projects/{projectId}/videos/{videoId}/reports` |
 
 To upload a video, see [Direct upload](/direct-upload). To rename it or **delete**
-it, see [Manage videos](/manage-videos).
+it, see [Manage videos](/manage-videos). To let a browser upload on your own
+domain, see the browser upload token in [Direct upload](/direct-upload#browser).
 
 ### Webhooks, usage and billing
 
@@ -114,6 +115,9 @@ For the events we send, the payload, and how to check `Segmnt-Signature`, see
 | --- | --- |
 | `GET` `POST` | `/v1/projects/{projectId}/webhook-endpoints` |
 | `DELETE` | `/v1/projects/{projectId}/webhook-endpoints/{endpointId}` |
+| `POST` | `/v1/projects/{projectId}/webhook-endpoints/{endpointId}/rotate-secret` |
+| `GET` | `/v1/projects/{projectId}/webhook-endpoints/{endpointId}/deliveries` |
+| `POST` | `/v1/projects/{projectId}/webhook-endpoints/{endpointId}/test` |
 | `GET` | `/v1/projects/{projectId}/usage` |
 | `GET` | `/v1/billing/plan` |
 | `GET` | `/v1/billing/plans` |

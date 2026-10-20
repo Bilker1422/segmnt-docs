@@ -69,7 +69,10 @@ actions:
       Returns the signed-in user and its account. A visitor who is not
       signed in (no session, expired session, signed out) gets
       `401 unauthorized`.
-  - target: $.tags[10]
+  # Remove the Admin tag by name. This used to be `$.tags[10]`, but two tags
+  # (Upload tokens, Demo) were inserted before Admin since, so the index hid
+  # Usage instead. Match by name so a future tag insert cannot drift again.
+  - target: $.tags[?(@.name == 'Admin')]
     remove: true
   # Per-video public access mode is not released yet: no release tag contains
   # it, and the current production release has no accessMode. Hide it from the
@@ -112,6 +115,30 @@ actions:
   - target: $.components.schemas.ProjectUpdateInput.description
     update: |
       Rename a project and/or update its white-label branding. At least one field is required.
+  # Phone verification is Not planned (board, 19 Oct 2026; public wording in
+  # PRs #550 and #551). The two phone routes are still in the API, but there is
+  # no SMS service behind them: in production they answer 503
+  # sms_not_configured. The published reference must not teach a feature we
+  # are not building, so the routes and their schemas stay out until the CTO
+  # marks them Available in the claims register (YAH-876).
+  - target: $.paths['/v1/me/phone/start']
+    remove: true
+  - target: $.paths['/v1/me/phone/verify']
+    remove: true
+  - target: $.components.schemas.PhoneStartInput
+    remove: true
+  - target: $.components.schemas.PhoneChallenge
+    remove: true
+  - target: $.components.schemas.PhoneVerifyInput
+    remove: true
+  - target: $.components.schemas.PhoneVerified
+    remove: true
+  # The two phone fields on the GET /v1/me answer are part of the same
+  # not-planned feature.
+  - target: $.components.schemas.Me.properties.account.properties.phoneVerified
+    remove: true
+  - target: $.components.schemas.Me.properties.account.properties.phoneVerificationRequired
+    remove: true
   # Webhook secret rotation, the delivery log and the send-test-event call are
   # live in production as of v0.15.0 (YAH-1099), so they render in the published
   # reference. Do not re-add a `remove` overlay for these three routes.
