@@ -84,7 +84,7 @@ This is the most useful code to handle. Read `code` to know which 403 you have.
 | `origin_missing` | CDN | The request has no `Origin` and no `Referer` header. | Play from a browser page, not a bare request. |
 | `domain_mismatch` | CDN | The request's origin is not the token's domain. | Play from your verified domain. |
 | `video_unavailable` | CDN | The video is held or deleted. | Stop playback. Wait for `video.ready`. |
-| `plan_limit_reached` | CDN | The account is over its watched-minutes limit, or the request is for a quality above the plan. | Change plan, or play a lower quality. |
+| `plan_limit_reached` | CDN | The account is over its watched-minutes limit, the request is for a quality above the plan, or the request comes from your own site on a plan that plays in our player (Free and Starter). | Change plan, play a lower quality, or use the embed code. |
 
 The CDN also sends the same value in the `X-Segmnt-Error` header, so a player can
 read the cause without parsing the body. See

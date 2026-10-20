@@ -52,6 +52,9 @@ Answer (`201`):
 }
 ```
 
+**Free and Starter play through our embed (our player, with our logo). Pro and
+Agency can use their own player.**
+
 On a plan with **white-label** (Pro and Agency), the answer also has
 `playlistUrl` for your own hls.js player:
 

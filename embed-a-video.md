@@ -24,6 +24,9 @@ looks like `vid_9xR4tL`.
 
 ## The embed code
 
+Free and Starter play through our embed (our player, with our logo). Pro and
+Agency can use their own player.
+
 Copy this block into your page's HTML. Replace two things:
 
 - `vid_9xR4tL` with your video id.
