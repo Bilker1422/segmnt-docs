@@ -32,6 +32,7 @@ A page with no label is **Available**.
 | Send a test event | Available | Send one signed `webhook.test` event to your endpoint and see the result in the delivery log. See [Webhooks](/webhooks#send-a-test-event). |
 | Browser upload token | Available | Your server mints a short-lived token. The browser uses it to upload one file without your API key. |
 | Hold and removal notice | Available | When we hold or remove a video we e-mail the account owner with the reason, and a removal also sends the `video.removed` webhook. A legal matter is not notified. See [Reports and video review](/reports-and-review). |
+| Usage-threshold warning e-mails (80% / 100%) | Available | On paid plans we e-mail the account owner when watched minutes reach 80% and 100% of the plan limit. Free and Pilot plans get no e-mail. English only today. |
 
 ## What is coming soon
 
