@@ -110,6 +110,8 @@ is available but not required), and becomes `true` only when the phone gate is
 on: a new free account that has not verified yet. See
 [Phone verification](/phone-verification).
 
+A visitor who is not signed in gets `401 unauthorized`.
+
 Sign out:
 
 ```bash

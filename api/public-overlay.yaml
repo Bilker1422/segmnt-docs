@@ -46,6 +46,29 @@ actions:
     remove: true
   - target: $.paths['/v1/admin/moderation/scan']
     remove: true
+  # The device link route is TEST only (YAH-1389): the dashboard links the
+  # device after sign-in. It carries `x-excluded` in the spec; the path and its
+  # schemas are removed here as well, so the published reference does not
+  # describe a route that is not in production yet. The route and the two
+  # schemas come back when the device link is released and the CTO marks it
+  # Available in the claims register (YAH-876).
+  - target: $.paths['/v1/me/device']
+    remove: true
+  - target: $.components.schemas.DeviceLinkInput
+    remove: true
+  - target: $.components.schemas.DeviceLink
+    remove: true
+  # The blocked-account answer of GET /v1/me is TEST only (YAH-1389) and it is
+  # not in the release-status list, so it stays out of the published reference
+  # until the CTO marks it Available. The 401 answer for a visitor who is not
+  # signed in is true in production and stays.
+  - target: $.paths['/v1/me'].get.responses['403']
+    remove: true
+  - target: $.paths['/v1/me'].get.description
+    update: |
+      Returns the signed-in user and its account. A visitor who is not
+      signed in (no session, expired session, signed out) gets
+      `401 unauthorized`.
   - target: $.tags[10]
     remove: true
   # Per-video public access mode is not released yet: no release tag contains

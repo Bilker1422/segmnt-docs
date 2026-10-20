@@ -335,6 +335,14 @@ paths:
       tags: [Auth]
       operationId: getMe
       summary: The signed-in user and its account
+      description: |
+        Returns the signed-in user and its account. A visitor who is not
+        signed in (no session, expired session, signed out) gets
+        `401 unauthorized`.
+
+        A session that belongs to a blocked account gets `403 banned` instead,
+        so the dashboard can tell the customer why they are signed out. The
+        answer carries no account details.
       security:
         - session: []
       responses:
@@ -346,6 +354,68 @@ paths:
                 $ref: '#/components/schemas/Me'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: The session belongs to a blocked account (`code` is `banned`).
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+
+  /v1/me/device:
+    post:
+      tags: [Auth]
+      x-excluded: true
+      x-internal: true
+      operationId: linkDevice
+      summary: Link this browser's device fingerprint to the signed-in account
+      description: |
+        Called once by the dashboard after sign-in (YAH-1389). The fingerprint is
+        stored only as a salted hash. Linking the same device twice is a no-op.
+        If the hash matches an active ban, the account is blocked at once: its
+        sessions stop and its videos stop playing. The request is refused from
+        another origin (the CSRF guard) and can only link a device to the
+        signed-in account.
+
+        At most 20 devices per account. An account that already has 20 linked
+        devices gets `429 device_limit_reached` for a new device; a repeat of an
+        already-linked device still answers `200`.
+      security:
+        - session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeviceLinkInput'
+      responses:
+        '200':
+          description: The device is linked (or was already linked).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceLink'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: The device is under an active ban (`code` is `banned`), or the request failed the CSRF guard.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '429':
+          description: The account already has the maximum number of linked devices (`code` is `device_limit_reached`), or the caller is rate limited.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '503':
+          description: Device linking is not configured (`code` is `not_configured`).
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
 
   /v1/me/phone/start:
     post:
@@ -2806,6 +2876,34 @@ components:
             Present only when the `test` provider is configured, so an
             automated end-to-end test can finish the flow without a real SMS.
             Never present in production.
+
+    DeviceLinkInput:
+      type: object
+      required: [fp]
+      properties:
+        fp:
+          type: string
+          minLength: 1
+          maxLength: 256
+          description: A stable identifier for the browser/device, stored only as a salted hash. The raw value is never kept.
+          examples: [b1f0c7d2-3a4e-4f56-9a0b-1c2d3e4f5a6b]
+
+    DeviceLink:
+      type: object
+      required: [linked, firstSeenAt, deviceCount]
+      properties:
+        linked:
+          type: boolean
+          description: Always true on a `200`; the same device linked twice keeps its original `firstSeenAt`.
+          examples: [true]
+        firstSeenAt:
+          type: string
+          format: date-time
+          description: When this device was first linked to the account.
+        deviceCount:
+          type: integer
+          description: How many devices the account has linked now (at most 20).
+          examples: [2]
 
     PhoneVerifyInput:
       type: object
