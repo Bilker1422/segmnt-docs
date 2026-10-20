@@ -87,8 +87,9 @@ Not today. Sign-up uses Google or GitHub only. See
 
 ### Is phone verification required to upload?
 
-No. Phone verification at sign-up is **Coming soon**, and it does not block an
-upload. See [Phone verification](/phone-verification).
+No. Phone verification at sign-up is **Not planned**, so it does not block an
+upload. A verified domain is the gate. See
+[Phone verification](/phone-verification).
 
 ### Will my first videos be held for review?
 
