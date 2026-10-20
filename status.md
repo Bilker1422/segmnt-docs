@@ -4,7 +4,7 @@ description: The public status labels used across segmnt docs and the website, a
 icon: "list-checks"
 ---
 
-We use three labels on every page and on the website. They mean the same thing
+We use four labels on every page and on the website. They mean the same thing
 everywhere.
 
 | Label | What it means |
@@ -12,6 +12,7 @@ everywhere.
 | **Available** | The feature works today. Follow the guide as written. |
 | **Beta** | The feature works, but it may change, and we have not finished checking it everywhere. Some plans cannot use it yet. |
 | **Coming soon** | The feature is not available yet. We describe the plan, not a working feature. |
+| **Not planned** | We are not going to build this. Do not wait for it. |
 
 A page with no label is **Available**.
 
@@ -39,7 +40,6 @@ A page with no label is **Available**.
 | 1440p and 4K renditions | Coming soon | The higher ladder is built, but no customer can reach it in production today. |
 | 4K playback through the CDN | Coming soon | 4K is not reachable while paid plans are not on sale. |
 | Viewer network binding (IP binding) | Coming soon | An opt-in project setting that binds a playback token to the viewer's network (IPv4 `/24`, IPv6 `/64`). Built; we have not offered it publicly yet. Not DRM: viewers on the same network can still share a link. See [How playback protection works](/playback-protection#part-3-viewer-network-binding-optional). |
-| Phone verification at sign-up | Coming soon | The API is available, but the sign-up step is not on. See [Phone verification](/phone-verification). |
 | Automatic video review (frame check) | Coming soon | There is no automatic frame check on a live account yet. |
 | Free-plan review hold | Coming soon | A new free video is not held for review today. |
 | Paid plans, checkout and overage | Coming soon | Plans and prices are listed; checkout is paused. See [Plans and payment](/billing). |
@@ -48,6 +48,12 @@ A page with no label is **Available**.
 
 > The website uses this same legend. If a page and this table disagree, this
 > table is right — tell us and we will fix the page.
+
+## What is not planned
+
+| Feature | Status | Notes |
+| --- | --- | --- |
+| Phone verification at sign-up | Not planned | We are not adding a phone step at sign-up. A verified domain is the gate. The phone endpoints stay in the API for now; see [Phone verification](/phone-verification). |
 
 ## How we keep this honest
 
