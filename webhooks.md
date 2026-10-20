@@ -296,6 +296,9 @@ does not have the right signing secret.
    with no extra spaces or quotes.
 3. Check that it is the secret of **this endpoint**. Each endpoint has its own
    secret, and a rotated secret replaces the old one at once.
+4. Check that your server reads the **raw body** before anything parses it. If
+   a JSON parser runs first, the signature never matches, even with the right
+   secret. See [Verify the signature](#verify-the-signature).
 
 Where to find the secret:
 
