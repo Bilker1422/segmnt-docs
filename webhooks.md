@@ -149,11 +149,22 @@ To check a delivery:
 4. Compare your result with `v1` in constant time. A simple `==` is not safe.
 
 The Node.js example below does all four steps. It reads the raw body first and
-does not call `JSON.parse` until after the signature is valid.
+does not call `JSON.parse` until after the signature is valid. It also reads the
+signing secret **once, when the server starts**, and stops the server if the
+secret is missing. Without the secret, every delivery fails, so it is better to
+stop at start than to fail every delivery in silence.
 
 ```js
 import express from "express";
 import { createHmac, timingSafeEqual } from "node:crypto";
+
+// Read the signing secret once, when the server starts. If it is missing, stop
+// now: without it, every delivery fails.
+const SEGMNT_WEBHOOK_SECRET = process.env.SEGMNT_WEBHOOK_SECRET;
+if (!SEGMNT_WEBHOOK_SECRET) {
+  console.error("SEGMNT_WEBHOOK_SECRET is not set. Set it to your endpoint signing secret (whsec_...).");
+  process.exit(1);
+}
 
 const app = express();
 
@@ -177,7 +188,7 @@ function verifySegmntSignature(secret, signatureHeader, rawBody, toleranceSecond
 // express.raw keeps the body as a Buffer, so the bytes we verify are the bytes we got.
 app.post("/hooks/segmnt", express.raw({ type: "application/json" }), (req, res) => {
   const ok = verifySegmntSignature(
-    process.env.SEGMNT_WEBHOOK_SECRET,
+    SEGMNT_WEBHOOK_SECRET,
     req.get("segmnt-signature"),
     req.body,
   );
@@ -269,6 +280,34 @@ The dashboard covers most of these calls:
 
 Rotating the signing secret is **API only** today: there is no rotate button in
 the dashboard yet.
+
+## Troubleshooting
+
+### Every delivery fails
+
+If every delivery in the delivery log is `failed` (or keeps retrying), and the
+last HTTP status from your endpoint is `401` or `500`, your server most likely
+does not have the right signing secret.
+
+1. Check that `SEGMNT_WEBHOOK_SECRET` (or the name you use) is set **in this
+   environment** - staging and production each need their own value. A secret
+   set on your laptop is not set on your server.
+2. Check that the value is the **whole** secret, including the `whsec_` prefix,
+   with no extra spaces or quotes.
+3. Check that it is the secret of **this endpoint**. Each endpoint has its own
+   secret, and a rotated secret replaces the old one at once.
+
+Where to find the secret:
+
+- In the dashboard, **Project settings → Webhooks** shows the `whsec_...` value
+  **once**, when you add the endpoint.
+- In the API, it is the `signingSecret` field in the answer to
+  [add an endpoint](#create-and-manage-endpoints) or to
+  [`rotate-secret`](#rotate-the-signing-secret).
+
+We cannot show a secret again. If you no longer have it, call `rotate-secret`
+to get a new one, put it on your server, and restart the server. Then use
+**Send test event** to check that the delivery shows as `delivered`.
 
 ## Test your endpoint today
 

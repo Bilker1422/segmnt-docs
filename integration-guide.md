@@ -110,7 +110,10 @@ To connect one:
 
 1. Create an endpoint with a public `https://` address. We refuse `localhost`
    and private network addresses.
-2. Copy the signing secret. We show it **once**. Store it like an API key.
+2. Copy the signing secret. We show it **once**. Store it like an API key, and
+   set it in **every** environment that receives webhooks. Read it when your
+   server starts, and stop the server if it is missing: without it, every
+   delivery fails. See [Every delivery fails](/webhooks#every-delivery-fails).
 3. On each delivery, check the `Segmnt-Signature` header against the raw body
    before you read the JSON. The full steps and a working Node.js example are in
    [Webhooks](/webhooks#verify-the-signature).
