@@ -20,7 +20,7 @@ This page shows the events we send, the payload, how to check the
 | `video.ready` | All qualities are ready and the video can play. |
 | `video.failed` | The video failed, in encoding or in the complete call. `data.video.failure` says why. |
 | `video.held` | Our team held the video and it does not play. When the hold ends, we send `video.ready` again. `data.reason` says why, when we have one. For a legal matter we do not send this event. |
-| `video.removed` | The video was removed. It is deleted and playback stops. `data.reason` says why, when we have one, for example `deleted_by_customer` or `plan_ended`. For a legal matter we do not send this event. |
+| `video.removed` | The video is deleted and playback stops. We send it when our team removes the video, when you delete it (`data.reason` is `deleted_by_customer`), and when it is deleted because a paid plan stopped (`plan_ended`). For a legal matter we do not send this event. |
 
 Subscribe only to the events you handle. We send an event only to the endpoints
 that subscribed to it.
@@ -323,4 +323,3 @@ above. To test `video.failed`, upload a file that is not a video (for example a
   list, and under **Webhooks** in the API reference.
 - [Direct upload](/direct-upload) — upload a video, then wait for the event.
 - [Feature status](/status) — which features are Available, Beta or Coming soon.
-

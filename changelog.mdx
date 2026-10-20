@@ -10,15 +10,81 @@ that change the API. Newest first.
 For what is live right now, see [Feature status](/status). For the endpoint list,
 see the [API overview](/api-overview).
 
+## 0.18.3 — 20 October 2026
+
+- Internal fix to how we record watched time. No customer-visible change.
+
+## 0.18.2 — 20 October 2026
+
+- Internal work on accounts whose paid plan stopped. No customer-visible change.
+  Billing is paused, so this does not affect anyone today.
+
 ## 0.18.1 — 20 October 2026
 
 - **No silent deletes.** When a paid plan stops, the account owner now gets a
   warning e-mail before any video is deleted. It says how many videos will go,
   the date, and how to keep them. Videos are deleted only 30 days after the
   plan stopped, and at least 7 days after the warning e-mail.
-- **Webhooks.** `video.removed` is now also sent when you delete a video
-  (`data.reason` is `deleted_by_customer`) and when a video is removed after a
-  plan stops (`plan_ended`). See [Webhooks](/webhooks).
+- **Webhooks.** When you delete a video, we now send `video.removed` with
+  `data.reason` set to `deleted_by_customer`. When stored videos are deleted
+  because a paid plan stopped, `data.reason` is `plan_ended`. See
+  [Webhooks](/webhooks).
+
+## 0.18.0 — 18 October 2026
+
+- **Browser upload token.** Your server can create a short-lived token that lets
+  a browser upload one file without your API key. The token works for one upload
+  only. See the [Integration guide](/integration-guide).
+
+## 0.17.5 — 18 October 2026
+
+- **Dashboard.** The sign-in and sign-up pages have a language selector.
+
+## 0.17.4 — 18 October 2026
+
+- Internal reliability work in the playback check. No customer-visible change.
+
+## 0.17.3 — 18 October 2026
+
+- Security fixes from an internal review. No customer-visible change.
+
+## 0.17.2 — 18 October 2026
+
+- **API:** the video list now returns the true total number of videos in the
+  `total` field.
+- **Dashboard.** Video counts use this total, so they are always correct.
+
+## 0.17.1 — 18 October 2026
+
+- Internal fix to how we record watched time. No customer-visible change.
+
+## 0.17.0 — 18 October 2026
+
+- **Player.** A volume slider sits beside the mute button.
+- **Usage.** Watched minutes are counted more reliably.
+
+## 0.16.2 — 17 October 2026
+
+- **Playback.** A playback token that was not signed with one of our keys is
+  refused with `403`.
+- Internal monitoring work, so our team finds a fault sooner.
+
+## 0.16.1 — 17 October 2026
+
+- Internal error-reporting work, so our team finds and fixes a fault sooner. No
+  customer-visible change.
+
+## 0.16.0 — 17 October 2026
+
+- **Encoding.** More videos encode at the same time, so a burst of uploads no
+  longer waits for a free slot. Encoding speed and quality are unchanged.
+- **Usage.** Watched minutes are no longer lost when a report fails. We send the
+  report again and count each minute once.
+
+## 0.15.0 — 17 October 2026
+
+- **Dashboard.** A new Webhooks screen. Add, list and remove endpoints, read the
+  delivery log and send a test event. See [Webhooks](/webhooks).
 
 ## 0.14.0 — 17 October 2026
 
