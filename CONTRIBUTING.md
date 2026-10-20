@@ -12,12 +12,17 @@ hand; a sync overwrites it.
 You need Node.js 24. From `mintlify-docs/`:
 
 ```bash
-npx mintlify@latest dev --no-open    # preview at http://localhost:3000
-npx mintlify@latest validate         # strict build check; must exit 0
-npx mintlify@latest broken-links     # checks internal links
+npx mintlify@4.2.1072 dev --no-open    # preview at http://localhost:3000
+npx mintlify@4.2.1072 validate         # strict build check; must exit 0
+npx mintlify@4.2.1072 broken-links     # checks internal links
 ```
 
 `validate` and `broken-links` must pass before you open a pull request.
+
+Use the version above, not `@latest`. CI runs this exact version, so a
+different version can pass on your machine and fail in the build. The version
+is bumped by hand in every file that names it, and the CI guard fails the
+build if the files disagree.
 
 ## The four page types (Diátaxis)
 
@@ -112,7 +117,7 @@ documentation copy byte-identical to `api/openapi.yaml`; CI checks this with
 1. Open an issue for the change. Say the page, the gap and the reader's job.
 2. Branch from `main`. One branch, one page group.
 3. Edit `mintlify-docs/` only.
-4. Run `npx mintlify@latest validate` and `npx mintlify@latest broken-links`.
+4. Run `npx mintlify@4.2.1072 validate` and `npx mintlify@4.2.1072 broken-links`.
    Both must pass.
 5. Open a pull request. Put in the description:
    - the preview link,

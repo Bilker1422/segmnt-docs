@@ -44,10 +44,15 @@ feature, not the pitch.
 You need Node.js 24. From this folder:
 
 ```bash
-npx mintlify@latest dev --no-open   # http://localhost:3000
-npx mintlify@latest validate        # strict build check (exits on warnings/errors)
-npx mintlify@latest broken-links    # checks internal links
+npx mintlify@4.2.1072 dev --no-open    # http://localhost:3000
+npx mintlify@4.2.1072 validate         # strict build check (exits on warnings/errors)
+npx mintlify@4.2.1072 broken-links     # checks internal links
 ```
+
+Use the version above, not `@latest`. CI runs this exact version, so a
+different version can pass on your machine and fail in the build. The version
+is bumped by hand in every file that names it, and the CI guard fails the
+build if the files disagree.
 
 `dev`, `validate` and `broken-links` work offline and do not need a Mintlify
 login. The agent tools only exist on the hosted site, so they return 404 from
