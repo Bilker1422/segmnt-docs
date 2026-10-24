@@ -1171,6 +1171,8 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
 
   /v1/projects/{projectId}/videos:
     parameters:
@@ -2787,6 +2789,12 @@ components:
         Retry-After:
           schema:
             type: integer
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    ServiceUnavailable:
+      description: 'Temporary storage failure (`code` is `storage_unavailable`). The request did not finish and is safe to retry unchanged.'
       content:
         application/problem+json:
           schema:
