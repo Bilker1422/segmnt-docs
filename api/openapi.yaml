@@ -198,17 +198,32 @@ paths:
       security: []
       responses:
         '200':
-          description: The enabled providers.
+          description: The enabled providers, and the state of the bot gate.
           content:
             application/json:
               schema:
                 type: object
-                required: [data]
+                required: [data, turnstile]
                 properties:
                   data:
                     type: array
                     items:
                       $ref: '#/components/schemas/AuthProvider'
+                  turnstile:
+                    type: object
+                    required: [enabled, siteKey]
+                    description: |
+                      The state of the sign-in / sign-up bot gate. The gate is off
+                      by default. When `enabled` is true the dashboard draws the
+                      widget and sends its answer as `cf_turnstile_response` to
+                      `GET /auth/{provider}/start`. The secret is never returned.
+                    properties:
+                      enabled:
+                        type: boolean
+                        description: True only when the gate is on.
+                      siteKey:
+                        type: [string, 'null']
+                        description: Public widget site key, or null when the gate is off.
 
   /auth/{provider}/start:
     parameters:
@@ -235,6 +250,15 @@ paths:
           schema:
             type: string
             maxLength: 2048
+        - name: cf_turnstile_response
+          in: query
+          required: false
+          description: |
+            The Turnstile widget answer. Only needed when the bot gate is on
+            (`turnstile.enabled` in `GET /auth/providers`); it is ignored while
+            the gate is off. The gate is off by default.
+          schema:
+            type: string
       responses:
         '302':
           description: Redirect to the provider. `Location` is its authorize URL.
@@ -242,6 +266,16 @@ paths:
             Location:
               schema:
                 type: string
+        '403':
+          description: |
+            The bot check failed (`code` is `bot_challenge_failed`). The gate is
+            off by default; when it is on the check fails closed, so a missing,
+            bad or expired answer, a siteverify error, or a check slower than
+            5 seconds refuses the start with no redirect.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
         '404':
           $ref: '#/components/responses/NotFound'
         '503':
