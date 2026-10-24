@@ -24,7 +24,9 @@ seconds; watched time is in minutes and is rounded down.
 ## 1. Usage of one project
 
 `GET /v1/projects/{projectId}/usage` returns the stored seconds of the project
-and the minutes watched in a date range.
+and the minutes watched in a date range. It also returns your plan, its limits,
+and what is left of them for the whole account this month. A project API key is
+enough for all of this — no dashboard session.
 
 | Query | Required | Default | Notes |
 | --- | --- | --- | --- |
@@ -42,12 +44,46 @@ curl "$BASE/v1/projects/$PROJECT_ID/usage?from=2026-10-01&to=2026-10-14" \
   "from": "2026-10-01",
   "to": "2026-10-14",
   "storedSeconds": 5400,
-  "watchedMinutes": 842
+  "watchedMinutes": 842,
+  "planId": "free",
+  "planStatus": "active",
+  "currentPeriod": {
+    "start": "2026-10-01T00:00:00.000Z",
+    "end": "2026-11-01T00:00:00.000Z"
+  },
+  "limits": {
+    "storedSeconds": 7200,
+    "uploadSecondsPerPeriod": 7200,
+    "watchedMinutesPerPeriod": 2000,
+    "verifiedDomains": 1,
+    "projects": 1,
+    "maxQuality": 720,
+    "whiteLabel": false
+  },
+  "accountUsage": { "storedSeconds": 5400, "watchedMinutes": 842 },
+  "remaining": { "storedSeconds": 1800, "watchedMinutes": 1158 }
 }
 ```
 
 Notes:
 
+- `planId` is the plan of the account the project belongs to (`free`,
+  `starter`, `pro` or `agency`). `planStatus` is one of `active`, `pilot`,
+  `past_due`, `canceled` — the same values as `GET /v1/billing/plan`. While a
+  pilot is inside its 30-day window, the `limits` in the answer are the pilot
+  limits, not the plan's own limits.
+- `currentPeriod` is the current UTC month. The `start` is inclusive and the
+  `end` is exclusive. The monthly counters reset when a new period starts.
+- `limits` are the limits of the account's plan. In `limits`, `null` means **no
+  limit**.
+- `accountUsage` is the usage of the **whole account** (every project
+  together): stored seconds now, and watched minutes in the current period.
+- `remaining` is what is left of each limit: the limit minus the account usage.
+  It counts the **whole account** for the **current month**, no matter which
+  `from`/`to` range you asked for. It is never below `0`, and it is `null` when
+  that limit does not exist.
+- All of this works with a project API key. You do not need the dashboard
+  session that `GET /v1/billing/plan` needs (section 2).
 - `storedSeconds` is the total length of the project's videos **now**, not only
   in the period. It counts videos that are encoding, ready or held for review,
   and it uses [quality weighting](#4-quality-weighting). Deleting a video lowers
@@ -57,7 +93,8 @@ Notes:
   gets `404 not_found`, the same as an unknown project.
 - `from` after `to`, or a bad date, gets `400 invalid_request`.
 
-Account totals (every project together) are in the next call.
+The next call returns the same account totals with the plan name and the
+quality and logo entitlements. It needs a dashboard session.
 
 ## 2. Your plan, limits and usage
 
@@ -102,9 +139,12 @@ Notes:
   our logo.
 - `usage` is for the whole account: stored seconds now, watched minutes in the
   current period, and verified domains.
-- This call needs the session cookie. An API key cannot read it.
+- This call needs the session cookie. An API key cannot read it. To read your
+  plan, limits and what is left of them with an API key, use
+  `GET /v1/projects/{projectId}/usage` (section 1).
 - The new-upload and project limits are enforced, but they are not in this
-  answer yet. They are in the [limits](#3-limits) table below.
+  answer. The project usage call (section 1) returns them in its `limits`
+  field, and the [limits](#3-limits) table below lists them.
 
 ## 3. Limits
 
@@ -205,6 +245,11 @@ Checked on 14 Oct 2026:
 - `GET /v1/billing/plan` with no session → `401 unauthorized`.
 - `GET /v1/projects/{projectId}/usage` with no credential → `401 unauthorized`.
 - `POST` on both routes → `405 method_not_allowed`.
+
+The plan, limits and `remaining` fields on `GET /v1/projects/{projectId}/usage`
+were added in v0.19.0 (23 Oct 2026). Our API unit tests cover them, including
+that `remaining` is `null` when a limit does not exist and `0` when the account
+is at or past a limit.
 
 The full path (a project key and a session, the weighted stored total, watched
 minutes, the plan limits and the `403 plan_limit_reached` cases on upload,
