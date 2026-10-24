@@ -200,11 +200,42 @@ Notes:
 - If the page is public and long-lived, a short token is safer. Ask for a new
   token per page load, and do not cache the HTML that holds it.
 
+## segmnt in an LMS: Tutor LMS and LearnDash
+
+Course plugins keep lesson text in the WordPress editor, so both paths above
+work inside a lesson. The short version: put `[segmnt id="vid_9xR4tL"]` (plugin
+path) in the lesson body. The video plays on the same verified domain as the
+rest of the site, and the token rules do not change.
+
+**Tutor LMS.** Open the lesson (or the topic) in the course builder and add a
+**Shortcode** block in the lesson body with `[segmnt id="vid_9xR4tL"]`. Tutor
+renders lesson content through the normal WordPress content filters, so the
+shortcode builds the iframe with a fresh token, exactly as on a normal page.
+
+**LearnDash.** Lessons and topics use the standard WordPress editor, so a
+**Shortcode** block with `[segmnt id="vid_9xR4tL"]` works in the lesson body.
+If you build lessons with a page builder (for example Elementor with the
+LearnDash module), use its Shortcode or HTML widget with the same shortcode.
+
+If a lesson shows the shortcode as plain text, the builder rendered the content
+without WordPress's shortcode filters. Use the **Custom HTML** block with the
+iframe code instead, and keep the token fresh with the manual-path shortcode
+from [Option B](#option-b-a-fresh-token-on-every-page-load-recommended) above.
+
+Two rules carry over unchanged:
+
+- **Domain.** The lesson plays on the site's host, so that host must be the
+  verified domain. A staging or preview host is refused until you verify it.
+- **Cache.** An LMS that caches lesson HTML has the same 4-hour token rule as
+  a cached page: keep the cache lifetime under about 4 hours, or leave lesson
+  pages uncached.
+
 ## Common problems
 
 | Problem | Cause | Fix |
 | --- | --- | --- |
 | The block shows code, not a video | The editor escaped the HTML, or the block is a Code block, not a Custom HTML block | Use the **Custom HTML** block, or the shortcode block. |
+| The lesson shows `[segmnt ...]` as text | The LMS builder skipped the shortcode filters | Use the Custom HTML block with the iframe, or the `[segmnt_embed]` shortcode from Option B. |
 | The video does not play (plugin) | The site domain is not a verified domain, the key is not a playback key, or the video is not ready | Check **Settings → segmnt video**, verify the domain, and make sure the video is ready and not held for review. |
 | The video plays, then stops after a while (plugin) | The page cache is holding the page longer than the token lives | Keep the page-cache lifetime under about 4 hours, or leave `[segmnt]` pages uncached. |
 | "This video needs a playback token" | `YOUR_PLAYBACK_TOKEN` was left in the code | Replace it with a real token, or use Option B. |

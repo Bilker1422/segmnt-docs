@@ -127,7 +127,10 @@ how, with cURL, Node.js and PHP examples.
 Paste the block where the video should appear.
 
 - **WordPress:** install the **segmnt video** plugin (easy path), or use a
-  **Custom HTML** block. See [Add segmnt to WordPress](/wordpress).
+  **Custom HTML** block. See [Add segmnt to WordPress](/wordpress). For Tutor
+  LMS and LearnDash lessons, see the LMS section of that guide.
+- **Moodle:** see [Add segmnt to Moodle](/moodle).
+- **A React app:** see [Use segmnt in a React app](/react).
 - **Another site or page builder:** paste it into an HTML block, or build it on
   your server and send the finished HTML.
 

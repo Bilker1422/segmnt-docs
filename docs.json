@@ -41,7 +41,9 @@
               "embed-a-video",
               "playback-tokens",
               "webhooks",
-              "wordpress"
+              "wordpress",
+              "moodle",
+              "react"
             ]
           },
           {
