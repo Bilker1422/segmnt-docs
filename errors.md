@@ -98,7 +98,7 @@ A `409` means the request is valid, but the resource is not ready for it.
 | `code` | Where | Cause | What to do |
 | --- | --- | --- | --- |
 | `project_not_empty` | Delete project | The project still has videos. | Delete the videos first. |
-| `hostname_taken` | Add domain | The host is already added. | Use another host, or claim it with its owner. |
+| `hostname_taken` | Add domain | A **verified** domain already uses this host. | Use another host. |
 | `video_not_ready` | Playback token | The video is not `ready`, or it is held. | Wait for `video.ready`. Do not retry in a loop. |
 | `upload_closed` | Upload complete / cancel | The upload was cancelled, expired, or already completed. | Start a new upload. |
 

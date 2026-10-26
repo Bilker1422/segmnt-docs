@@ -78,6 +78,10 @@ Playback is locked to a domain, so add the host that will show the videos.
 3. Copy the TXT record we show you, and add it at your DNS provider.
 4. Click **Verify**. The status becomes **Verified** when the record is found.
 
+Only a **verified** domain stops someone else from adding the same hostname. A
+claim you do not verify is removed after **14 days**, and the hostname becomes
+available again.
+
 A free account can verify **1** domain. The full detail is in
 [Accounts, projects, API keys and domains](/accounts-and-projects).
 

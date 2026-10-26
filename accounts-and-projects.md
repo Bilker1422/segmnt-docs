@@ -270,8 +270,9 @@ Plan limit: a **free** account can verify **1** domain. More gives
 `403 plan_limit_reached`; remove the old one or upgrade first. If the host is
 already **verified** by someone else, you get `409 hostname_taken`. A host that
 is only **pending** (added but not yet verified) does not block you: you can add
-the same host and verify it yourself. Removing a domain refuses new tokens for
-it. Tokens already issued keep working until they expire.
+the same host and verify it yourself. A claim you do not verify is removed after
+**14 days**, and the hostname becomes available again. Removing a domain refuses
+new tokens for it. Tokens already issued keep working until they expire.
 
 > The domain routes are live.
 
@@ -311,7 +312,7 @@ the text. The `type` field links to `https://docs.segmnt.cloud/errors/{code}`.
 | 404 | `not_found` | Wrong id, or it is in another account | Check the id. |
 | 404 | `not_found` | Unknown or disabled sign-in provider | Use a provider from `/auth/providers`. |
 | 409 | `project_not_empty` | You tried to delete a project that has videos | Delete the videos first. |
-| 409 | `hostname_taken` | The host is already added | Use another host, or claim it with its owner. |
+| 409 | `hostname_taken` | A **verified** domain already uses this host | Use another host. |
 | 500 | `internal_error` | We could not create your session | Try again. |
 | 502 | `provider_error` | The sign-in provider returned an error | Try again. |
 | 503 | `not_configured` | Sign-in is off in this environment | Nothing to fix on your side. |

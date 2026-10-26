@@ -73,6 +73,9 @@ with a **TXT record**. After that its status is `verified`.
   [Usage and plan limits](/usage-and-limits).
 - Remove a domain and we stop issuing tokens for it. Tokens already issued keep
   working until they expire.
+- Only a **verified** domain stops someone else from adding the same hostname.
+  A claim you do not verify is removed after **14 days**, and the hostname
+  becomes available again.
 
 Setup details are in
 [Accounts, projects, API keys and domains](/accounts-and-projects).
