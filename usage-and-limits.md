@@ -25,8 +25,9 @@ seconds; watched time is in minutes and is rounded down.
 
 `GET /v1/projects/{projectId}/usage` returns the stored seconds of the project
 and the minutes watched in a date range. It also returns your plan, its limits,
-and what is left of them for the whole account this month. A project API key is
-enough for all of this — no dashboard session.
+and what is left of them for the whole account: your stored time as it is now,
+and this month's watched minutes. A project API key is enough for all of this —
+no dashboard session.
 
 | Query | Required | Default | Notes |
 | --- | --- | --- | --- |
@@ -81,9 +82,9 @@ Notes:
 - `accountUsage` is the usage of the **whole account** (every project
   together): stored seconds now, and watched minutes in the current period.
 - `remaining` is what is left of each limit: the limit minus the account usage.
-  It counts the **whole account** for the **current month**, no matter which
-  `from`/`to` range you asked for. It is never below `0`, and it is `null` when
-  that limit does not exist.
+  It counts the **whole account**: stored time as it is now, and watched minutes
+  for the **current month**, no matter which `from`/`to` range you asked for. It
+  is never below `0`, and it is `null` when that limit does not exist.
 - All of this works with a project API key. You do not need the dashboard
   session that `GET /v1/billing/plan` needs (section 2).
 - `storedSeconds` is the total length of the project's videos **now**, not only
