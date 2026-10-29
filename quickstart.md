@@ -40,6 +40,10 @@ Playback is locked to a domain, so add the host that will show the video.
 3. Copy the TXT record we show you, and add it at your DNS provider.
 4. Click **Verify**. The status becomes **Verified** when the record is found.
 
+Copy the record name and value instead of retyping them: the name starts with
+`_`, and in a right-to-left interface (Arabic) the underscore can appear at the
+wrong end of the line.
+
 Full detail: [Accounts, projects, API keys and domains](/accounts-and-projects).
 
 ## Step 4: Create an API key

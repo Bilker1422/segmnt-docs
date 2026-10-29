@@ -71,6 +71,17 @@ Not yet. The per-video public mode is **Coming soon**, so every video needs a
 playback token today. See
 [Playback tokens → Public videos need no token](/playback-tokens#public-videos-need-no-token).
 
+## Sign-in and sessions
+
+### Why did my session end?
+
+A session ends after 7 days without use, and always 30 days after sign-in.
+After that, or after you sign out, the dashboard tells you **Your session
+ended. Please sign in again.** and API calls with the old cookie answer
+`401 unauthorized`. Nothing is lost: sign in again with Google or GitHub and
+keep working. See
+[Accounts, projects, API keys and domains → Your session](/accounts-and-projects#2-your-session).
+
 ## Free plan
 
 ### What are the free-plan limits?

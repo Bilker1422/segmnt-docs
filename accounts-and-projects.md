@@ -68,12 +68,18 @@ After sign-in we send a `segmnt_session` cookie:
 
 | Property | Value |
 | --- | --- |
-| Lifetime | 30 days |
+| Lifetime | 30 days (maximum) |
+| Idle timeout | 7 days without use |
 | Flags | `HttpOnly`, `Secure`, `SameSite=Lax`, `Path=/` |
 
 Sessions are **server-side, not JWTs**. The cookie holds a random id, and we
 store only the SHA-256 hash of that id. Signing out deletes the session row. If
 you lose the cookie, sign in again.
+
+A session ends after **7 days without use**, and always **30 days** after
+sign-in. When it ends, the dashboard tells you
+**Your session ended. Please sign in again.** Sign in again and keep working:
+your projects, videos, API keys and domains are unchanged.
 
 Every `/v1/projects...` call needs this session cookie. Without a valid session
 you get `401 unauthorized`:
@@ -256,6 +262,10 @@ Steps:
 2. Create that TXT record at your DNS provider.
 3. Call verify. When the record is found, `status` becomes `verified`. If it is
    not found yet, it stays `pending` and you can try again later.
+
+> Copy the record **name** and **value** from the dashboard instead of retyping
+> them. The name starts with `_`, and in a right-to-left interface (Arabic) the
+> underscore can render at the wrong end of the line.
 
 Endpoints (all use the session cookie):
 

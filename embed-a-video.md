@@ -45,7 +45,7 @@ Copy this block into your page's HTML. Replace two things:
 ```
 
 The dashboard also builds this code for you. In the **guided setup** (the
-first-run wizard, the step "Test your video and copy the embed code"), click
+first-run wizard, the step "Play your video, then copy the embed code"), click
 **Copy code**. It leaves `YOUR_PLAYBACK_TOKEN` in the code **on purpose**, so a
 real token never leaks into what you copy.
 
