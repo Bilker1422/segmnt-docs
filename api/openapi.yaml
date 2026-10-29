@@ -224,6 +224,102 @@ paths:
                       siteKey:
                         type: [string, 'null']
                         description: Public widget site key, or null when the gate is off.
+                  password:
+                    type: boolean
+                    description: True when e-mail + password sign-up and sign-in are on.
+
+  /auth/password/signup:
+    post:
+      tags: [Auth]
+      x-excluded: true
+      x-internal: true
+      operationId: passwordSignup
+      summary: Sign up with e-mail and password
+      description: |
+        Creates an account with an e-mail and a password, and signs the user
+        in. Only on when the environment's `PASSWORD_AUTH` flag is on
+        (`password: true` in `GET /auth/providers`); otherwise 404.
+
+        The e-mail is not verified yet, so it never links to an existing
+        Google or GitHub account with the same e-mail.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                  maxLength: 254
+                  description: Compared in lower case.
+                password:
+                  type: string
+                  description: 10 to 256 characters.
+                displayName:
+                  type: string
+                  maxLength: 100
+                turnstileToken:
+                  type: string
+                  description: The bot-gate answer. Required only when `turnstile.enabled` is true.
+      responses:
+        '204':
+          description: Signed in. `Set-Cookie` carries the `segmnt_session` cookie.
+        '400':
+          description: Invalid e-mail (`invalid_email`) or a password that is too short, too long or equal to the e-mail (`weak_password`).
+        '403':
+          description: Cross-site request, or the bot check failed (`bot_challenge_failed`).
+        '404':
+          description: Password sign-in is off in this environment.
+        '409':
+          description: An account with this e-mail already exists (`email_taken`).
+        '415':
+          description: The body is not JSON.
+
+  /auth/password/signin:
+    post:
+      tags: [Auth]
+      x-excluded: true
+      x-internal: true
+      operationId: passwordSignin
+      summary: Sign in with e-mail and password
+      description: |
+        Signs in with an e-mail and a password. A wrong password and an
+        unknown e-mail get the same answer. Only on when `PASSWORD_AUTH` is on.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                  maxLength: 254
+                  description: Compared in lower case.
+                password:
+                  type: string
+                  description: 10 to 256 characters.
+                turnstileToken:
+                  type: string
+                  description: The bot-gate answer. Required only when `turnstile.enabled` is true.
+      responses:
+        '204':
+          description: Signed in. `Set-Cookie` carries the `segmnt_session` cookie.
+        '401':
+          description: The e-mail or password is not correct (`invalid_credentials`).
+        '403':
+          description: Cross-site request, or the bot check failed (`bot_challenge_failed`).
+        '404':
+          description: Password sign-in is off in this environment.
+        '415':
+          description: The body is not JSON.
 
   /auth/{provider}/start:
     parameters:
