@@ -236,9 +236,14 @@ paths:
       operationId: passwordSignup
       summary: Sign up with e-mail and password
       description: |
-        Creates an account with an e-mail and a password, and signs the user
-        in. Only on when the environment's `PASSWORD_AUTH` flag is on
+        Creates an account with an e-mail and a password, and mails a
+        "confirm your e-mail" link. It does NOT sign the user in: the account
+        stays inactive until the link is used (`POST /auth/password/verify`).
+        Only on when the environment's `PASSWORD_AUTH` flag is on
         (`password: true` in `GET /auth/providers`); otherwise 404.
+
+        A good Turnstile answer is always required. An environment without
+        Turnstile keys refuses every sign-up.
 
         The e-mail is not verified yet, so it never links to an existing
         Google or GitHub account with the same e-mail.
@@ -264,10 +269,16 @@ paths:
                   maxLength: 100
                 turnstileToken:
                   type: string
-                  description: The bot-gate answer. Required only when `turnstile.enabled` is true.
+                  description: The bot-gate answer. Always required.
+                language:
+                  $ref: '#/components/schemas/AuthMailLanguage'
       responses:
-        '204':
-          description: Signed in. `Set-Cookie` carries the `segmnt_session` cookie.
+        '202':
+          description: Account created and the verify link mailed. No session.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthMailAccepted'
         '400':
           description: Invalid e-mail (`invalid_email`) or a password that is too short, too long or equal to the e-mail (`weak_password`).
         '403':
@@ -288,7 +299,9 @@ paths:
       summary: Sign in with e-mail and password
       description: |
         Signs in with an e-mail and a password. A wrong password and an
-        unknown e-mail get the same answer. Only on when `PASSWORD_AUTH` is on.
+        unknown e-mail get the same answer. An account whose e-mail is not
+        confirmed yet gets `403 email_not_verified` (only after the password
+        matched). Only on when `PASSWORD_AUTH` is on.
       security: []
       requestBody:
         required: true
@@ -315,7 +328,150 @@ paths:
         '401':
           description: The e-mail or password is not correct (`invalid_credentials`).
         '403':
+          description: Cross-site request, the bot check failed (`bot_challenge_failed`), or the e-mail is not confirmed yet (`email_not_verified`).
+        '404':
+          description: Password sign-in is off in this environment.
+        '415':
+          description: The body is not JSON.
+
+  /auth/password/verify:
+    post:
+      tags: [Auth]
+      x-excluded: true
+      x-internal: true
+      operationId: passwordVerifyEmail
+      summary: Confirm the e-mail with the mailed link
+      description: |
+        Uses the token from the "confirm your e-mail" link (the dashboard reads
+        it from `#/verify-email?token=...`). A token works once and expires
+        after 24 hours; only the newest link works. On success the account is
+        active and the user is signed in.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token:
+                  type: string
+      responses:
+        '204':
+          description: E-mail confirmed and signed in. `Set-Cookie` carries the `segmnt_session` cookie.
+        '400':
+          description: Unknown, used or expired link (`invalid_token`).
+        '403':
+          description: Cross-site request.
+        '404':
+          description: Password sign-in is off in this environment.
+        '415':
+          description: The body is not JSON.
+
+  /auth/password/resend-verification:
+    post:
+      tags: [Auth]
+      x-excluded: true
+      x-internal: true
+      operationId: passwordResendVerification
+      summary: Mail a new "confirm your e-mail" link
+      description: |
+        Mails a new verify link when the e-mail belongs to a password account
+        that is not confirmed yet. The answer is the same 202 in every case,
+        so it does not show which e-mails have accounts. At most one mail per
+        account per 60 seconds. A good Turnstile answer is always required.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthMailRequest'
+      responses:
+        '202':
+          description: Accepted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthMailAccepted'
+        '400':
+          description: Invalid e-mail (`invalid_email`).
+        '403':
           description: Cross-site request, or the bot check failed (`bot_challenge_failed`).
+        '404':
+          description: Password sign-in is off in this environment.
+        '415':
+          description: The body is not JSON.
+
+  /auth/password/forgot:
+    post:
+      tags: [Auth]
+      x-excluded: true
+      x-internal: true
+      operationId: passwordForgot
+      summary: Mail a password reset link
+      description: |
+        Mails a reset link when the e-mail belongs to a password account. The
+        answer is the same 202 in every case. At most one mail per account per
+        60 seconds. A good Turnstile answer is always required.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthMailRequest'
+      responses:
+        '202':
+          description: Accepted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthMailAccepted'
+        '400':
+          description: Invalid e-mail (`invalid_email`).
+        '403':
+          description: Cross-site request, or the bot check failed (`bot_challenge_failed`).
+        '404':
+          description: Password sign-in is off in this environment.
+        '415':
+          description: The body is not JSON.
+
+  /auth/password/reset:
+    post:
+      tags: [Auth]
+      x-excluded: true
+      x-internal: true
+      operationId: passwordReset
+      summary: Set a new password with the mailed link
+      description: |
+        Uses the token from the reset link (`#/reset-password?token=...`). A
+        token works once and expires after 30 minutes. A refused password does
+        not use up the link. On success every session of the user ends; the
+        user then signs in with the new password. The link also confirms the
+        e-mail.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, password]
+              properties:
+                token:
+                  type: string
+                password:
+                  type: string
+                  description: 10 to 256 characters, not equal to the e-mail.
+      responses:
+        '204':
+          description: Password changed. All sessions ended. No new session.
+        '400':
+          description: Unknown, used or expired link (`invalid_token`), or a refused password (`weak_password`).
+        '403':
+          description: Cross-site request.
         '404':
           description: Password sign-in is off in this environment.
         '415':
@@ -2913,6 +3069,31 @@ components:
         `GET` video for the current state).
 
   schemas:
+    AuthMailLanguage:
+      type: string
+      enum: [en, ar]
+      default: en
+      description: The language of the mailed link (Arabic is right to left).
+    AuthMailRequest:
+      type: object
+      required: [email, turnstileToken]
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        turnstileToken:
+          type: string
+          description: The bot-gate answer. Always required.
+        language:
+          $ref: '#/components/schemas/AuthMailLanguage'
+    AuthMailAccepted:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [accepted]
     Problem:
       type: object
       required: [type, title, status, code]
