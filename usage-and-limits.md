@@ -57,6 +57,8 @@ curl "$BASE/v1/projects/$PROJECT_ID/usage?from=2026-10-01&to=2026-10-14" \
     "watchedMinutesPerPeriod": 2000,
     "verifiedDomains": 1,
     "projects": 1,
+    "maxDurationSeconds": 3600,
+    "maxConcurrentEncodes": 1,
     "maxQuality": 720,
     "whiteLabel": false
   },
@@ -93,8 +95,8 @@ Notes:
   gets `404 not_found`, the same as an unknown project.
 - `from` after `to`, or a bad date, gets `400 invalid_request`.
 
-The next call returns the same account totals with the plan name and the
-quality and logo entitlements. It needs a dashboard session.
+The next call returns the same account totals with the plan name and all of
+the plan's limits. It needs a dashboard session.
 
 ## 2. Your plan, limits and usage
 
@@ -116,8 +118,12 @@ curl "$BASE/v1/billing/plan" \
   },
   "limits": {
     "storedSeconds": 7200,
+    "uploadSecondsPerPeriod": 7200,
     "watchedMinutesPerPeriod": 2000,
     "verifiedDomains": 1,
+    "projects": 1,
+    "maxDurationSeconds": 3600,
+    "maxConcurrentEncodes": 1,
     "maxQuality": 720,
     "whiteLabel": false
   },
@@ -141,10 +147,9 @@ Notes:
   current period, and verified domains.
 - This call needs the session cookie. An API key cannot read it. To read your
   plan, limits and what is left of them with an API key, use
-  `GET /v1/projects/{projectId}/usage` (section 1).
-- The new-upload and project limits are enforced, but they are not in this
-  answer. The project usage call (section 1) returns them in its `limits`
-  field, and the [limits](#3-limits) table below lists them.
+  `GET /v1/projects/{projectId}/usage` (section 1). It returns the same
+  `limits` plus `remaining`: what is left of your stored time and of this
+  month's watched minutes.
 
 ## 3. Limits
 
