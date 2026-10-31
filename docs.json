@@ -64,6 +64,19 @@
             "pages": ["moderation", "reports-and-review"]
           },
           {
+            "group": "How it works and why",
+            "pages": [
+              "how-it-works/index",
+              "how-it-works/video-quality",
+              "how-it-works/playback-links",
+              "how-it-works/keeping-and-deleting-videos",
+              "how-it-works/free-plan-limits",
+              "how-it-works/pilot",
+              "how-it-works/no-phone-check",
+              "how-it-works/no-drm"
+            ]
+          },
+          {
             "group": "Legal",
             "pages": ["legal"]
           }
