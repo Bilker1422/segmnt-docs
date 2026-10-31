@@ -37,7 +37,21 @@ Playback is locked to a domain, so add the host that will show the video.
 1. Open the project → **Domains** → **Add domain**.
 2. Enter the exact host, for example `courses.example.com`. A subdomain is its
    own domain: add `www.courses.example.com` separately if you use it.
-3. Copy the TXT record we show you, and add it at your DNS provider.
+3. Copy the DNS record we show you, and add it at your DNS provider. It looks
+   like this:
+
+   ```text
+   Type:  TXT
+   Name:  _segmnt-verify.courses.example.com
+   Value: segmnt-verify=b41c09e2f7a3d6c1
+   ```
+
+   Copy the name and the value — do not retype them. The name starts with an
+   underscore (`_`), and in Arabic text it can be shown at the wrong end of the
+   name. A copied record always verifies.
+
+   العربية: انسخ اسم السجل وقيمته ولا تُعِد كتابتهما؛ يبدأ الاسم بشرطة سفلية `_`.
+
 4. Click **Verify**. The status becomes **Verified** when the record is found.
 
 Copy the record name and value instead of retyping them: the name starts with

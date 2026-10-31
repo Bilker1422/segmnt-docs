@@ -66,6 +66,7 @@ This is the most useful code to handle. Read `code` to know which 403 you have.
 | --- | --- | --- | --- |
 | `plan_limit_reached` | API | You are over a plan limit: stored hours, new uploads, watched minutes, projects, domains, file size, or a quality above your plan's maximum. | Delete something, wait for the period to end, or change plan. |
 | `domain_not_verified` | API | You asked for a playback token for a domain that is not verified on the project. | Verify the domain first. |
+| `endpoint_limit_reached` | API | You already have 5 webhook endpoints. | Delete one before adding another. |
 | `insufficient_scope` | API | A playback-only API key called a route it may not use. | Use a full API key, from your server. |
 | `banned` | API | The account or device is under an active ban. | Contact us if you think this is a mistake. |
 | `account_banned` | API | The account is blocked. | Contact us if you think this is a mistake. |
