@@ -46,9 +46,9 @@ Full detail: [Accounts, projects, API keys and domains](/accounts-and-projects).
   `cursor` to get the next page.
 - **Errors** are `application/problem+json` with a stable `code`. See
   [Errors](/errors).
-- **`Idempotency-Key`** is scoped to the account and the route. The same key with
-  the same body returns the first result. The same key with a different body
-  gets `422`.
+- **`Idempotency-Key`** is scoped to the project. Only upload create and video
+  reports read it. The same key returns the first result. We do not compare the
+  body, so use a new key for a new request.
 - **Money** is an integer in the smallest currency unit (halalas for SAR;
   1 SAR = 100 halalas).
 - Bodies are `application/json`. Another content type gets `415`.

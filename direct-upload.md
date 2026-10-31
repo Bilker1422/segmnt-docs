@@ -71,7 +71,9 @@ Answer (`201`):
 ```
 
 `Idempotency-Key` is optional but we recommend it. If your request times out,
-send it again with the same key (within 24 hours) and you get the same upload.
+send it again with the same key and you get the same upload. The header works
+with a server API key. With an upload token (browser upload), the header is
+ignored. The single-use token protects you instead.
 The answer has fresh part URLs, so you can send the parts again after the old
 part URLs expire (part URLs work for 4 hours).
 

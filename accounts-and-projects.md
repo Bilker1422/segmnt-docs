@@ -313,12 +313,11 @@ the text. The `type` field links to `https://docs.segmnt.cloud/errors/{code}`.
 
 | Status | `code` | Meaning | What to do |
 | --- | --- | --- | --- |
-| 400 | `invalid_request` | Missing or wrong field, or a bad cursor | Fix the request. Do not retry. |
+| 400 | `invalid_request` | Missing or wrong field, a bad cursor, or a playback-token domain that is not verified on the project | Fix the request. Do not retry. For a domain, verify it first. |
 | 400 | `invalid_state` | The sign-in flow expired or was changed | Start sign-in again. |
 | 400 | `auth_denied` | You cancelled sign-in at the provider | Start sign-in again. |
 | 401 | `unauthorized` | Missing, wrong, expired or revoked session or key | Sign in again, or check the key. |
 | 403 | `plan_limit_reached` | Over your plan limit (for example 1 verified domain on free) | Remove something or upgrade. |
-| 403 | `domain_not_verified` | Playback was asked for on a domain you have not verified | Verify the domain first. |
 | 404 | `not_found` | Wrong id, or it is in another account | Check the id. |
 | 404 | `not_found` | Unknown or disabled sign-in provider | Use a provider from `/auth/providers`. |
 | 409 | `project_not_empty` | You tried to delete a project that has videos | Delete the videos first. |

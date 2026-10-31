@@ -79,9 +79,10 @@ video changes state, for example `video.ready`.
 **Rate limit** — a cap on requests per minute. Over it, the API answers `429`
 with a `Retry-After` header.
 
-**`Idempotency-Key`** — a header you add to repeat a create call safely. The same
-key with the same body returns the first result; the same key with a different
-body gets `422`.
+**`Idempotency-Key`** — a header you add to repeat a create call safely. The key
+is scoped to the project. The same key returns the first result. We do not
+compare the body, so use a new key for a new request. Only upload create and
+video reports read it.
 
 ## Plans
 
