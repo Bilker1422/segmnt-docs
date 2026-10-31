@@ -101,8 +101,10 @@ info:
     - Times are RFC 3339 in UTC.
     - Lists use cursor pagination: pass `nextCursor` back as `cursor`.
     - Errors use `application/problem+json` (RFC 9457) with a stable `code`.
-    - `Idempotency-Key` is scoped to the account and the route. The same key with
-      a different body gets `422`.
+    - `Idempotency-Key` is scoped to the project. A repeat request with the same
+      key returns the first result. The body is not compared, and there is no
+      `422`. Only upload create and video reports read the key. Upload create
+      reads it only with a server API key; with an upload token it is ignored.
     - Money is an integer in the smallest unit of the currency (halalas for SAR).
   license:
     name: Proprietary
@@ -2980,7 +2982,7 @@ components:
       name: Idempotency-Key
       in: header
       required: false
-      description: Any unique string. A retry with the same key within 24 hours returns the first result.
+      description: Any unique string. A retry with the same key returns the first result.
       schema:
         type: string
         maxLength: 255
@@ -3018,9 +3020,8 @@ components:
     Forbidden:
       description: |
         Not allowed. `code` says why: `insufficient_scope` (a playback-only API
-        key called a route it may not use), a plan limit
-        (`plan_limit_reached`), or a domain that is not verified
-        (`domain_not_verified`).
+        key called a route it may not use), or a plan limit
+        (`plan_limit_reached`).
       content:
         application/problem+json:
           schema:
