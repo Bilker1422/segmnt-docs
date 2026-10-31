@@ -21,10 +21,6 @@ see the [API overview](/api-overview).
 
 ## 0.18.1 — 20 October 2026
 
-- **No silent deletes.** When a paid plan stops, the account owner now gets a
-  warning e-mail before any video is deleted. It says how many videos will go,
-  the date, and how to keep them. Videos are deleted only 30 days after the
-  plan stopped, and at least 7 days after the warning e-mail.
 - **Webhooks.** When you delete a video, we now send `video.removed` with
   `data.reason` set to `deleted_by_customer`. When stored videos are deleted
   because a paid plan stopped, `data.reason` is `plan_ended`. See

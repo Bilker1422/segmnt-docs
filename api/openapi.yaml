@@ -2852,8 +2852,8 @@ webhooks:
         /v1/projects/{projectId}/videos/{videoId}` answers `404` and playback
         stops. `data.reason` says why, when we have one: for example
         `deleted_by_customer` (you deleted it) or `plan_ended` (it was removed
-        30 days after a paid plan stopped, after a warning e-mail to the account
-        owner). For a legal matter we do not send this event.
+        30 days after a paid plan stopped). For a legal matter we do not send
+        this event.
       parameters:
         - $ref: '#/components/parameters/WebhookSignature'
       requestBody:
@@ -3865,8 +3865,11 @@ components:
             reason:
               type: string
               description: |
-                Why we held or removed the video. Only on `video.held` and
-                `video.removed`, and only when we have a reason to give.
+                Why we removed or held the video. It is set only on `video.held`
+                and `video.removed`, and only when we have a reason to give.
+                On `video.removed` it is `deleted_by_customer` (the customer
+                deleted the video) or `plan_ended` (the video was removed 30
+                days after a paid plan stopped). A legal matter never sends it.
 
     WebhookDelivery:
       type: object

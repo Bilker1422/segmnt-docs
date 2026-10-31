@@ -123,7 +123,8 @@ Every event is one JSON object:
   `GET /v1/projects/{projectId}/videos/{videoId}`. Use `data.video.id` to find
   the video in your system.
 - `data.reason` — only on `video.held` and `video.removed`, and only when we
-  have a reason to give.
+  have a reason to give. On `video.removed` the value is `deleted_by_customer`
+  or `plan_ended`.
 
 ## Verify the signature
 
