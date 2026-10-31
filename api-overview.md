@@ -35,7 +35,8 @@ Rules:
   [Accounts, projects, API keys and domains](/accounts-and-projects).
 - Sign-in is SSO only: Google and GitHub. We never store a password.
 
-Full detail: [Accounts, projects, API keys and domains](/accounts-and-projects).
+Full detail: [Authentication](/authentication) and
+[Accounts, projects, API keys and domains](/accounts-and-projects).
 
 ## Conventions
 
@@ -51,7 +52,7 @@ Full detail: [Accounts, projects, API keys and domains](/accounts-and-projects).
   body, so use a new key for a new request.
 - **Money** is an integer in the smallest currency unit (halalas for SAR;
   1 SAR = 100 halalas).
-- Bodies are `application/json`. Another content type gets `415`.
+- Send bodies as `application/json`. A body that is not valid JSON gets `400`.
 
 ## Rate limits
 

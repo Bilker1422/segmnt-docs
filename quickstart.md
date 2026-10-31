@@ -1,138 +1,209 @@
 ---
-title: "Quickstart: play one protected video"
-description: In one sitting, sign up, upload a video, wait until it is ready, create a playback token, embed the video, and prove it is locked to your domain.
+title: "Quickstart: play your first signed video"
+description: Get an API key, upload a video, wait until it is ready, create a playback token on your server, and embed the player on a verified domain.
 icon: "play"
 ---
 
-This is a tutorial. Follow it from top to bottom and you will end with a
-protected video playing on your own domain, and proof that a copied link returns
-`403`. It takes about 10 minutes.
+This tutorial takes you from a new account to a video that plays on your own
+website. You upload one MP4 file, create a playback token on your server, and
+embed the player. The last step shows that a copied link fails on another site.
 
-You need one thing first: a website or test page whose domain you control, for
-example `courses.example.com`.
+You need:
 
-> Want the reference instead of a lesson? See [Set up your first project](/getting-started)
-> and [Direct upload](/direct-upload).
+- A Google or GitHub account, to sign in to the dashboard.
+- A domain or subdomain that you control, for example `courses.example.com`, and
+  access to its DNS settings.
+- A short MP4 file under 100 MiB.
+- A terminal with `curl` and `jq` installed.
 
-## Step 1: Sign in
+Each step has one block of commands or code, and the output you should see after
+it. Replace every value that starts with `YOUR_` or ends with `...`.
 
-1. Open https://app.segmnt.cloud.
-2. Pick **Google** or **GitHub**.
+## Step 1: Create a project and an API key
 
-We create your free account on this first sign-in. There is no password and no
-card.
+1. Open [app.segmnt.cloud](https://app.segmnt.cloud) and sign in with Google or
+   GitHub. Your free account is created on your first sign-in.
+2. Click **New project**. Enter a name, for example `Course site`.
+3. Open the project. Click **API keys**, then **Create key**. The dashboard
+   creates a `full` key, which can call every route of this project.
+4. Copy the key. It starts with `sk_`. We show it only once.
 
-## Step 2: Create a project
+Set the values in your terminal:
 
-A project is one site, one client or one product. A free account has one project.
+```bash
+export SEGMNT_BASE="https://api.segmnt.cloud"
+export SEGMNT_KEY="sk_..."     # your API key. Keep it on your server.
+export PROJECT_ID="prj_..."    # the project id, shown on the project page
+```
 
-In the dashboard, open **Projects** → **New project**, and give it a name.
+Check the key. Run this command:
 
-Keep the project id (`prj_...`); the next steps use it.
+```bash
+curl -sS "$SEGMNT_BASE/v1/projects/$PROJECT_ID/videos" \
+  -H "Authorization: Bearer $SEGMNT_KEY"
+```
 
-## Step 3: Verify your domain
+Expected output, for a new project:
 
-Playback is locked to a domain, so add the host that will show the video.
+```json
+{"data":[],"nextCursor":null,"total":0}
+```
 
-1. Open the project → **Domains** → **Add domain**.
-2. Enter the exact host, for example `courses.example.com`. A subdomain is its
-   own domain: add `www.courses.example.com` separately if you use it.
-3. Copy the DNS record we show you, and add it at your DNS provider. It looks
-   like this:
+If you get `401`, the key is wrong. Copy it again. See
+[Authentication](/authentication).
+
+## Step 2: Verify your domain
+
+Playback works only on domains that you verify. Add the host in the dashboard.
+A free account can verify one domain.
+
+1. Open the project. Click **Domains**, then **Add domain**.
+2. Enter the exact host, for example `courses.example.com`. A subdomain counts as
+   its own domain.
+3. Add the TXT record that the dashboard shows to your DNS provider. The name
+   starts with `_segmnt-verify.`:
 
    ```text
-   Type:  TXT
-   Name:  _segmnt-verify.courses.example.com
-   Value: segmnt-verify=b41c09e2f7a3d6c1
+   Type:   TXT
+   Name:   _segmnt-verify.courses.example.com
+   Value:  segmnt-verify=YOUR_TOKEN_FROM_THE_DASHBOARD
    ```
 
-   Copy the name and the value — do not retype them. The name starts with an
+   Copy the name and the value. Do not retype them. The name starts with an
    underscore (`_`), and in Arabic text it can be shown at the wrong end of the
    name. A copied record always verifies.
 
    العربية: انسخ اسم السجل وقيمته ولا تُعِد كتابتهما؛ يبدأ الاسم بشرطة سفلية `_`.
 
-4. Click **Verify**. The status becomes **Verified** when the record is found.
+4. Click **Verify**.
 
-Copy the record name and value instead of retyping them: the name starts with
-`_`, and in a right-to-left interface (Arabic) the underscore can appear at the
-wrong end of the line.
+DNS changes can take time to spread. If **Verify** fails, wait and click it
+again.
 
-Full detail: [Accounts, projects, API keys and domains](/accounts-and-projects).
+Expected output: the domain shows the status **Verified** in the dashboard.
 
-## Step 4: Create an API key
+## Step 3: Upload a video
 
-1. Open the project → **API keys** → **Create key**.
-2. Name it, and copy the secret (`sk_...`). We show it once.
+Run these commands in the folder that holds your MP4 file. Change `FILE` to your
+file name. A file under 100 MiB has one part. Larger files need more parts. See
+[Direct upload](/direct-upload).
 
-Keep this key on your **server**. Never put it in a page.
-
-## Step 5: Upload a video
-
-The fastest path is the dashboard: open the project, click **Upload**, and pick a
-short MP4.
-
-To upload from your own code, use the four calls in
-[Direct upload](/direct-upload). They send the file straight to storage with a
-pre-signed URL, so the file never passes through the API.
-
-## Step 6: Wait until the video is ready
-
-We encode the video after the upload ends. Poll the video until `status` is
-`ready`:
+First, create the upload:
 
 ```bash
-export BASE="https://api.segmnt.cloud"
-export SEGMNT_KEY="sk_..."          # your API key (server only)
-export PROJECT_ID="prj_7kQ2mB"
-export VIDEO_ID="vid_9xR4tL"
+export FILE="lesson-01.mp4"
+export SIZE=$(wc -c < "$FILE")
 
-curl "$BASE/v1/projects/$PROJECT_ID/videos/$VIDEO_ID" \
-  -H "Authorization: Bearer $SEGMNT_KEY"
-```
-
-Read `status` in the answer:
-
-| `status` | Meaning |
-| --- | --- |
-| `uploading` | The file is still going up. |
-| `processing` | We are encoding it. |
-| `ready` | It can play. Go to Step 7. |
-| `failed` | The encode failed. |
-
-> **Note — the review hold is Coming soon.** When the review hold is on, a free
-> account's first videos wait for review. Such a video can still report `ready`,
-> but the playback-token call in Step 7 is refused with `409 video_not_ready`.
-> If that happens, read [Moderation and held videos](/moderation). The hold is
-> off today, so a new free video is not held.
-
-## Step 7: Create a playback token
-
-A **playback token** is a short, signed pass for one video on one domain. Create
-it on your server:
-
-```bash
-curl -X POST "$BASE/v1/projects/$PROJECT_ID/videos/$VIDEO_ID/playback-tokens" \
+curl -sS -X POST "$SEGMNT_BASE/v1/projects/$PROJECT_ID/uploads" \
   -H "Authorization: Bearer $SEGMNT_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"domain":"courses.example.com"}'
+  -d "{\"title\":\"First lesson\",\"fileName\":\"$FILE\",\"sizeBytes\":$SIZE,\"contentType\":\"video/mp4\"}" \
+  > upload.json
 ```
 
-The answer is `201` and holds `token`, `expiresAt` and `embedUrl`. Keep the
-`token` value:
+Expected output: none. The file `upload.json` now holds the answer. Read the IDs
+with this command:
 
 ```bash
-export TOKEN="v1...."               # the token from the answer above
+jq -r '.id, .video.id' upload.json
 ```
 
-A token lives for 4 hours by default. For a real page, ask for a new token each
-time you show the video, from your server. See
+Expected output: an upload ID that starts with `upl_`, then a video ID that
+starts with `vid_`.
+
+Next, send the file to the part URL, then complete the upload. The part URL
+needs no API key:
+
+```bash
+export UPLOAD_ID=$(jq -r '.id' upload.json)
+export VIDEO_ID=$(jq -r '.video.id' upload.json)
+export PART_URL=$(jq -r '.parts[0].url' upload.json)
+
+curl -sS -X PUT "$PART_URL" --upload-file "$FILE" -D part.headers -o /dev/null
+export ETAG=$(grep -i '^etag:' part.headers | cut -d' ' -f2- | tr -d '"\r\n')
+
+curl -sS -X POST "$SEGMNT_BASE/v1/projects/$PROJECT_ID/uploads/$UPLOAD_ID/complete" \
+  -H "Authorization: Bearer $SEGMNT_KEY" \
+  -H "Content-Type: application/json" \
+  -d "{\"parts\":[{\"partNumber\":1,\"etag\":\"$ETAG\"}]}"
+```
+
+Expected output: the video as JSON, with `"status":"processing"`. The encode
+starts now.
+
+You can also upload in the dashboard. Open the project, click **Upload**, and
+choose the file. Then open the video, copy its ID, and set `VIDEO_ID` to that ID.
+
+## Step 4: Wait until the video is ready
+
+Run this loop. It checks the status every 10 seconds and stops when the video is
+no longer processing:
+
+```bash
+while true; do
+  STATUS=$(curl -sS "$SEGMNT_BASE/v1/projects/$PROJECT_ID/videos/$VIDEO_ID" \
+    -H "Authorization: Bearer $SEGMNT_KEY" | jq -r '.status')
+  echo "$STATUS"
+  case "$STATUS" in ready|failed|held|uploading) break ;; esac
+  sleep 10
+done
+```
+
+Expected output: `processing` on each line, then `ready`. The time depends on
+the length of the video.
+
+| `status` | Meaning | What to do |
+| --- | --- | --- |
+| `processing` | We are encoding the video. | Wait. |
+| `ready` | The video can play. | Go to step 5. |
+| `held` | The video is held for review and does not play yet. | Read [Moderation](/moderation). |
+| `uploading` | The upload is not complete. The loop stops here. | Run the complete call in step 3 again. |
+| `failed` | The encode failed. | Read the `failure` field of the video. |
+
+In a production system, subscribe to the `video.ready` event instead of polling.
+See [Webhooks](/webhooks).
+
+## Step 5: Create a playback token on your server
+
+Run this command on your server, not in a browser. The API key stays on the
+server. The token is safe to send to a browser, because it works only for this
+video and this domain.
+
+```bash
+curl -sS -X POST "$SEGMNT_BASE/v1/projects/$PROJECT_ID/videos/$VIDEO_ID/playback-tokens" \
+  -H "Authorization: Bearer $SEGMNT_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"domain":"courses.example.com"}' \
+  > token.json
+
+export TOKEN=$(jq -r '.token' token.json)
+```
+
+Expected output: none. The file `token.json` holds the answer. It looks like
+this, with the values shortened:
+
+```json
+{
+  "token": "v1.eyJ...",
+  "expiresAt": "2026-11-01T06:00:00.000Z",
+  "embedUrl": "https://cdn.segmnt.cloud/e/vid_9xR4tL?token=v1.eyJ...",
+  "thumbnailUrl": "https://cdn.segmnt.cloud/v/vid_9xR4tL/thumb.jpg?token=v1.eyJ..."
+}
+```
+
+The `domain` must be a verified domain of your project. Otherwise the answer is
+`400 invalid_request`.
+
+A token lasts 4 hours by default. For a longer video, add `expiresInSeconds` to
+the body. The maximum is 86400. Create a new token each time you show the video.
+For cURL, Node.js and PHP examples, see
 [Create playback tokens on your server](/playback-tokens).
 
-## Step 8: Embed the video
+## Step 6: Embed the player
 
-Put this block on the page that you verified in Step 3. Replace `vid_9xR4tL` and
-the token with your own values:
+Paste this code into the page on your verified domain. Replace
+`YOUR_PLAYBACK_TOKEN` with the value of `$TOKEN` from step 5. Use the `vid_` ID
+from step 3.
 
 ```html
 <div style="position:relative;width:100%;aspect-ratio:16 / 9;">
@@ -144,49 +215,45 @@ the token with your own values:
 </div>
 ```
 
-Open your page. The video plays. That is your first protected video.
+Open the page. The video appears with its thumbnail. Press play.
 
-The page needs nothing in the `<head>`. To make the first frame start sooner,
-you can add the two optional lines in
-[Open the CDN connection early](/embed-a-video#open-the-cdn-connection-early-optional).
+Expected output: the video plays on your page.
 
-## Step 9: Prove it is locked to your domain
+## Step 7: Check the domain lock
 
-Now try to use the video somewhere else. Ask for the video with a **different**
-origin — a site you did **not** verify:
+Ask for the playlist with your token, and with an origin that you did not verify:
 
 ```bash
 curl -i "https://cdn.segmnt.cloud/v/$VIDEO_ID/master.m3u8?token=$TOKEN" \
-  -H "Origin: https://someone-elses-site.example"
+  -H "Origin: https://someone-else.example"
 ```
 
-The answer is `403` with the header `X-Segmnt-Error: domain_mismatch`. Ask with no
-token at all, and you get `403 token_missing`:
+Expected output: a `403` answer with the header `X-Segmnt-Error: domain_mismatch`.
 
-```bash
-curl -i "https://cdn.segmnt.cloud/e/$VIDEO_ID"
-```
+A copied link does not play on another site. Your video is now protected by a
+token and a domain lock.
 
-The token is bound to your domain, so a copied link does not play anywhere else.
-This is the point of the product. Full detail:
-[How playback protection works](/playback-protection).
+Free and Starter play through our embed (our player, with our logo). Pro and
+Agency can use their own player.
 
-## What you built
+## If a step fails
 
-- A project with a verified domain and an API key.
-- A video that we encoded to HLS.
-- A signed playback token for one video and one domain.
-- An embed that plays on your domain, and `403` off it.
+| Response | Cause | Fix |
+| --- | --- | --- |
+| `401 unauthorized` | The API key is wrong or revoked. | Check the key. Create a new key if needed. |
+| `403 insufficient_scope` | The key has the `playback` scope, which can create only playback tokens. | Use a `full` key for steps 1 to 4. |
+| `400 invalid_request` on the token call | The domain is not verified in this project. | Finish step 2. |
+| `409 video_not_ready` on the token call | The video is still processing, or it is held. | Finish step 4. |
+| `403 domain_mismatch` on the player | The page is not on the verified domain. | Embed the player on the verified domain. |
+| `403 plan_limit_reached` on the player | Free and Starter play only through our embed page, not from your own site. | Use the embed code from step 6. Pro and Agency can use their own player. |
 
-## Where to go next
+For every error code, see [Errors](/errors).
 
-- [Embed a video on any website](/embed-a-video) — the iframe and JavaScript embeds.
-- [Create playback tokens on your server](/playback-tokens) — cURL, Node.js and PHP.
-- [Add segmnt to WordPress](/wordpress) — the plugin path.
-- [Direct upload](/direct-upload) — the full upload flow in three languages.
-- [Errors](/errors) — what `403` and `409` mean and how to react.
-- [Feature status](/status) — what is available, beta and coming soon.
+## Next steps
 
-> Tested with the current release. The video events, tokens, domain lock and
-> embed are the released API. If a step does not work for you, tell us which
-> step and which answer you got.
+- [Authentication](/authentication): base URL, key scopes, and how playback
+  tokens differ from API keys.
+- [Direct upload](/direct-upload): files larger than 100 MiB, and parallel parts.
+- [Create playback tokens on your server](/playback-tokens): cURL, Node.js and
+  PHP examples.
+- [Webhooks](/webhooks): get a `video.ready` event instead of polling.

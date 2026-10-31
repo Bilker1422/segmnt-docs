@@ -30,7 +30,7 @@
         "groups": [
           {
             "group": "Get started",
-            "pages": ["index", "quickstart", "getting-started", "faq", "status"]
+            "pages": ["index", "quickstart", "authentication", "getting-started", "faq", "status"]
           },
           {
             "group": "Integrate",
@@ -41,6 +41,7 @@
               "embed-a-video",
               "playback-tokens",
               "webhooks",
+              "code-samples",
               "wordpress",
               "moodle",
               "react"
