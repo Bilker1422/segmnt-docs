@@ -211,3 +211,12 @@ actions:
       If a call returns
       `429` with a `Retry-After` header, wait that many seconds, then call
       complete again. It is safe to repeat.
+  # The Projects tag in the two OpenAPI copies says "An account has many
+  # projects", but the project cap depends on the plan (YAH-1278). The OpenAPI
+  # copies are never edited by hand, so the public wording is set here. The
+  # numbers match `api/src/plan-catalog.ts` and `api/src/plans.ts`
+  # (PILOT_LIMITS) and the docs page `accounts-and-projects.md`, section 3.
+  - target: $.tags[?(@.name == 'Projects')].description
+    update: |
+      How many projects an account can have depends on its plan: Free and
+      Starter 1, Pro and Pilot 3, Agency 25. Agencies use one project per client.
