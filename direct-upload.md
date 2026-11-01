@@ -42,8 +42,8 @@ The size limit is checked 3 times: when you create the upload (declared
 `sizeBytes`), when you complete it (real size), and before encoding (real
 duration). If the real file is over the limit, the video ends as `failed` with
 `failure.code` = `plan_limit_reached`, and the file is removed.
-If the real file is larger than the `sizeBytes` you declared, the video ends as
-`failed` with `size_mismatch`.
+If the real file is not the same size as the `sizeBytes` you declared (larger or
+smaller), the video ends as `failed` with `size_mismatch`. No encoding starts.
 
 ## Step 1: Create the upload
 
@@ -151,7 +151,7 @@ Errors use `application/problem+json`. Use the `code` field in your code, not th
 | create | 403 | `account_banned` | The account is blocked | Contact us if you think this is a mistake. |
 | any | 404 | `not_found` | Wrong project or upload ID, or the key is for another project | Check the IDs. |
 | complete | 400 | `invalid_request` | `parts` list is not valid | Fix the request. |
-| complete | 400 | `invalid_parts` | Part numbers or ETags do not match what was uploaded | Check that every part was uploaded and the ETags are right. |
+| complete | 400 | `invalid_parts` | The part list is not the whole upload: a part is missing, listed twice, or above the part count. The `detail` names the part, for example `part 2 is missing.` | Upload the named part, then complete again with the full list. The upload stays open. |
 | complete | 409 | `upload_closed` | Upload was cancelled or expired | Start a new upload. |
 | cancel | 409 | `upload_closed` | Upload is already complete | Nothing to cancel. |
 | browser create/complete | 403 | `origin_mismatch` | The upload token is for another domain | Send the request from the verified domain the token names. |
