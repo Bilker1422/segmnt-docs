@@ -159,3 +159,55 @@ actions:
     update: |
       Coming soon. Count of all matching projects, not just this page.
       Not returned yet, so do not rely on it today.
+  # Server-side upload limits (YAH-2247, from YAH-2212). A project API key on
+  # create and complete is not limited per IP. Each key has its own ceiling of
+  # 1,000 calls a minute. Browser upload-token calls keep 60 a minute per IP.
+  # The register row for this claim must be Available before this merges (YAH-876).
+  - target: $.paths['/v1/projects/{projectId}/uploads'].post.description
+    update: |
+      Creates a video in `uploading` status and returns one pre-signed `PUT` URL
+      per part. The client sends each part straight to storage, keeps the `ETag`
+      response header of each part, then calls the complete route.
+
+      Two ways to authenticate: a project API key or session from your server,
+      or a single-use upload token from `POST /v1/projects/{projectId}/upload-tokens`
+      for a browser. With a token, the browser must send the token's verified
+      domain as its `Origin`; the token's `maxSizeBytes` and content type are
+      enforced here and on complete.
+
+      Part upload: `PUT` the raw bytes to the part URL with the exact size of
+      that part as `Content-Length`. No auth header is needed (`Content-Type`
+      is not checked). The part URL signs the part's `Content-Length`, so a
+      request that declares a different length is refused. Storage CORS allows
+      `PUT` from any origin and exposes `ETag`, so a browser can read it.
+
+      URLs are for upload only. Playback never uses storage URLs. Part URLs
+      work for 4 hours. The upload itself stays open until `expiresAt`, 24
+      hours after the start; calling create again with the same
+      `Idempotency-Key` returns the same upload with fresh part URLs.
+
+      Plan limits are checked here with `sizeBytes`, and again later: on complete
+      (real file size) and before encoding (real duration). A file over the limit
+      ends as `failed` with `failure.code` = `plan_limit_reached` and is removed.
+
+      Rate limits: a call that uses a project API key is not limited per IP.
+      Each key may make up to 1,000 create and complete calls a minute. A browser
+      that uses an upload token is limited to 60 calls a minute per IP address.
+      If a call is limited,
+      the API returns `429` with a `Retry-After` header. Wait that many seconds,
+      then try again.
+  - target: $.paths['/v1/projects/{projectId}/uploads/{uploadId}/complete'].post.description
+    update: |
+      Joins the parts and starts encoding. The video moves to `processing`.
+      Safe to retry: if the upload was already completed, it returns `202` with
+      the current video.
+
+      A browser calls this with its upload token, and only for the upload that
+      token created. A token cannot complete another upload.
+
+      Rate limits: a call that uses a project API key is not limited per IP.
+      Each key may make up to 1,000 create and complete calls a minute. A browser
+      that uses an upload token is limited to 60 calls a minute per IP address.
+      If a call returns
+      `429` with a `Retry-After` header, wait that many seconds, then call
+      complete again. It is safe to repeat.
