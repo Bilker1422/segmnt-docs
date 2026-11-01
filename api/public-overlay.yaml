@@ -190,6 +190,16 @@ actions:
       (real file size) and before encoding (real duration). A file over the limit
       ends as `failed` with `failure.code` = `plan_limit_reached` and is removed.
 
+      Upload hours: Starter, Pro and Agency can keep uploading after they use
+      their included upload hours in the calendar month, up to 3 times those
+      hours. The included hours are 5 h on Starter, 15 h on Pro and 30 h on
+      Agency, so the cap is 15 h, 45 h and 90 h. At the cap, this call returns
+      `403` with `code` = `plan_limit_reached` and `limit` = `monthly_uploads_cap`.
+      To go higher, contact support. Free and Pilot stop at their included hours
+      and return `403` with `limit` = `monthly_uploads`. Upload hours count the
+      processing hours of new uploads, as on the usage page. The stored-hours
+      limit, the file size, the video length and the encode limit still apply.
+
       Rate limits: a call that uses a project API key is not limited per IP.
       Each key may make up to 1,000 create and complete calls a minute. A browser
       that uses an upload token is limited to 60 calls a minute per IP address.
@@ -226,6 +236,30 @@ actions:
   # response, not a $ref plus a sibling description, so every renderer shows it.
   - target: $.paths['/v1/projects/{projectId}/uploads/{uploadId}/complete'].post.responses['400']
     remove: true
+  # Upload pay as you go, Release A (YAH-2296; register claims U1 and U2 are
+  # Available on YAH-876). U2: every plan-limit 403 body has a `limit` field.
+  # The field is described on the shared Forbidden answer and on the Problem
+  # schema. The code list is `PLAN_LIMITS` in api/src/http.ts. U3 (charge) and
+  # U4 (usage display, e-mails) stay out until Release B (YAH-2197).
+  - target: $.components.responses.Forbidden.description
+    update: |
+      Not allowed. `code` says why. Two common codes: `insufficient_scope` (a
+      playback-only API key called a route it may not use), and
+      `plan_limit_reached` (the account has hit a plan limit).
+
+      For `plan_limit_reached`, the `limit` field names the limit that was hit:
+      `stored_hours`, `monthly_uploads`, `monthly_uploads_cap`, `file_size`,
+      `video_duration`, `watched_minutes`, `quality`, `projects`, `white_label`
+      or `verified_domains`. The `code` does not change.
+  - target: $.components.schemas.Problem.properties
+    update:
+      limit:
+        type: string
+        description: |
+          From the API. On `403 plan_limit_reached`, the plan limit that was hit,
+          for example `monthly_uploads_cap`. The playback CDN does not send this
+          field for a blocked or over-limit project. It does send it for `quality`
+          and `white_label` refusals.
   - target: $.paths['/v1/projects/{projectId}/uploads/{uploadId}/complete'].post.responses
     update:
       '400':
