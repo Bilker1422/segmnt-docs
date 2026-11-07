@@ -2580,6 +2580,250 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
+  /v1/admin/billing/summary:
+    get:
+      tags: [Admin]
+      x-excluded: true
+      x-internal: true
+      operationId: getAdminBillingSummary
+      summary: Monthly billing summary and closing report
+      description: |
+        Read-only. Per account: plan, subscription amount, overage per meter
+        (upload seconds, encoded seconds, stored seconds, watched minutes), VAT,
+        total and invoice status, plus month totals across accounts. Amounts are
+        halalas. A meter with no catalog price has a `null` rate and amount and
+        the note `price not set`; prices are never invented.
+
+        A recorded invoice row is authoritative for its own month: its net, VAT,
+        total, rate and billable minutes are echoed, not recomputed. Only when no
+        row exists are amounts computed from the catalog, and then VAT follows
+        the board switch (`BILLING_VAT_MODE`), which is off today. Totals report
+        both `expectedTotalHalalas` (every account) and `recordedTotalHalalas`
+        (accounts with an invoice row). Both are sums of priced meters only and
+        exclude encoded seconds and stored overage, which have no catalog price.
+      security:
+        - adminAccess: []
+      parameters:
+        - name: month
+          in: query
+          required: true
+          description: Calendar month, `YYYY-MM`.
+          schema:
+            type: string
+            pattern: '^\d{4}-(0[1-9]|1[0-2])$'
+            example: '2026-10'
+      responses:
+        '200':
+          description: The month billing summary and closing report.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [month, period, currency, vatRatePercent, accounts, totals]
+                properties:
+                  month:
+                    type: string
+                  period:
+                    type: object
+                    required: [start, end]
+                    properties:
+                      start:
+                        type: string
+                      end:
+                        type: string
+                  currency:
+                    type: string
+                  vatRatePercent:
+                    type: integer
+                  accounts:
+                    type: array
+                    items:
+                      type: object
+                      required: [accountId, accountName, plan, planStatus, usage, overage, subscription, vatHalalas, totalHalalas, invoiceStatus]
+                      properties:
+                        accountId:
+                          type: string
+                        accountName:
+                          type: string
+                        plan:
+                          type: string
+                        planStatus:
+                          type: string
+                        usage:
+                          type: object
+                          required: [uploadSeconds, encodedSeconds, storedSeconds, storedSecondsAsOf, watchedSeconds, watchedMinutes]
+                          properties:
+                            uploadSeconds:
+                              type: integer
+                            encodedSeconds:
+                              type: integer
+                            storedSeconds:
+                              type: integer
+                            storedSecondsAsOf:
+                              type: string
+                              enum: [now]
+                              description: Stored seconds are read live at request time, not at month end.
+                            watchedSeconds:
+                              type: integer
+                            watchedMinutes:
+                              type: integer
+                        overage:
+                          type: object
+                          required: [uploadSeconds, encodedSeconds, storedSeconds, watchedMinutes]
+                          properties:
+                            uploadSeconds:
+                              $ref: '#/components/schemas/AdminBillingMeter'
+                            encodedSeconds:
+                              $ref: '#/components/schemas/AdminBillingMeter'
+                            storedSeconds:
+                              $ref: '#/components/schemas/AdminBillingMeter'
+                            watchedMinutes:
+                              $ref: '#/components/schemas/AdminBillingMeter'
+                        subscription:
+                          type: object
+                          required: [amountHalalas, net, vat, total, status]
+                          properties:
+                            amountHalalas:
+                              type: integer
+                            net:
+                              type: integer
+                            vat:
+                              type: integer
+                            total:
+                              type: integer
+                            status:
+                              type: string
+                        vatHalalas:
+                          type: integer
+                        totalHalalas:
+                          type: integer
+                        invoiceStatus:
+                          type: object
+                          required: [subscription, subscriptionInvoiceId, overage, overageInvoiceId, overall]
+                          properties:
+                            subscription:
+                              type: [string, 'null']
+                            subscriptionInvoiceId:
+                              type: [string, 'null']
+                            overage:
+                              type: [string, 'null']
+                            overageInvoiceId:
+                              type: [string, 'null']
+                            overall:
+                              type: string
+                              enum: [not_issued, recorded, invoiced]
+                  totals:
+                    type: object
+                    required: [accountCount, subscription, overage, vatHalalas, expectedTotalHalalas, recordedAccounts, recordedTotalHalalas, uploadOverageSeconds, watchedOverageMinutes]
+                    properties:
+                      accountCount:
+                        type: integer
+                      subscription:
+                        type: object
+                        properties:
+                          net:
+                            type: integer
+                          vat:
+                            type: integer
+                          total:
+                            type: integer
+                      overage:
+                        type: object
+                        properties:
+                          net:
+                            type: integer
+                          vat:
+                            type: integer
+                          total:
+                            type: integer
+                      vatHalalas:
+                        type: integer
+                      expectedTotalHalalas:
+                        type: integer
+                        description: Every account, priced from the catalog where nothing is invoiced yet. This is not billed money.
+                      recordedAccounts:
+                        type: integer
+                        description: Accounts that have at least one invoice row for the month.
+                      recordedTotalHalalas:
+                        type: integer
+                        description: Sum of priced meters only (subscription plus upload and watched overage) for the accounts that have at least one invoice row for the month. It includes overage priced from the catalog that has no invoice row yet, so it is not only money already invoiced. It excludes encoded seconds and stored overage, which have no catalog price, so it is not a full computed total.
+                      uploadOverageSeconds:
+                        type: integer
+                      watchedOverageMinutes:
+                        type: integer
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /v1/admin/billing/summary.csv:
+    get:
+      tags: [Admin]
+      x-excluded: true
+      x-internal: true
+      operationId: getAdminBillingSummaryCsv
+      summary: Monthly billing summary and closing report as CSV
+      description: |
+        The same numbers as `GET /v1/admin/billing/summary`, as a downloadable
+        CSV for the month closing. Header row plus one row per account, then a
+        final `TOTALS` row.
+
+        Columns: the account, its plan and subscription (amount, net, VAT,
+        total, status), then for each meter its used, included, overage, rate
+        and amount, then `overage_vat_halalas`, `overage_total_halalas`,
+        `vat_halalas`, `total_halalas`, the invoice status, and
+        `accounts_with_invoice_total_halalas`. Amount columns are net (before
+        VAT); `overage_vat_halalas`, `overage_total_halalas`, `vat_halalas` and
+        `total_halalas` include VAT. `accounts_with_invoice_total_halalas` is
+        filled in the `TOTALS` row only. It is the sum of priced meters only
+        (subscription plus upload and watched overage) for the accounts that
+        have at least one invoice row for the month. It includes overage priced
+        from the catalog that has no invoice row yet, so it is not the same as
+        money already invoiced. It excludes encoded seconds and stored overage,
+        which have no catalog price, so it is not a full computed total. It is
+        the same value as `recordedTotalHalalas` in the JSON summary, so it can
+        be checked against the expected total. `expectedTotalHalalas` and
+        `recordedAccounts` stay JSON-only. All amounts are halalas.
+
+        A meter with no catalog price leaves its rate and amount cells empty;
+        prices are never invented. In the `TOTALS` row a meter amount cell is
+        left empty when any account row has that meter unpriced, and the VAT and
+        total cells are left empty when any account row has any meter unpriced,
+        because a partial sum would look like the real month total. For the same
+        reason the `*_included` allowance cells are always empty in `TOTALS`.
+        On account rows, `vat_halalas` and `total_halalas` are also sums of
+        priced meters only: a row can show a number while it still has unpriced
+        usage (encoded seconds or stored overage).
+        The file is UTF-8 with a BOM and CRLF line endings.
+      security:
+        - adminAccess: []
+      parameters:
+        - name: month
+          in: query
+          required: true
+          description: Calendar month, `YYYY-MM`.
+          schema:
+            type: string
+            pattern: '^\d{4}-(0[1-9]|1[0-2])$'
+            example: '2026-10'
+      responses:
+        '200':
+          description: The month billing summary as a UTF-8 CSV attachment.
+          headers:
+            Content-Disposition:
+              description: '`attachment; filename="billing-2026-10.csv"`.'
+              schema:
+                type: string
+          content:
+            text/csv:
+              schema:
+                type: string
+                description: Header row, one row per account, then a `TOTALS` row.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
   /v1/admin/videos:
     get:
       tags: [Admin]
@@ -4235,6 +4479,34 @@ components:
           type: integer
         reports7d:
           type: integer
+
+    AdminBillingMeter:
+      type: object
+      required: [used, included, overage, rate, rateUnit, amountHalalas, priceSet, note]
+      description: One billing meter for one account and month. A `null` rate means no catalog price applies, so the amount is `null` and `note` is `price not set`.
+      properties:
+        used:
+          type: integer
+          description: Measured units this month (seconds, or minutes for watchedMinutes).
+        included:
+          type: [integer, 'null']
+          description: The plan's included units, or null when the plan has no limit for this meter.
+        overage:
+          type: integer
+          description: Units past the included amount (started minutes for watchedMinutes).
+        rate:
+          type: [integer, 'null']
+          description: Catalog rate in halalas, or null when no price is set.
+        rateUnit:
+          type: [string, 'null']
+          description: What `rate` is priced per, e.g. `halalas per upload hour`.
+        amountHalalas:
+          type: [integer, 'null']
+          description: The overage amount in halalas before VAT, or null when no price is set.
+        priceSet:
+          type: boolean
+        note:
+          type: [string, 'null']
 
     AdminAccount:
       type: object
