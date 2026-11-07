@@ -2016,6 +2016,63 @@ paths:
         '409':
           $ref: '#/components/responses/Conflict'
 
+  /v1/account/billing/pay-as-you-go/upload:
+    get:
+      tags: [Billing]
+      operationId: getUploadPayAsYouGo
+      summary: Get the upload meter's Pay-As-You-Go switch
+      description: |
+        The upload allowance has its own switch, separate from watching and
+        processing. `enabled` is false when the plan does not support upload
+        overage. `cap` is what the account is actually allowed today: the
+        included hours when off, the 3x safety cap when on.
+      security:
+        - session: []
+      responses:
+        '200':
+          description: Current setting.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayAsYouGoUploadSetting'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    patch:
+      tags: [Billing]
+      operationId: updateUploadPayAsYouGo
+      summary: Turn the upload meter's Pay-As-You-Go on or off
+      description: |
+        `false` is a hard stop at the plan's included upload hours with a clear
+        `plan_limit_reached` error. `true` allows overage up to 3 times the
+        included upload hours. Only the upload meter changes; watching and
+        processing are untouched. Every change is audit-logged.
+      security:
+        - session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [enabled]
+              properties:
+                enabled:
+                  type: boolean
+      responses:
+        '200':
+          description: New setting.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayAsYouGoUploadSetting'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
   /v1/account/billing/pay-as-you-go/watching:
     get:
       tags: [Billing]
@@ -4424,6 +4481,40 @@ components:
             watchedMinutesPerPeriod:
               type: [integer, 'null']
               description: From the watching meter row. Null means no watch cap (overage is billed).
+    PayAsYouGoUploadSetting:
+      type: object
+      required: [meter, enabled, supported, plan, included, cap]
+      properties:
+        meter:
+          type: string
+          enum: [upload]
+        enabled:
+          type: boolean
+          description: False means a hard stop at the included upload hours.
+        supported:
+          type: boolean
+          description: False when the plan has no upload Pay-As-You-Go (Free and Pilot).
+        plan:
+          type: object
+          required: [id, name]
+          properties:
+            id:
+              type: string
+            name:
+              type: string
+        included:
+          type: object
+          required: [uploadSecondsPerPeriod]
+          properties:
+            uploadSecondsPerPeriod:
+              type: [integer, 'null']
+        cap:
+          type: object
+          required: [uploadSecondsPerPeriod]
+          properties:
+            uploadSecondsPerPeriod:
+              type: [integer, 'null']
+              description: The upload limit in force (3x included when on, included when off).
     WatchingPayAsYouGoSetting:
       type: object
       required: [meter, enabled, supported, plan, included, cap, safetyCap]
