@@ -272,3 +272,21 @@ actions:
           application/problem+json:
             schema:
               $ref: '#/components/schemas/Problem'
+  # Watch-time Pay-As-You-Go switch (YAH-2534 D1-W). On TEST, not in a release
+  # yet (v0.19.15 does not have it), and not Available in the claims register
+  # (YAH-876). A push to main mirrors mintlify-docs/ to the public site, so this
+  # block hides the route, its schema and the text that names it until the
+  # release ships. On release, delete these actions.
+  - target: $.paths['/v1/account/billing/pay-as-you-go/watching']
+    remove: true
+  - target: $.components.schemas.WatchingPayAsYouGoSetting
+    remove: true
+  - target: $.paths['/v1/account/billing/pay-as-you-go'].get.description
+    update: |
+      Whether the account may go past its included watch minutes and
+      processing hours (Pay-As-You-Go). `enabled` is false when the plan does
+      not support it. `cap` is what the account is actually allowed today.
+  - target: $.components.schemas.PayAsYouGoSetting.properties.cap.properties.watchedMinutesPerPeriod
+    update:
+      type: [integer, 'null']
+      description: Null means no watch cap (overage is billed).

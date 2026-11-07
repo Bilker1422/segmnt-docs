@@ -1958,6 +1958,11 @@ paths:
         Whether the account may go past its included watch minutes and
         processing hours (Pay-As-You-Go). `enabled` is false when the plan does
         not support it. `cap` is what the account is actually allowed today.
+        The watch fields (`included.watchedMinutesPerPeriod` and
+        `cap.watchedMinutesPerPeriod`) come from the watching meter, so they
+        match what playback enforces. Use
+        `/v1/account/billing/pay-as-you-go/watching` to read or change that
+        meter on its own.
       security:
         - session: []
       responses:
@@ -1997,6 +2002,63 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PayAsYouGoSetting'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /v1/account/billing/pay-as-you-go/watching:
+    get:
+      tags: [Billing]
+      operationId: getWatchingPayAsYouGo
+      summary: Get the watch-time Pay-As-You-Go switch
+      description: |
+        The watching meter's own switch, independent of processing and upload.
+        `enabled` is false when the plan has no watch-time Pay-As-You-Go (Free,
+        Starter and Pilot). `cap` is where playback stops: the included watch
+        minutes when off, the meter's own safety cap when on (null = no cap).
+      security:
+        - session: []
+      responses:
+        '200':
+          description: Current state.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WatchingPayAsYouGoSetting'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    patch:
+      tags: [Billing]
+      operationId: updateWatchingPayAsYouGo
+      summary: Turn watch-time Pay-As-You-Go on or off
+      description: |
+        Changes only the watching meter; processing and upload are untouched.
+        `false` is a hard stop at the included watch minutes with a clear
+        `plan_limit_reached` error. `true` allows overage up to that meter's own
+        safety cap (never a shared 3x). Every change is audit-logged.
+      security:
+        - session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [enabled]
+              properties:
+                enabled:
+                  type: boolean
+      responses:
+        '200':
+          description: New state.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WatchingPayAsYouGoSetting'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -4350,7 +4412,49 @@ components:
               description: The upload limit in force (3x included when on, included when off).
             watchedMinutesPerPeriod:
               type: [integer, 'null']
-              description: Null means no watch cap (overage is billed).
+              description: From the watching meter row. Null means no watch cap (overage is billed).
+    WatchingPayAsYouGoSetting:
+      type: object
+      required: [meter, enabled, supported, plan, included, cap, safetyCap]
+      properties:
+        meter:
+          type: string
+          enum: [watching]
+        enabled:
+          type: boolean
+          description: False means a hard stop at the included watch minutes.
+        supported:
+          type: boolean
+          description: False when the plan has no watch-time Pay-As-You-Go (Free, Starter and Pilot).
+        plan:
+          type: object
+          required: [id, name]
+          properties:
+            id:
+              type: string
+            name:
+              type: string
+        included:
+          type: object
+          required: [watchedMinutesPerPeriod]
+          properties:
+            watchedMinutesPerPeriod:
+              type: [integer, 'null']
+              description: From the meter row when set, else the plan catalog.
+        cap:
+          type: object
+          required: [watchedMinutesPerPeriod]
+          properties:
+            watchedMinutesPerPeriod:
+              type: [integer, 'null']
+              description: Where playback stops. Null means no cap (overage continues to be billed).
+        safetyCap:
+          type: object
+          required: [watchedMinutesPerPeriod]
+          properties:
+            watchedMinutesPerPeriod:
+              type: [integer, 'null']
+              description: The meter row's own safety cap; never a shared 3x.
     AccountPlan:
       type: object
       required: [plan, status, currentPeriod, limits, usage]
