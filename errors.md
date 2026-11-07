@@ -47,7 +47,7 @@ Wait that many seconds, then retry.
 | `code` | Cause |
 | --- | --- |
 | `invalid_request` | A missing or wrong field, a bad cursor, a bad date range, or a body that is not JSON. |
-| `invalid_parts` | The upload `parts` list does not match what was uploaded. |
+| `invalid_parts` | The upload `parts` list does not match what was uploaded. If the parts cannot be joined, the upload is still open: upload the file again. |
 | `invalid_state` | The sign-in flow expired or was changed. Start sign-in again. |
 | `auth_denied` | The user cancelled sign-in at the provider. |
 | `billing_mismatch` | A payment does not match the order (amount, currency, plan or account). |
