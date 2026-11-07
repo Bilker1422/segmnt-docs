@@ -1312,6 +1312,13 @@ paths:
         hours after the start; calling create again with the same
         `Idempotency-Key` returns the same upload with fresh part URLs.
 
+        An upload that is not completed before `expiresAt` ends as `failed`
+        with `failure.code` = `upload_expired` (customer fault, `retryable`
+        false): upload the file again to start a new one. A cancelled upload
+        ends the same way with `upload_cancelled`. Both send one
+        `video.failed` event; read the final state with
+        `GET /v1/projects/{projectId}/videos/{videoId}`.
+
         Plan limits are checked here with `sizeBytes`, and again later: on complete
         (real file size) and before encoding (real duration). A file over the limit
         ends as `failed` with `failure.code` = `plan_limit_reached` and is removed.
@@ -1355,7 +1362,7 @@ paths:
       tags: [Uploads]
       operationId: abortUpload
       summary: Cancel an upload
-      description: Removes the uploaded parts and the video. Unfinished uploads are also removed after `expiresAt`.
+      description: Removes the uploaded parts and cancels the video, which ends as `failed` with `failure.code` = `upload_cancelled` (customer fault, `retryable` false, one `video.failed` event). An unfinished upload left past `expiresAt` ends the same way, with `upload_expired`, without being deleted.
       responses:
         '204':
           description: Upload cancelled.
@@ -3172,7 +3179,11 @@ webhooks:
       tags: [Webhooks]
       operationId: onVideoFailed
       summary: Encoding failed
-      description: '`data.video.failure` says why.'
+      description: >-
+        `data.video.failure` says why. Sent once for every video that moves to
+        `failed`, including an upload that was cancelled (`upload_cancelled`)
+        or expired before complete-upload (`upload_expired`). Read
+        `failure.code` to tell them apart.
       parameters:
         - $ref: '#/components/parameters/WebhookSignature'
       requestBody:
