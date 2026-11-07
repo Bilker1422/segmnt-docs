@@ -114,6 +114,9 @@ A `409` means the request is valid, but the resource is not ready for it.
 | `code` | Cause |
 | --- | --- |
 | `rate_limited` | Over the per-minute limit. Wait `Retry-After` seconds. |
+| `too_many_open_uploads` | This project already has 10 uploads open. Finish or cancel one, then try again. |
+
+`too_many_open_uploads` has no `Retry-After` header. Retrying the same request does not help until one upload is finished, cancelled or expired. An expired upload frees its slot, so start a new upload instead of waiting.
 
 ### 500, 502, 503 — our side
 
