@@ -1949,6 +1949,61 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
 
+  /v1/account/billing/pay-as-you-go:
+    get:
+      tags: [Billing]
+      operationId: getPayAsYouGo
+      summary: Get the account's Pay-As-You-Go switch
+      description: |
+        Whether the account may go past its included watch minutes and
+        processing hours (Pay-As-You-Go). `enabled` is false when the plan does
+        not support it. `cap` is what the account is actually allowed today.
+      security:
+        - session: []
+      responses:
+        '200':
+          description: Current setting.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayAsYouGoSetting'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    patch:
+      tags: [Billing]
+      operationId: updatePayAsYouGo
+      summary: Turn Pay-As-You-Go on or off
+      description: |
+        `false` is a hard stop at the included limit with a clear
+        `plan_limit_reached` error. `true` allows overage up to 3 times the
+        included upload hours. Every change is audit-logged.
+      security:
+        - session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [enabled]
+              properties:
+                enabled:
+                  type: boolean
+      responses:
+        '200':
+          description: New setting.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayAsYouGoSetting'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
   /v1/billing/plans:
     get:
       tags: [Billing]
@@ -4260,6 +4315,42 @@ components:
               enum: [month, year]
         limits:
           $ref: '#/components/schemas/PlanLimits'
+    PayAsYouGoSetting:
+      type: object
+      required: [enabled, supported, plan, included, cap]
+      properties:
+        enabled:
+          type: boolean
+          description: False means a hard stop at the included limit.
+        supported:
+          type: boolean
+          description: False when the plan has no Pay-As-You-Go (Free and Pilot).
+        plan:
+          type: object
+          required: [id, name]
+          properties:
+            id:
+              type: string
+            name:
+              type: string
+        included:
+          type: object
+          required: [uploadSecondsPerPeriod, watchedMinutesPerPeriod]
+          properties:
+            uploadSecondsPerPeriod:
+              type: [integer, 'null']
+            watchedMinutesPerPeriod:
+              type: [integer, 'null']
+        cap:
+          type: object
+          required: [uploadSecondsPerPeriod, watchedMinutesPerPeriod]
+          properties:
+            uploadSecondsPerPeriod:
+              type: [integer, 'null']
+              description: The upload limit in force (3x included when on, included when off).
+            watchedMinutesPerPeriod:
+              type: [integer, 'null']
+              description: Null means no watch cap (overage is billed).
     AccountPlan:
       type: object
       required: [plan, status, currentPeriod, limits, usage]
