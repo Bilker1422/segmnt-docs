@@ -89,12 +89,17 @@ info:
     | `403` | `domain_mismatch` | `Origin` / `Referer` is not `https://{domain}`. |
     | `403` | `video_unavailable` | Video is held or deleted. |
     | `403` | `plan_limit_reached` | The account is over its free limit, or the request is for a quality above the plan's maximum. |
+    | `503` | `block_check_unavailable` | Coming soon: we could not finish the playback check. Temporary, with `Retry-After` seconds. Not a problem with your video or your plan. |
 
     A held or deleted video gets `video_unavailable` within about a minute, also for
     tokens issued before. After a delete, files are removed and the CDN can also
     answer `404` `not_found`. A request for a quality above your plan's maximum
     is also `plan_limit_reached`, even when the account is inside its limit; the
     master playlist only lists the qualities your plan allows.
+
+    A request that comes back `503` `block_check_unavailable` carries a
+    `Retry-After` header and must not be cached. Playback resumes on its own:
+    retry after that many seconds. This code arrives in the next release.
 
     ## Conventions
     - IDs are strings with a type prefix: `acc_`, `usr_`, `prj_`, `vid_`, `upl_`, `key_`, `dom_`, `whe_`, `evt_`.

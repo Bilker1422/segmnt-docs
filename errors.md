@@ -78,6 +78,7 @@ This is the most useful code to handle. Read `code` to know which 403 you have.
 | `domain_mismatch` | CDN | The request's origin is not the token's domain. | Play from your verified domain. |
 | `video_unavailable` | CDN | The video is held or deleted. | Stop playback. Wait for `video.ready`. |
 | `plan_limit_reached` | CDN | The account is over its watched-minutes limit, the request is for a quality above the plan, or the request comes from your own site on a plan that plays in our player (Free and Starter). | Change plan, play a lower quality, or use the embed code. |
+| `block_check_unavailable` | CDN | Coming soon: we could not finish the playback check. This is temporary and not a problem with your video or your plan. | Retry after the `Retry-After` seconds. |
 
 The CDN also sends the same value in the `X-Segmnt-Error` header, so a player can
 read the cause without parsing the body. See
@@ -85,6 +86,10 @@ read the cause without parsing the body. See
 
 `ip_mismatch` applies when a project turns on viewer network binding, which is
 **Coming soon**. See [Feature status](/status).
+
+`block_check_unavailable` arrives in the next release, and is **Coming soon**
+until then. Today a playback check that cannot answer is reported as
+`video_unavailable` or `plan_limit_reached`. See [Feature status](/status).
 
 ### 404 — not found
 
