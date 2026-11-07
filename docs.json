@@ -23,6 +23,12 @@
   "icons": {
     "library": "lucide"
   },
+  "redirects": [
+    {
+      "source": "/errors/:code",
+      "destination": "/errors"
+    }
+  ],
   "navigation": {
     "tabs": [
       {

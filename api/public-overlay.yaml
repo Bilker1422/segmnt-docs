@@ -115,6 +115,23 @@ actions:
   - target: $.components.schemas.ProjectUpdateInput.description
     update: |
       Rename a project and/or update its white-label branding. At least one field is required.
+  # Password sign-in is TEST only (PASSWORD_AUTH is set in env.test only). The
+  # six /auth/password/* routes are in the internal spec, but no production
+  # route answers them, so the published reference hides them. Board decision,
+  # 31 Oct 2026 (YAH-2064). Restore them only when the CTO marks password
+  # sign-in Available in the claims register (YAH-876).
+  - target: $.paths['/auth/password/signup']
+    remove: true
+  - target: $.paths['/auth/password/signin']
+    remove: true
+  - target: $.paths['/auth/password/verify']
+    remove: true
+  - target: $.paths['/auth/password/resend-verification']
+    remove: true
+  - target: $.paths['/auth/password/forgot']
+    remove: true
+  - target: $.paths['/auth/password/reset']
+    remove: true
   # Phone verification is Not planned (board, 19 Oct 2026; public wording in
   # PRs #550 and #551). The two phone routes are still in the API, but there is
   # no SMS service behind them: in production they answer 503

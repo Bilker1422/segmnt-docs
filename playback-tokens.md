@@ -38,7 +38,7 @@ Body:
 | Field | Required | Notes |
 | --- | --- | --- |
 | `domain` | Yes | A verified domain of the project. A host name only: `courses.example.com`. No `https://`, no path. |
-| `viewerIp` | Only with IP binding | Coming soon. The viewer's IP address. Will be required when the project has IP binding on; ignored otherwise. Send the viewer's IP, not your server's. |
+| `viewerIp` | Only with IP binding | The viewer's IP address. Required when the project has IP binding on; ignored otherwise. Send the viewer's IP, not your server's. |
 | `expiresInSeconds` | No | 60 to 86400. Default `14400` (4 hours). Make it longer than the video so playback does not stop. |
 
 Answer (`201`):
@@ -189,7 +189,7 @@ the text.
 | --- | --- | --- | --- |
 | 400 | `invalid_request` | `domain` is missing or not a host name, or `expiresInSeconds` is out of range | Fix the body. |
 | 400 | `invalid_request` | `domain` is not a **verified** domain of the project | Verify the domain first. |
-| 400 | `invalid_request` | Coming soon: IP binding is on and `viewerIp` is missing or not an IP address | Send the viewer's IP address. |
+| 400 | `invalid_request` | IP binding is on and `viewerIp` is missing or not an IP address | Send the viewer's IP address. |
 | 401 | `unauthorized` | Missing, wrong or revoked key | Check the key. |
 | 404 | `not_found` | Unknown video, or a key from another project | Check the ids. |
 | 409 | `video_not_ready` | The video is not `ready`, or it is held for review | Wait, or ask support. |

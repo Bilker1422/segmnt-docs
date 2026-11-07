@@ -82,22 +82,21 @@ Setup details are in
 
 ## Part 3: Viewer network binding (optional)
 
-> **Status: Coming soon.** Network binding is built; we have not offered it
-> publicly yet. This section explains how it will work. See
+> **Status: Available.** Off by default. This section explains how it works. See
 > [Feature status](/status).
 
 By default a playback link works from **any** network, so anyone on your verified
 domain who has the link can watch it until the token expires. If that is too
-loose, you will be able to bind a token to the **viewer's network**.
+loose, you can bind a token to the **viewer's network**.
 
-- You will turn it on per project with `PATCH /v1/projects/{projectId}` and
-  `{"ipBinding": true}`. It is **off by default**, and it will be available on
+- You turn it on per project with `PATCH /v1/projects/{projectId}` and
+  `{"ipBinding": true}`. It is **off by default**, and it is available on
   every plan — it does not change prices or plan limits.
-- When it is on, your server will send the **viewer's** IP address as `viewerIp`
+- When it is on, your server sends the **viewer's** IP address as `viewerIp`
   when it creates a token. Our API sees **your server's** IP, not the viewer's,
   so your server is the one that has to know the viewer's address.
-- The token will then hold the viewer's **network prefix**, not the exact
-  address: IPv4 `/24`, IPv6 `/64`. A request from another network will get
+- The token then holds the viewer's **network prefix**, not the exact
+  address: IPv4 `/24`, IPv6 `/64`. A request from another network gets
   `403 ip_mismatch`, on the media path and on the embed page.
 - The setting applies to tokens you create **after** you change it. A token you
   created earlier keeps working (or stays bound) until it expires. Use a short
@@ -112,21 +111,21 @@ curl -X PATCH "https://api.segmnt.cloud/v1/projects/$PROJECT_ID" \
   -d '{"ipBinding": true}'
 ```
 
-Every project will carry `ipBinding` in its answer, so you can read it back. The
+Every project carries `ipBinding` in its answer, so you can read it back. The
 switch is documented with the other project settings in
 [Accounts, projects, API keys and domains](/accounts-and-projects#playback-network-binding-optional).
 
-You will then create a token with the viewer's IP — see
+Then create a token with the viewer's IP — see
 [Bind a token to the viewer's network](/playback-tokens#bind-a-token-to-the-viewers-network-optional).
-On a bound project a token will **never** be minted without it: a missing or
-invalid `viewerIp` will be `400 invalid_request`. Do **not** send your server's
+On a bound project a token is **never** minted without it: a missing or
+invalid `viewerIp` gets `400 invalid_request`. Do **not** send your server's
 own IP; that would bind every token to your server's network and normal viewers
 would fail.
 
-### What viewers will see
+### What viewers see
 
-A viewer on another network (for example, someone who copied the link) will get
-`403` and the player will show a short message. The answer will carry
+A viewer on another network (for example, someone who copied the link) gets
+`403` and the player shows a short message. The answer carries
 `X-Segmnt-Error: ip_mismatch`, so your own player can tell this apart from an
 expired token. Ask the viewer to open the page from their own network, or have
 your server issue a fresh token for that network.
@@ -153,8 +152,7 @@ Each playback request goes through the same gate, in this order:
 2. **Signature valid, and for this video?** No → `403 token_invalid`. The token
    names one video, so a token for another video never plays this one.
 3. **Not expired?** Expired → `403 token_expired`.
-4. **Network (only when the project turns on IP binding).** *(Coming soon — see
-   [Feature status](/status).)* The request will then have to come from the
+4. **Network (only when the project turns on IP binding).** The request then has to come from the
    viewer's network: IPv4 `/24` or IPv6 `/64`. Another network →
    `403 ip_mismatch`. This is off by default.
 5. **Domain.** The request's `Origin` header (or the origin of its `Referer`)
@@ -190,7 +188,7 @@ Protection is about **where** a video can play, not **who** can watch it.
 
 - It does not lock a token to one viewer. Anyone on your **verified domain**
   with the link can watch it until the token expires. Use short tokens, and your
-  own login on top, if you need that. Viewer network binding (Coming soon)
+  own login on top, if you need that. Viewer network binding
   narrows a token to one **network**, not one person.
 - It does not stop **screen recording**.
 - It does not stop someone who can publish pages on your verified domain.

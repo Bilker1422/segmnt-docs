@@ -141,7 +141,7 @@ REST endpoints (all use the session cookie):
 | `GET` | `/v1/projects` | `limit` (1-100, default 20) and `cursor`. Newest first. |
 | `POST` | `/v1/projects` | `{"name": "Client A courses"}` (1-100 characters) → `201` |
 | `GET` | `/v1/projects/{projectId}` | one project |
-| `PATCH` | `/v1/projects/{projectId}` | `{"name": "New name"}` → `200`. Also `ipBinding` (`true`/`false`) to bind new playback tokens to the viewer's network (Coming soon). |
+| `PATCH` | `/v1/projects/{projectId}` | `{"name": "New name"}` → `200`. Also `ipBinding` (`true`/`false`, default `false`) to bind new playback tokens to the viewer's network (IPv4 `/24`, IPv6 `/64`). |
 | `DELETE` | `/v1/projects/{projectId}` | empty project → `204`; not empty → `409 project_not_empty` |
 
 Plan limit: the project cap depends on your plan (see the start of this
@@ -160,12 +160,12 @@ page:
 
 ### Playback network binding (optional)
 
-> **Status: Coming soon.** See [Feature status](/status).
+> **Status: Available.** Off by default. See [Feature status](/status).
 
-`ipBinding` will be a per-project switch, **off by default**, that binds every
+`ipBinding` is a per-project switch, **off by default**, that binds every
 new playback token to the **viewer's network** (IPv4 `/24`, IPv6 `/64`). A link
 that is shared to another network will then stop working with `403 ip_mismatch`.
-It will be available on every plan and does not change prices or plan limits.
+It is available on every plan and does not change prices or plan limits.
 
 Turn it on or off with the session cookie:
 
@@ -176,8 +176,8 @@ curl -X PATCH "https://api.segmnt.cloud/v1/projects/$PROJECT_ID" \
   -d '{"ipBinding": true}'
 ```
 
-Every project will carry `ipBinding` in its answer, so you can read it back. When
-it is on, your server will pass the viewer's IP as `viewerIp` when it creates a
+Every project carries `ipBinding` in its answer, so you can read it back. When
+it is on, your server passes the viewer's IP as `viewerIp` when it creates a
 token — see
 [How playback protection works](/playback-protection#part-3-viewer-network-binding-optional).
 The setting applies to tokens you create after you change it. It is not DRM: two

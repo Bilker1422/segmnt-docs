@@ -57,8 +57,8 @@ info:
     embed page only loads inside a frame on the token's domain
     (`Content-Security-Policy: frame-ancestors`).
 
-    **Viewer network (optional). Coming soon.** A project will be able to turn
-    on `ipBinding` (default off). Then every new playback token is bound to the
+    **Viewer network (optional).** A project can turn on `ipBinding` (default
+    off). Then every new playback token is bound to the
     viewer's network (IPv4 `/24`, IPv6 `/64`) and the CDN will refuse a request
     from another network with `403 ip_mismatch`. Because our API sees your
     server's IP, not the viewer's, your server will pass the viewer's IP as
@@ -84,7 +84,7 @@ info:
     | `403` | `token_missing` | No `token` query parameter. |
     | `403` | `token_invalid` | Bad format or signature, or the token is for another video. |
     | `403` | `token_expired` | Token is past `expiresAt`. |
-    | `403` | `ip_mismatch` | Coming soon. The token is bound to the viewer's network (project `ipBinding`) and this request is from another network (or the viewer IP cannot be checked). |
+    | `403` | `ip_mismatch` | The token is bound to the viewer's network (project `ipBinding`) and this request is from another network (or the viewer IP cannot be checked). |
     | `403` | `origin_missing` | No `Origin` and no `Referer` header. |
     | `403` | `domain_mismatch` | `Origin` / `Referer` is not `https://{domain}`. |
     | `403` | `video_unavailable` | Video is held or deleted. |
@@ -1602,7 +1602,7 @@ paths:
         plays without one, so you may skip this call for it. If you do mint a
         token for a public video it still works; the extra token changes nothing.
 
-        Coming soon: when the project has `ipBinding` on, `viewerIp` will be
+        When the project has `ipBinding` on, `viewerIp` is
         required. Pass the viewer's own IP address (our API sees your server's
         IP, not the viewer's). The token is then bound to the viewer's network
         and the CDN refuses another network with `403 ip_mismatch`. This applies
@@ -3859,7 +3859,7 @@ components:
         ipBinding:
           type: boolean
           description: |
-            Coming soon. Turn playback network binding on or off (default off).
+            Turn playback network binding on or off (default off).
             Available on every plan. The change applies to tokens you create
             after you change it.
         branding:
@@ -4209,7 +4209,7 @@ components:
         viewerIp:
           type: string
           description: |
-            Coming soon. The viewer's IP address. Will be required when the
+            The viewer's IP address. Required when the
             project has `ipBinding` on; ignored otherwise. Send the viewer's IP,
             not your server's: our API only sees your server. The token is bound
             to the viewer's network (IPv4 `/24`, IPv6 `/64`), so the CDN refuses
