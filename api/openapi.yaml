@@ -2078,6 +2078,29 @@ paths:
         '409':
           $ref: '#/components/responses/Conflict'
 
+  /v1/usage/summary:
+    get:
+      tags: [Billing]
+      operationId: getUsageSummary
+      summary: Get the account's plan limits and usage, plus the last three closed months
+      description: |
+        Read-only usage for the signed-in account. Each meter reports `used`,
+        `included` (`null` when the plan has no limit), `remaining` (never
+        negative) and `percent` (`null` when there is no limit). `processed_hours`
+        comes from the upload ledger, so it is never a made-up number. No price
+        is returned; this endpoint reports usage and limits only.
+      security:
+        - session: []
+      responses:
+        '200':
+          description: Current usage summary.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsageSummary'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
   /v1/account/billing/pay-as-you-go/watching:
     get:
       tags: [Billing]
@@ -4608,6 +4631,107 @@ components:
                 billed overage: Free, Starter and Pilot stop playback at the
                 limit, so they always report `0`. Pro and Agency never stop
                 playback at this point.
+    UsageSummary:
+      type: object
+      required: [plan, period, meters, payAsYouGo, history]
+      properties:
+        plan:
+          type: object
+          required: [id, name, status]
+          properties:
+            id:
+              $ref: '#/components/schemas/PlanId'
+            name:
+              type: string
+            status:
+              type: string
+              enum: [active, pilot, past_due, canceled]
+        period:
+          type: object
+          required: [start, end]
+          properties:
+            start:
+              $ref: '#/components/schemas/Timestamp'
+            end:
+              $ref: '#/components/schemas/Timestamp'
+        meters:
+          type: array
+          description: One entry per meter, always in the same order.
+          items:
+            $ref: '#/components/schemas/UsageMeter'
+        payAsYouGo:
+          type: object
+          required: [enabled, cap, planSupportsIt]
+          properties:
+            enabled:
+              type: boolean
+              description: |
+                True when watch time past the included minutes is billed
+                pay-as-you-go (Pro and Agency, when no pilot is active).
+            cap:
+              type: [integer, 'null']
+              description: |
+                Watched minutes at which playback stops. `null` when
+                pay-as-you-go is active (no hard stop), otherwise the plan's
+                included minutes.
+            planSupportsIt:
+              type: boolean
+              description: |
+                True when the plan can pay-as-you-go at all (Pro and Agency),
+                even if a pilot currently turns it off.
+        history:
+          type: array
+          description: The last three closed UTC months, oldest first.
+          minItems: 3
+          maxItems: 3
+          items:
+            type: object
+            required: [period, used]
+            properties:
+              period:
+                type: object
+                required: [start, end]
+                properties:
+                  start:
+                    $ref: '#/components/schemas/Timestamp'
+                  end:
+                    $ref: '#/components/schemas/Timestamp'
+              used:
+                type: object
+                required: [upload_hours, processed_hours, stored_hours, watched_minutes]
+                properties:
+                  upload_hours:
+                    type: number
+                  processed_hours:
+                    type: number
+                  stored_hours:
+                    type: number
+                    description: Reconstructed from when each video was created and (if ever) deleted.
+                  watched_minutes:
+                    type: number
+    UsageMeter:
+      type: object
+      required: [meter, unit, used, included, remaining, percent]
+      properties:
+        meter:
+          type: string
+          enum: [upload_hours, processed_hours, stored_hours, watched_minutes]
+        unit:
+          type: string
+          enum: [hours, minutes]
+        used:
+          type: number
+        included:
+          type: [number, 'null']
+          description: The plan's allowance for this meter, or `null` when there is no limit.
+        remaining:
+          type: [number, 'null']
+          description: Never negative; `0` once the meter is at or over its limit. `null` when there is no limit.
+        percent:
+          type: [number, 'null']
+          description: |
+            `used / included * 100`, rounded to two decimals. Can exceed `100`
+            on pay-as-you-go overage. `null` when there is no limit.
     Checkout:
       type: object
       required: [id, checkoutUrl, expiresAt]
