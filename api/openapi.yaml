@@ -4536,7 +4536,12 @@ components:
       properties:
         enabled:
           type: boolean
-          description: False means a hard stop at the included limit.
+          description: |
+            False means a hard stop at the included limit. Each meter has its own
+            switch (`/v1/account/billing/pay-as-you-go/upload` and
+            `/v1/account/billing/pay-as-you-go/watching`), and the per-meter
+            switch decides enforcement; this account-wide value is only the
+            default for a meter that has no setting of its own.
         supported:
           type: boolean
           description: False when the plan has no Pay-As-You-Go (Free and Pilot).
