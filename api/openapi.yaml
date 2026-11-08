@@ -2703,7 +2703,7 @@ components:
                     type: number
                   stored_hours:
                     type: number
-                    description: Reconstructed from when each video was created and (if ever) deleted.
+                    description: Reconstructed from when each video was created and (if ever) deleted. A video that later moves to `failed` drops out of past months.
                   watched_minutes:
                     type: number
     UsageMeter:
