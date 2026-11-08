@@ -2671,6 +2671,46 @@ paths:
         '503':
           description: Admin access is not configured.
 
+  /v1/admin/stats:
+    get:
+      tags: [Admin]
+      x-excluded: true
+      x-internal: true
+      operationId: getAdminStats
+      summary: Read-only growth aggregates
+      description: |
+        Signups per week, active accounts, watched minutes and plan mix. Counts
+        and totals only: no account id, name, e-mail, project name or video
+        title. This is the only route the read-only `STATS_READ_TOKEN` may call;
+        full admin credentials can also read it.
+      security:
+        - adminAccess: []
+      parameters:
+        - name: weeks
+          in: query
+          required: false
+          description: Number of Monday-to-Sunday UTC weeks, ending with the current week.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 26
+            default: 12
+      responses:
+        '200':
+          description: Aggregates for the window.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GrowthStats'
+        '400':
+          description: weeks is not a whole number from 1 to 26.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: The credential may not read this route.
+        '503':
+          description: Admin access is not configured.
+
   /v1/admin/scan:
     post:
       tags: [Admin]
@@ -3458,6 +3498,8 @@ components:
         Admin credential (task A12). Either a Cloudflare Access JWT (sent as the
         `Cf-Access-Jwt-Assertion` header when the request passed the Access
         policy) or a shared admin token as a bearer token. Never a customer key.
+        `GET /v1/admin/stats` also accepts the separate read-only
+        `STATS_READ_TOKEN`, which no other admin route accepts.
     internalSecret:
       type: http
       scheme: bearer
@@ -5162,6 +5204,83 @@ components:
           type: boolean
         note:
           type: [string, 'null']
+
+    GrowthStats:
+      type: object
+      required: [generatedAt, window, totals, planMix, weeks, videos]
+      properties:
+        generatedAt:
+          type: string
+          format: date-time
+        window:
+          type: object
+          required: [weeks, since, until]
+          properties:
+            weeks:
+              type: integer
+            since:
+              type: string
+              format: date
+            until:
+              type: string
+              format: date
+        totals:
+          type: object
+          required: [accounts, bannedAccounts, newAccounts, activeAccounts, watchSeconds, watchMinutes]
+          properties:
+            accounts:
+              type: integer
+            bannedAccounts:
+              type: integer
+            newAccounts:
+              type: integer
+            activeAccounts:
+              type: integer
+            watchSeconds:
+              type: integer
+            watchMinutes:
+              type: number
+        planMix:
+          type: array
+          items:
+            type: object
+            required: [planId, accounts]
+            properties:
+              planId:
+                type: string
+              accounts:
+                type: integer
+        weeks:
+          type: array
+          items:
+            type: object
+            required: [weekStart, signups, activeAccounts, watchMinutes]
+            properties:
+              weekStart:
+                type: string
+                format: date
+                description: Monday of the UTC week.
+              signups:
+                type: integer
+              activeAccounts:
+                type: integer
+                description: Accounts with at least one watched second in the week.
+              watchMinutes:
+                type: number
+        videos:
+          type: object
+          required: [total, ready, processing, held, storedMinutes]
+          properties:
+            total:
+              type: integer
+            ready:
+              type: integer
+            processing:
+              type: integer
+            held:
+              type: integer
+            storedMinutes:
+              type: number
 
     AdminAccount:
       type: object
