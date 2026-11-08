@@ -2158,6 +2158,59 @@ paths:
         '409':
           $ref: '#/components/responses/Conflict'
 
+  /v1/usage/breakdown:
+    get:
+      tags: [Billing]
+      operationId: getUsageBreakdown
+      summary: Explain what consumed one meter, by project, video and operation
+      description: |
+        Read-only. The same total `GET /v1/usage/summary` reports for that meter
+        (asserted in the tests), split three ways so a customer can see what
+        used it.
+
+        `byProject` and `byVideo` list the top 10 by quantity, largest first.
+        Everything past the top 10 is summed into `other` instead of being
+        dropped, so `byProject` shares plus `other.projectShare` add up to 100%.
+        `other.videoQuantity` is the same remainder for videos, which carry no
+        share.
+
+        `byOperation` names the operation that recorded the usage: `upload`,
+        `processing`, `storage` or `playback`. Each meter comes from one place
+        (the video rows, the upload ledger or the playback ledger), so a meter
+        has exactly one operation and a `100` share.
+
+        A month with no data returns `200` with `total: 0` and empty arrays, not
+        an error. Unknown `meter` or a `month` that is not `YYYY-MM` returns
+        `400`. `month` defaults to the current UTC month.
+      security:
+        - session: []
+      parameters:
+        - name: meter
+          in: query
+          required: true
+          description: The meter to explain.
+          schema:
+            type: string
+            enum: [upload_hours, processed_hours, stored_hours, watched_minutes]
+        - name: month
+          in: query
+          required: false
+          description: The UTC month, `YYYY-MM`. Defaults to the current month.
+          schema:
+            type: string
+            pattern: '^\d{4}-(0[1-9]|1[0-2])$'
+      responses:
+        '200':
+          description: The breakdown for that meter and month.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsageBreakdown'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
   /v1/account/billing/pay-as-you-go/watching:
     get:
       tags: [Billing]
@@ -4832,6 +4885,82 @@ components:
           description: |
             `used / included * 100`, rounded to two decimals. Can exceed `100`
             on pay-as-you-go overage. `null` when there is no limit.
+    UsageBreakdown:
+      type: object
+      required: [meter, month, unit, total, byProject, byVideo, byOperation, other]
+      properties:
+        meter:
+          type: string
+          enum: [upload_hours, processed_hours, stored_hours, watched_minutes]
+        month:
+          type: string
+          description: The UTC month, `YYYY-MM`.
+          example: '2026-11'
+        unit:
+          type: string
+          enum: [hours, minutes]
+        total:
+          type: number
+          description: Same number as the summary's `used` for this meter.
+        byProject:
+          type: array
+          description: Top 10 projects by quantity, largest first.
+          maxItems: 10
+          items:
+            type: object
+            required: [projectId, name, quantity, share]
+            properties:
+              projectId:
+                type: string
+              name:
+                type: [string, 'null']
+              quantity:
+                type: number
+              share:
+                type: number
+                description: Percent of `total`, rounded to two decimals.
+        byVideo:
+          type: array
+          description: Top 10 videos by quantity, largest first.
+          maxItems: 10
+          items:
+            type: object
+            required: [videoId, title, quantity]
+            properties:
+              videoId:
+                type: string
+              title:
+                type: [string, 'null']
+              quantity:
+                type: number
+        byOperation:
+          type: array
+          description: The operation that recorded this meter's usage.
+          items:
+            type: object
+            required: [operation, quantity, share]
+            properties:
+              operation:
+                type: string
+                enum: [upload, processing, storage, playback]
+              quantity:
+                type: number
+              share:
+                type: number
+        other:
+          type: object
+          description: Everything past the top 10, so nothing is silently dropped.
+          required: [projectQuantity, projectShare, videoQuantity]
+          properties:
+            projectQuantity:
+              type: number
+            projectShare:
+              type: number
+              description: |
+                `byProject` shares plus this share add up to 100%.
+            videoQuantity:
+              type: number
+
     Checkout:
       type: object
       required: [id, checkoutUrl, expiresAt]

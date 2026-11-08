@@ -307,3 +307,11 @@ actions:
     update:
       type: [integer, 'null']
       description: Null means no watch cap (overage is billed).
+  # Usage breakdown (YAH-2565, Release B2). On TEST, not in a release yet, and
+  # not Available in the claims register (YAH-876). A push to main mirrors
+  # mintlify-docs/ to the public site, so this hides the route and its schemas
+  # until the CTO marks it Available. On release, delete these actions.
+  - target: $.paths['/v1/usage/breakdown']
+    remove: true
+  - target: $.components.schemas.UsageBreakdown
+    remove: true
