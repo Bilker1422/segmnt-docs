@@ -102,10 +102,11 @@ Notes:
   numbers you see on the site.
 - This call needs the session cookie. Without it you get `401 unauthorized`.
 
-## 2. Start a checkout (paused)
+## 2. Start a checkout
 
-Checkout is **paused**: no payment gateway is active, so this call cannot start
-a payment and cannot change a plan. It answers `503 billing_paused`.
+Paid plans are not open yet. Checkout cannot start a payment and cannot change a
+plan: this call answers `503 billing_paused`. Join the
+[paid-plan whitelist](#3-join-the-paid-plan-whitelist) instead.
 
 ```bash
 curl -X POST "$BASE/v1/billing/checkout" \

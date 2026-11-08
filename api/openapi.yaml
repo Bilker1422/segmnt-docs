@@ -4,113 +4,7 @@ info:
   version: 0.19.19
   summary: Video infrastructure. Upload through one API and we encode, store, secure and stream it on your own domain.
   description: |
-    First draft of the segmnt API contract (task A2). It is a contract for the MVP
-    and will change while we build it.
-
-    ## Authentication
-    - **API key** (`apiKey`): `Authorization: Bearer <key>`. A key belongs to one
-      project. It can only call routes under `/v1/projects/{projectId}` for that
-      project. Send it only from your server, never from a browser.
-    - **Dashboard session** (`session`): cookie set after SSO sign-in (Google, GitHub,
-      Reddit, Apple). It can call every route for projects in the signed-in account.
-      Account routes (projects, API keys, billing) accept only the session.
-      The cookie is `HttpOnly; Secure; SameSite=Lax`. Requests with a body must be
-      `application/json`; other content types get `415`.
-
-    The SSO sign-in routes live under `/auth/*` (task A8): the browser is
-    redirected to the provider and back, then the `segmnt_session` cookie
-    authenticates the account routes.
-
-    ## Rate limits
-    Every `/v1/**` and `/auth/**` request is rate limited by client IP (task
-    A17): `/v1/**` allows 1,200 requests per minute and `/auth/**` allows 60 per
-    minute. `GET /health` and `OPTIONS` preflight are never counted. A blocked
-    request gets `429` with a `Retry-After` header and `code: "rate_limited"`.
-
-    ## Video lifecycle
-    `uploading` → `processing` → `ready`, or `failed`. Our team can move a video to
-    `held` (it does not play) or back to `ready`. Moving to `ready`, `failed`
-    or `held` sends a webhook.
-    A held or deleted video stops playing within about a minute, also for tokens
-    issued before.
-
-    ## Playback
-    Videos never have a public URL. Your server asks for a playback token for one
-    video and one verified domain. The token goes in the `token` query parameter
-    of the master playlist URL:
-    `https://cdn.segmnt.cloud/v/{videoId}/master.m3u8?token={token}`.
-    The CDN rewrites every playlist it returns and adds the same `?token=` to
-    each link inside, so a player only needs the master playlist URL.
-
-    Free plans must play with `embedUrl` (our player, with our logo).
-    `playlistUrl` is returned only on plans with `whiteLabel`.
-
-    **Domain check.** The CDN takes the `Origin` header, or the origin of
-    `Referer` when there is no `Origin`. It must be exactly `https://{domain}`,
-    where `{domain}` is the token's domain:
-    - scheme `https` only; no port;
-    - host compared without case (`Courses.Example.com` = `courses.example.com`);
-    - exact host only: subdomains do not match (`www.courses.example.com` needs
-      its own verified domain).
-
-    Requests from our embed page (on the CDN host) pass the domain check; the
-    embed page only loads inside a frame on the token's domain
-    (`Content-Security-Policy: frame-ancestors`).
-
-    **Viewer network (optional).** A project can turn on `ipBinding` (default
-    off). Then every new playback token is bound to the
-    viewer's network (IPv4 `/24`, IPv6 `/64`) and the CDN will refuse a request
-    from another network with `403 ip_mismatch`. Because our API sees your
-    server's IP, not the viewer's, your server will pass the viewer's IP as
-    `viewerIp` when it creates the token. Without `ipBinding` the field is
-    ignored. This is not DRM: two viewers on the same `/24`, or behind one
-    mobile-carrier NAT, can still share. The setting applies to tokens you
-    create after you change it: tokens you created before the change keep
-    working (or stay bound) until they expire. Use a short `expiresInSeconds`
-    when you turn binding on.
-
-    **Expiry.** A token is expired when the CDN clock is at or after
-    `expiresAt`. There is no clock skew allowance. Note: browsers keep segments
-    in their cache for 1 day and playlists for 30 seconds, so test expiry with a
-    fresh client or no browser cache.
-
-    **CDN errors.** Every refused request has the header
-    `X-Segmnt-Error: <code>` and an `application/problem+json` body with the same
-    `code`. A token check runs in this order; the first failure wins:
-
-    | Status | `code` | When |
-    |---|---|---|
-    | `404` | `not_found` | Path is not a video file we serve. |
-    | `403` | `token_missing` | No `token` query parameter. |
-    | `403` | `token_invalid` | Bad format or signature, or the token is for another video. |
-    | `403` | `token_expired` | Token is past `expiresAt`. |
-    | `403` | `ip_mismatch` | The token is bound to the viewer's network (project `ipBinding`) and this request is from another network (or the viewer IP cannot be checked). |
-    | `403` | `origin_missing` | No `Origin` and no `Referer` header. |
-    | `403` | `domain_mismatch` | `Origin` / `Referer` is not `https://{domain}`. |
-    | `403` | `video_unavailable` | Video is held or deleted. |
-    | `403` | `plan_limit_reached` | The account is over its free limit, or the request is for a quality above the plan's maximum. |
-    | `503` | `block_check_unavailable` | Coming soon: we could not finish the playback check. Temporary, with `Retry-After` seconds. Not a problem with your video or your plan. |
-
-    A held or deleted video gets `video_unavailable` within about a minute, also for
-    tokens issued before. After a delete, files are removed and the CDN can also
-    answer `404` `not_found`. A request for a quality above your plan's maximum
-    is also `plan_limit_reached`, even when the account is inside its limit; the
-    master playlist only lists the qualities your plan allows.
-
-    A request that comes back `503` `block_check_unavailable` carries a
-    `Retry-After` header and must not be cached. Playback resumes on its own:
-    retry after that many seconds. This code arrives in the next release.
-
-    ## Conventions
-    - IDs are strings with a type prefix: `acc_`, `usr_`, `prj_`, `vid_`, `upl_`, `key_`, `dom_`, `whe_`, `evt_`.
-    - Times are RFC 3339 in UTC.
-    - Lists use cursor pagination: pass `nextCursor` back as `cursor`.
-    - Errors use `application/problem+json` (RFC 9457) with a stable `code`.
-    - `Idempotency-Key` is scoped to the project. A repeat request with the same
-      key returns the first result. The body is not compared, and there is no
-      `422`. Only upload create and video reports read the key. Upload create
-      reads it only with a server API key; with an upload token it is ignored.
-    - Money is an integer in the smallest unit of the currency (halalas for SAR).
+    The segmnt API contract. It can change while we build it.
   license:
     name: Proprietary
     identifier: LicenseRef-Proprietary
@@ -130,7 +24,9 @@ tags:
       `/auth/{provider}/callback`, which sets the `segmnt_session` cookie.
       Launch providers: Google and GitHub. Apple and Reddit come later.
   - name: Projects
-    description: An account has many projects. Agencies use one project per client.
+    description: |
+      How many projects an account can have depends on its plan: Free and
+      Starter 1, Pro and Pilot (by invitation) 3, Agency 25. Agencies use one project per client.
   - name: API keys
     description: Server-side keys. Each key belongs to one project.
   - name: Domains
@@ -153,27 +49,19 @@ tags:
       No authentication; one protected demo video, fixed by configuration.
   - name: Webhooks
     description: |
-      HTTPS endpoints that receive video events. The MVP has no "send test event"
-      route and no delivery log. To test, register your own receiver and upload
-      a short video.
+      HTTPS endpoints that receive video events. To test, register your own
+      receiver and upload a short video.
   - name: Usage
     description: Stored and watched time.
   - name: Billing
-    description: Plans and checkout through the payment provider's hosted page.
-  - name: Admin
-    description: |
-      Internal routes for our team (A12 abuse/review and A13 bans). Not for
-      customers. The page is at `/admin` behind Cloudflare Access. Every admin
-      route is gated by `adminAccess` (a Cloudflare Access JWT, or a shared
-      admin token). Internal helper routes are called by our own Workers with
-      `internalSecret`.
-    x-internal: true
+    description: Plans, checkout and the paid-plan whitelist.
   - name: System
     description: Health check.
 paths:
   /health:
     get:
-      tags: [System]
+      tags:
+        - System
       operationId: getHealth
       summary: Health check
       security: []
@@ -184,19 +72,20 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [status]
+                required:
+                  - status
                 properties:
                   status:
                     type: string
                     const: ok
-        '4XX':
-          description: Client error.
         '503':
           description: The API is not ready.
-
+        4XX:
+          description: Client error.
   /auth/providers:
     get:
-      tags: [Auth]
+      tags:
+        - Auth
       operationId: listAuthProviders
       summary: List the enabled sign-in providers
       description: |
@@ -210,7 +99,9 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [data, turnstile]
+                required:
+                  - data
+                  - turnstile
                 properties:
                   data:
                     type: array
@@ -218,7 +109,9 @@ paths:
                       $ref: '#/components/schemas/AuthProvider'
                   turnstile:
                     type: object
-                    required: [enabled, siteKey]
+                    required:
+                      - enabled
+                      - siteKey
                     description: |
                       The state of the sign-in / sign-up bot gate. The gate is off
                       by default. When `enabled` is true the dashboard draws the
@@ -229,266 +122,16 @@ paths:
                         type: boolean
                         description: True only when the gate is on.
                       siteKey:
-                        type: [string, 'null']
+                        type:
+                          - string
+                          - 'null'
                         description: Public widget site key, or null when the gate is off.
-                  password:
-                    type: boolean
-                    description: True when e-mail + password sign-up and sign-in are on.
-
-  /auth/password/signup:
-    post:
-      tags: [Auth]
-      x-excluded: true
-      x-internal: true
-      operationId: passwordSignup
-      summary: Sign up with e-mail and password
-      description: |
-        Creates an account with an e-mail and a password, and mails a
-        "confirm your e-mail" link. It does NOT sign the user in: the account
-        stays inactive until the link is used (`POST /auth/password/verify`).
-        Only on when the environment's `PASSWORD_AUTH` flag is on
-        (`password: true` in `GET /auth/providers`); otherwise 404.
-
-        A good Turnstile answer is always required. An environment without
-        Turnstile keys refuses every sign-up.
-
-        The e-mail is not verified yet, so it never links to an existing
-        Google or GitHub account with the same e-mail.
-      security: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [email, password]
-              properties:
-                email:
-                  type: string
-                  format: email
-                  maxLength: 254
-                  description: Compared in lower case.
-                password:
-                  type: string
-                  description: 10 to 256 characters.
-                displayName:
-                  type: string
-                  maxLength: 100
-                turnstileToken:
-                  type: string
-                  description: The bot-gate answer. Always required.
-                language:
-                  $ref: '#/components/schemas/AuthMailLanguage'
-      responses:
-        '202':
-          description: Account created and the verify link mailed. No session.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthMailAccepted'
-        '400':
-          description: Invalid e-mail (`invalid_email`) or a password that is too short, too long or equal to the e-mail (`weak_password`).
-        '403':
-          description: Cross-site request, or the bot check failed (`bot_challenge_failed`).
-        '404':
-          description: Password sign-in is off in this environment.
-        '409':
-          description: An account with this e-mail already exists (`email_taken`).
-        '415':
-          description: The body is not JSON.
-
-  /auth/password/signin:
-    post:
-      tags: [Auth]
-      x-excluded: true
-      x-internal: true
-      operationId: passwordSignin
-      summary: Sign in with e-mail and password
-      description: |
-        Signs in with an e-mail and a password. A wrong password and an
-        unknown e-mail get the same answer. An account whose e-mail is not
-        confirmed yet gets `403 email_not_verified` (only after the password
-        matched). Only on when `PASSWORD_AUTH` is on.
-      security: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [email, password]
-              properties:
-                email:
-                  type: string
-                  format: email
-                  maxLength: 254
-                  description: Compared in lower case.
-                password:
-                  type: string
-                  description: 10 to 256 characters.
-                turnstileToken:
-                  type: string
-                  description: The bot-gate answer. Required only when `turnstile.enabled` is true.
-      responses:
-        '204':
-          description: Signed in. `Set-Cookie` carries the `segmnt_session` cookie.
-        '401':
-          description: The e-mail or password is not correct (`invalid_credentials`).
-        '403':
-          description: Cross-site request, the bot check failed (`bot_challenge_failed`), or the e-mail is not confirmed yet (`email_not_verified`).
-        '404':
-          description: Password sign-in is off in this environment.
-        '415':
-          description: The body is not JSON.
-
-  /auth/password/verify:
-    post:
-      tags: [Auth]
-      x-excluded: true
-      x-internal: true
-      operationId: passwordVerifyEmail
-      summary: Confirm the e-mail with the mailed link
-      description: |
-        Uses the token from the "confirm your e-mail" link (the dashboard reads
-        it from `#/verify-email?token=...`). A token works once and expires
-        after 24 hours; only the newest link works. On success the account is
-        active and the user is signed in.
-      security: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [token]
-              properties:
-                token:
-                  type: string
-      responses:
-        '204':
-          description: E-mail confirmed and signed in. `Set-Cookie` carries the `segmnt_session` cookie.
-        '400':
-          description: Unknown, used or expired link (`invalid_token`).
-        '403':
-          description: Cross-site request.
-        '404':
-          description: Password sign-in is off in this environment.
-        '415':
-          description: The body is not JSON.
-
-  /auth/password/resend-verification:
-    post:
-      tags: [Auth]
-      x-excluded: true
-      x-internal: true
-      operationId: passwordResendVerification
-      summary: Mail a new "confirm your e-mail" link
-      description: |
-        Mails a new verify link when the e-mail belongs to a password account
-        that is not confirmed yet. The answer is the same 202 in every case,
-        so it does not show which e-mails have accounts. At most one mail per
-        account per 60 seconds. A good Turnstile answer is always required.
-      security: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AuthMailRequest'
-      responses:
-        '202':
-          description: Accepted.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthMailAccepted'
-        '400':
-          description: Invalid e-mail (`invalid_email`).
-        '403':
-          description: Cross-site request, or the bot check failed (`bot_challenge_failed`).
-        '404':
-          description: Password sign-in is off in this environment.
-        '415':
-          description: The body is not JSON.
-
-  /auth/password/forgot:
-    post:
-      tags: [Auth]
-      x-excluded: true
-      x-internal: true
-      operationId: passwordForgot
-      summary: Mail a password reset link
-      description: |
-        Mails a reset link when the e-mail belongs to a password account. The
-        answer is the same 202 in every case. At most one mail per account per
-        60 seconds. A good Turnstile answer is always required.
-      security: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AuthMailRequest'
-      responses:
-        '202':
-          description: Accepted.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthMailAccepted'
-        '400':
-          description: Invalid e-mail (`invalid_email`).
-        '403':
-          description: Cross-site request, or the bot check failed (`bot_challenge_failed`).
-        '404':
-          description: Password sign-in is off in this environment.
-        '415':
-          description: The body is not JSON.
-
-  /auth/password/reset:
-    post:
-      tags: [Auth]
-      x-excluded: true
-      x-internal: true
-      operationId: passwordReset
-      summary: Set a new password with the mailed link
-      description: |
-        Uses the token from the reset link (`#/reset-password?token=...`). A
-        token works once and expires after 30 minutes. A refused password does
-        not use up the link. On success every session of the user ends; the
-        user then signs in with the new password. The link also confirms the
-        e-mail.
-      security: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [token, password]
-              properties:
-                token:
-                  type: string
-                password:
-                  type: string
-                  description: 10 to 256 characters, not equal to the e-mail.
-      responses:
-        '204':
-          description: Password changed. All sessions ended. No new session.
-        '400':
-          description: Unknown, used or expired link (`invalid_token`), or a refused password (`weak_password`).
-        '403':
-          description: Cross-site request.
-        '404':
-          description: Password sign-in is off in this environment.
-        '415':
-          description: The body is not JSON.
-
   /auth/{provider}/start:
     parameters:
       - $ref: '#/components/parameters/AuthProviderId'
     get:
-      tags: [Auth]
+      tags:
+        - Auth
       operationId: startAuth
       summary: Start an SSO sign-in (browser only)
       description: |
@@ -539,12 +182,12 @@ paths:
           $ref: '#/components/responses/NotFound'
         '503':
           $ref: '#/components/responses/AuthNotConfigured'
-
   /auth/{provider}/callback:
     parameters:
       - $ref: '#/components/parameters/AuthProviderId'
     get:
-      tags: [Auth]
+      tags:
+        - Auth
       operationId: completeAuth
       summary: Complete an SSO sign-in (the provider redirects here)
       description: |
@@ -556,7 +199,7 @@ paths:
 
         A second provider links to an existing account only when its e-mail is
         provider-verified; otherwise it creates a new account. Every new account
-        is flagged for internal review (A12). The flag never leaves the API.
+        goes through a short review before it can start.
       security: []
       parameters:
         - name: code
@@ -609,10 +252,10 @@ paths:
                 $ref: '#/components/schemas/Problem'
         '503':
           $ref: '#/components/responses/AuthNotConfigured'
-
   /auth/logout:
     post:
-      tags: [Auth]
+      tags:
+        - Auth
       operationId: logout
       summary: End the dashboard session
       description: |
@@ -622,20 +265,16 @@ paths:
       responses:
         '204':
           description: Logged out.
-
   /v1/me:
     get:
-      tags: [Auth]
+      tags:
+        - Auth
       operationId: getMe
       summary: The signed-in user and its account
       description: |
         Returns the signed-in user and its account. A visitor who is not
         signed in (no session, expired session, signed out) gets
         `401 unauthorized`.
-
-        A session that belongs to a blocked account gets `403 banned` instead,
-        so the dashboard can tell the customer why they are signed out. The
-        answer carries no account details.
       security:
         - session: []
       responses:
@@ -647,303 +286,10 @@ paths:
                 $ref: '#/components/schemas/Me'
         '401':
           $ref: '#/components/responses/Unauthorized'
-        '403':
-          description: The session belongs to a blocked account (`code` is `banned`).
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-
-  /v1/me/device:
-    post:
-      tags: [Auth]
-      x-excluded: true
-      x-internal: true
-      operationId: linkDevice
-      summary: Link this browser's device fingerprint to the signed-in account
-      description: |
-        Called once by the dashboard after sign-in (YAH-1389). The fingerprint is
-        stored only as a salted hash. Linking the same device twice is a no-op.
-        If the hash matches an active ban, the account is blocked at once: its
-        sessions stop and its videos stop playing. The request is refused from
-        another origin (the CSRF guard) and can only link a device to the
-        signed-in account.
-
-        At most 20 devices per account. An account that already has 20 linked
-        devices gets `429 device_limit_reached` for a new device; a repeat of an
-        already-linked device still answers `200`.
-      security:
-        - session: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/DeviceLinkInput'
-      responses:
-        '200':
-          description: The device is linked (or was already linked).
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DeviceLink'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          description: The device is under an active ban (`code` is `banned`), or the request failed the CSRF guard.
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-        '429':
-          description: The account already has the maximum number of linked devices (`code` is `device_limit_reached`), or the caller is rate limited.
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-        '503':
-          description: Device linking is not configured (`code` is `not_configured`).
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-
-  /v1/me/phone/start:
-    post:
-      tags: [Auth]
-      operationId: startPhoneVerification
-      summary: Send a phone verification code
-      description: |
-        Starts phone verification for the signed-in account (task A13). Phone
-        verification is not enforced in this version, so a free account can
-        upload without it; this route is kept for when the wizard phone step
-        ships. The number
-        must be a Saudi or GCC mobile (`05XXXXXXXX`, `+9665XXXXXXXX`,
-        `+9715XXXXXXXX`, `+965XXXXXXXX`, ...); it is stored only as a salted hash.
-        Send a full international number (`+CC...`), or a local number together
-        with `country`; without `country` a local number is treated as Saudi.
-
-        At most 5 codes per account per hour. A phone number or account under an
-        active ban is refused. SMS is sent through our SMS provider; when none
-        is configured this route answers `503`. When the `test` provider is
-        configured, it also returns the code in `testCode` so an automated
-        end-to-end test can finish the flow.
-      security:
-        - session: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PhoneStartInput'
-      responses:
-        '202':
-          description: A code was sent.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PhoneChallenge'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          description: The account or phone number is banned (`code` is `banned`).
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-        '429':
-          $ref: '#/components/responses/TooManyRequests'
-        '503':
-          description: Phone verification is not configured, or the SMS provider is not set up (`code` is `not_configured` or `sms_not_configured`).
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-
-  /v1/me/phone/verify:
-    post:
-      tags: [Auth]
-      operationId: verifyPhone
-      summary: Verify a phone code and save the device fingerprint
-      description: |
-        Completes phone verification and stores the device fingerprint (task
-        A13). The challenge is single-use and expires after 10 minutes; 5 wrong
-        codes close it. Repeating a successful call with the same challenge is a
-        no-op `200`. A banned account, phone or device is refused.
-      security:
-        - session: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PhoneVerifyInput'
-      responses:
-        '200':
-          description: The phone number is verified.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PhoneVerified'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          description: The account, phone number or device is banned (`code` is `banned`).
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-        '404':
-          description: The challenge is unknown, already used, or belongs to another account (`code` is `challenge_not_found`).
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-        '410':
-          description: The code expired (`code` is `code_expired`).
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-        '429':
-          $ref: '#/components/responses/TooManyRequests'
-        '503':
-          $ref: '#/components/responses/AuthNotConfigured'
-
-  /v1/admin/bans:
-    get:
-      tags: [Admin]
-      x-excluded: true
-      x-internal: true
-      operationId: listBans
-      summary: List bans
-      description: |
-        Internal admin route for our team. The admin page (behind Cloudflare
-        Access) uses it. Phone numbers and fingerprints are never
-        returned, only whether a ban names one.
-      security:
-        - adminAccess: []
-      responses:
-        '200':
-          description: The 100 newest bans.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BanList'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '503':
-          description: The admin API is not configured (`code` is `admin_not_configured`).
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-    post:
-      tags: [Admin]
-      x-excluded: true
-      x-internal: true
-      operationId: createBan
-      summary: Ban an account, a phone and/or a device
-      description: |
-        **Every ban needs an approval reference.** The request must carry a
-        `boardApprovalRef`; without one this answers `403 board_approval_required`
-        and nothing is written. A ban blocks the account (`banned_at`), the phone
-        number and the device fingerprint. Sessions stop at once: session lookups
-        ignore a banned account. API keys are **not** revoked, so an existing key
-        keeps working on non-upload routes; upload routes are gated separately by
-        the upload check and answer `403 account_banned`. Safe to call twice: an
-        identical active ban is returned, not duplicated.
-
-        An account ban covers more than the account itself: the account's
-        verified e-mail addresses, its SSO identities and the devices it linked
-        are banned with it, so the same person cannot come back through another
-        account. Those are child rows of the ban, not bans of their own: they
-        carry the same reason and the same approval reference, they never show
-        up in the ban list and they are lifted together with the ban.
-      security:
-        - adminAccess: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/BanInput'
-      responses:
-        '201':
-          description: A new ban is active.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Ban'
-        '200':
-          description: An identical active ban already existed.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Ban'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          description: No approval reference was supplied (`code` is `board_approval_required`).
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-        '503':
-          description: The admin API is not configured (`code` is `admin_not_configured`).
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-
-  /v1/admin/bans/{banId}/lift:
-    post:
-      tags: [Admin]
-      x-excluded: true
-      x-internal: true
-      operationId: liftBan
-      summary: Lift a ban
-      description: |
-        Clears the ban; when it was the account's last active ban, `banned_at` is
-        cleared too. Lifting a ban also lifts the rows that belong to it, so the
-        e-mail addresses, SSO identities and devices it covered are free again.
-
-        Only a ban can be lifted. The child rows are not bans of their own and
-        are never shown in the ban list, so a lift with such an id answers
-        `404 not_found` and changes nothing.
-      security:
-        - adminAccess: []
-      parameters:
-        - $ref: '#/components/parameters/BanId'
-      responses:
-        '200':
-          description: The lifted ban.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Ban'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '503':
-          description: The admin API is not configured (`code` is `admin_not_configured`).
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-
   /v1/projects:
     get:
-      tags: [Projects]
+      tags:
+        - Projects
       operationId: listProjects
       summary: List projects
       security:
@@ -961,7 +307,8 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
     post:
-      tags: [Projects]
+      tags:
+        - Projects
       operationId: createProject
       summary: Create a project
       security:
@@ -985,12 +332,12 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
-
   /v1/projects/{projectId}:
     parameters:
       - $ref: '#/components/parameters/ProjectId'
     get:
-      tags: [Projects]
+      tags:
+        - Projects
       operationId: getProject
       summary: Get a project
       responses:
@@ -1005,7 +352,8 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
     patch:
-      tags: [Projects]
+      tags:
+        - Projects
       operationId: updateProject
       summary: Rename a project and/or update its white-label branding
       security:
@@ -1032,7 +380,8 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
     delete:
-      tags: [Projects]
+      tags:
+        - Projects
       operationId: deleteProject
       summary: Delete a project
       description: Only an empty project can be deleted. Delete its videos first.
@@ -1047,12 +396,12 @@ paths:
           $ref: '#/components/responses/NotFound'
         '409':
           $ref: '#/components/responses/Conflict'
-
   /v1/projects/{projectId}/api-keys:
     parameters:
       - $ref: '#/components/parameters/ProjectId'
     get:
-      tags: [API keys]
+      tags:
+        - API keys
       operationId: listApiKeys
       summary: List API keys
       security:
@@ -1064,7 +413,8 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [data]
+                required:
+                  - data
                 properties:
                   data:
                     type: array
@@ -1075,7 +425,8 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
     post:
-      tags: [API keys]
+      tags:
+        - API keys
       operationId: createApiKey
       summary: Create an API key
       security:
@@ -1086,16 +437,20 @@ paths:
           application/json:
             schema:
               type: object
-              required: [name]
+              required:
+                - name
               properties:
                 name:
                   type: string
                   minLength: 1
                   maxLength: 100
-                  examples: [Course site backend]
+                  examples:
+                    - Course site backend
                 scope:
                   type: string
-                  enum: [full, playback]
+                  enum:
+                    - full
+                    - playback
                   default: full
                   description: |
                     `playback` creates a key that can only mint playback tokens
@@ -1113,7 +468,6 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
-
   /v1/projects/{projectId}/api-keys/{keyId}:
     parameters:
       - $ref: '#/components/parameters/ProjectId'
@@ -1122,9 +476,10 @@ paths:
         required: true
         schema:
           type: string
-          pattern: '^key_[A-Za-z0-9]+$'
+          pattern: ^key_[A-Za-z0-9]+$
     delete:
-      tags: [API keys]
+      tags:
+        - API keys
       operationId: revokeApiKey
       summary: Revoke an API key
       security:
@@ -1136,12 +491,12 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
-
   /v1/projects/{projectId}/domains:
     parameters:
       - $ref: '#/components/parameters/ProjectId'
     get:
-      tags: [Domains]
+      tags:
+        - Domains
       operationId: listDomains
       summary: List domains
       responses:
@@ -1151,7 +506,8 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [data]
+                required:
+                  - data
                 properties:
                   data:
                     type: array
@@ -1162,7 +518,8 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
     post:
-      tags: [Domains]
+      tags:
+        - Domains
       operationId: addDomain
       summary: Add a domain
       description: |
@@ -1175,13 +532,15 @@ paths:
           application/json:
             schema:
               type: object
-              required: [hostname]
+              required:
+                - hostname
               properties:
                 hostname:
                   type: string
                   format: hostname
                   description: Exact host name, without scheme or path.
-                  examples: [courses.example.com]
+                  examples:
+                    - courses.example.com
       responses:
         '201':
           description: Domain added.
@@ -1199,13 +558,13 @@ paths:
           $ref: '#/components/responses/NotFound'
         '409':
           $ref: '#/components/responses/Conflict'
-
   /v1/projects/{projectId}/domains/{domainId}:
     parameters:
       - $ref: '#/components/parameters/ProjectId'
       - $ref: '#/components/parameters/DomainId'
     delete:
-      tags: [Domains]
+      tags:
+        - Domains
       operationId: removeDomain
       summary: Remove a domain
       responses:
@@ -1215,13 +574,13 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
-
   /v1/projects/{projectId}/domains/{domainId}/verify:
     parameters:
       - $ref: '#/components/parameters/ProjectId'
       - $ref: '#/components/parameters/DomainId'
     post:
-      tags: [Domains]
+      tags:
+        - Domains
       operationId: verifyDomain
       summary: Check the DNS record and verify a domain
       responses:
@@ -1237,12 +596,12 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-
   /v1/projects/{projectId}/upload-tokens:
     parameters:
       - $ref: '#/components/parameters/ProjectId'
     post:
-      tags: [Upload tokens]
+      tags:
+        - Upload tokens
       operationId: createUploadToken
       summary: Create a browser upload token
       description: |
@@ -1287,12 +646,12 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
         '503':
           description: Upload signing keys are not configured (`upload_not_configured`).
-
   /v1/projects/{projectId}/uploads:
     parameters:
       - $ref: '#/components/parameters/ProjectId'
     post:
-      tags: [Uploads]
+      tags:
+        - Uploads
       operationId: createUpload
       summary: Start an upload
       description: |
@@ -1317,16 +676,26 @@ paths:
         hours after the start; calling create again with the same
         `Idempotency-Key` returns the same upload with fresh part URLs.
 
-        An upload that is not completed before `expiresAt` ends as `failed`
-        with `failure.code` = `upload_expired` (customer fault, `retryable`
-        false): upload the file again to start a new one. A cancelled upload
-        ends the same way with `upload_cancelled`. Both send one
-        `video.failed` event; read the final state with
-        `GET /v1/projects/{projectId}/videos/{videoId}`.
-
         Plan limits are checked here with `sizeBytes`, and again later: on complete
         (real file size) and before encoding (real duration). A file over the limit
         ends as `failed` with `failure.code` = `plan_limit_reached` and is removed.
+
+        Upload hours: Starter, Pro and Agency can keep uploading after they use
+        their included upload hours in the calendar month, up to 3 times those
+        hours. The included hours are 5 h on Starter, 15 h on Pro and 30 h on
+        Agency, so the cap is 15 h, 45 h and 90 h. At the cap, this call returns
+        `403` with `code` = `plan_limit_reached` and `limit` = `monthly_uploads_cap`.
+        To go higher, contact support. Free and Pilot (by invitation) stop at their included hours
+        and return `403` with `limit` = `monthly_uploads`. Upload hours count the
+        processing hours of new uploads, as on the usage page. The stored-hours
+        limit, the file size, the video length and the encode limit still apply.
+
+        Rate limits: a call that uses a project API key is not limited per IP.
+        Each key may make up to 1,000 create and complete calls a minute. A browser
+        that uses an upload token is limited to 60 calls a minute per IP address.
+        If a call is limited,
+        the API returns `429` with a `Retry-After` header. Wait that many seconds,
+        then try again.
       security:
         - apiKey: []
         - session: []
@@ -1358,13 +727,13 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
-
   /v1/projects/{projectId}/uploads/{uploadId}:
     parameters:
       - $ref: '#/components/parameters/ProjectId'
       - $ref: '#/components/parameters/UploadId'
     delete:
-      tags: [Uploads]
+      tags:
+        - Uploads
       operationId: abortUpload
       summary: Cancel an upload
       description: Removes the uploaded parts and cancels the video, which ends as `failed` with `failure.code` = `upload_cancelled` (customer fault, `retryable` false, one `video.failed` event). An unfinished upload left past `expiresAt` ends the same way, with `upload_expired`, without being deleted.
@@ -1377,13 +746,13 @@ paths:
           $ref: '#/components/responses/NotFound'
         '409':
           $ref: '#/components/responses/Conflict'
-
   /v1/projects/{projectId}/uploads/{uploadId}/complete:
     parameters:
       - $ref: '#/components/parameters/ProjectId'
       - $ref: '#/components/parameters/UploadId'
     post:
-      tags: [Uploads]
+      tags:
+        - Uploads
       operationId: completeUpload
       summary: Finish an upload
       description: |
@@ -1393,6 +762,13 @@ paths:
 
         A browser calls this with its upload token, and only for the upload that
         token created. A token cannot complete another upload.
+
+        Rate limits: a call that uses a project API key is not limited per IP.
+        Each key may make up to 1,000 create and complete calls a minute. A browser
+        that uses an upload token is limited to 60 calls a minute per IP address.
+        If a call returns
+        `429` with a `Retry-After` header, wait that many seconds, then call
+        complete again. It is safe to repeat.
       security:
         - apiKey: []
         - session: []
@@ -1403,7 +779,8 @@ paths:
           application/json:
             schema:
               type: object
-              required: [parts]
+              required:
+                - parts
               properties:
                 parts:
                   type: array
@@ -1411,7 +788,9 @@ paths:
                   maxItems: 10000
                   items:
                     type: object
-                    required: [partNumber, etag]
+                    required:
+                      - partNumber
+                      - etag
                     properties:
                       partNumber:
                         type: integer
@@ -1428,7 +807,15 @@ paths:
               schema:
                 $ref: '#/components/schemas/Video'
         '400':
-          $ref: '#/components/responses/BadRequest'
+          description: |
+            The part list is not the whole upload. Send each part number from 1 to
+            the part count once. The `detail` names the first problem, for example
+            `part 2 is missing.` The upload stays open: upload the missing part and
+            complete again with the full list.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '404':
@@ -1441,12 +828,12 @@ paths:
                 $ref: '#/components/schemas/Problem'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
-
   /v1/projects/{projectId}/videos:
     parameters:
       - $ref: '#/components/parameters/ProjectId'
     get:
-      tags: [Videos]
+      tags:
+        - Videos
       operationId: listVideos
       summary: List videos
       parameters:
@@ -1471,13 +858,13 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
-
   /v1/projects/{projectId}/videos/{videoId}:
     parameters:
       - $ref: '#/components/parameters/ProjectId'
       - $ref: '#/components/parameters/VideoId'
     get:
-      tags: [Videos]
+      tags:
+        - Videos
       operationId: getVideo
       summary: Get a video and its status
       responses:
@@ -1492,14 +879,12 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
     patch:
-      tags: [Videos]
+      tags:
+        - Videos
       operationId: updateVideo
       summary: Update a video
       description: |
-        Rename the video and/or change its playback access mode. Provide at least
-        one of `title` or `accessMode`. Switching a video to `public` makes it
-        play without a token; switching back to `protected` (the default) needs a
-        signed, video-specific token again.
+        Rename the video. Provide `title`.
       requestBody:
         required: true
         content:
@@ -1510,8 +895,6 @@ paths:
               properties:
                 title:
                   $ref: '#/components/schemas/VideoTitle'
-                accessMode:
-                  $ref: '#/components/schemas/VideoAccessMode'
       responses:
         '200':
           description: Video updated.
@@ -1526,7 +909,8 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
     delete:
-      tags: [Videos]
+      tags:
+        - Videos
       operationId: deleteVideo
       summary: Delete a video
       description: Deletes the original, the HLS renditions and the thumbnail, and stops playback. Playback stops within about a minute. The original is removed at once; the HLS renditions and thumbnail are removed in the background, so storage clears shortly after.
@@ -1537,10 +921,10 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
-
   /v1/demo/playback:
     get:
-      tags: [Demo]
+      tags:
+        - Demo
       operationId: getDemoPlayback
       summary: Create a demo playback token
       description: |
@@ -1583,13 +967,13 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-
   /v1/projects/{projectId}/videos/{videoId}/playback-tokens:
     parameters:
       - $ref: '#/components/parameters/ProjectId'
       - $ref: '#/components/parameters/VideoId'
     post:
-      tags: [Playback]
+      tags:
+        - Playback
       operationId: createPlaybackToken
       summary: Create a playback token
       description: |
@@ -1597,16 +981,6 @@ paths:
         The token is signed (HMAC) and holds the video ID, the expiry and the
         allowed domain. The CDN refuses requests whose `Origin` or `Referer` is
         another domain, and refuses a token whose video ID is another video.
-
-        A `protected` video (the default) needs this token. A `public` video
-        plays without one, so you may skip this call for it. If you do mint a
-        token for a public video it still works; the extra token changes nothing.
-
-        When the project has `ipBinding` on, `viewerIp` is
-        required. Pass the viewer's own IP address (our API sees your server's
-        IP, not the viewer's). The token is then bound to the viewer's network
-        and the CDN refuses another network with `403 ip_mismatch`. This applies
-        to tokens you create after you change the setting.
       requestBody:
         required: true
         content:
@@ -1632,13 +1006,13 @@ paths:
           $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
-
   /v1/projects/{projectId}/videos/{videoId}/preview-token:
     parameters:
       - $ref: '#/components/parameters/ProjectId'
       - $ref: '#/components/parameters/VideoId'
     post:
-      tags: [Playback]
+      tags:
+        - Playback
       operationId: createPreviewToken
       summary: Create a dashboard preview token
       description: |
@@ -1670,12 +1044,12 @@ paths:
           $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
-
   /v1/projects/{projectId}/webhook-endpoints:
     parameters:
       - $ref: '#/components/parameters/ProjectId'
     get:
-      tags: [Webhooks]
+      tags:
+        - Webhooks
       operationId: listWebhookEndpoints
       summary: List webhook endpoints
       responses:
@@ -1685,7 +1059,8 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [data]
+                required:
+                  - data
                 properties:
                   data:
                     type: array
@@ -1696,7 +1071,8 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
     post:
-      tags: [Webhooks]
+      tags:
+        - Webhooks
       operationId: createWebhookEndpoint
       summary: Add a webhook endpoint
       description: |
@@ -1709,13 +1085,16 @@ paths:
           application/json:
             schema:
               type: object
-              required: [url, events]
+              required:
+                - url
+                - events
               properties:
                 url:
                   type: string
                   format: uri
-                  pattern: '^https://'
-                  examples: ['https://courses.example.com/hooks/segmnt']
+                  pattern: ^https://
+                  examples:
+                    - https://courses.example.com/hooks/segmnt
                 events:
                   type: array
                   minItems: 1
@@ -1737,7 +1116,6 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-
   /v1/projects/{projectId}/webhook-endpoints/{endpointId}:
     parameters:
       - $ref: '#/components/parameters/ProjectId'
@@ -1746,9 +1124,10 @@ paths:
         required: true
         schema:
           type: string
-          pattern: '^whe_[A-Za-z0-9]+$'
+          pattern: ^whe_[A-Za-z0-9]+$
     delete:
-      tags: [Webhooks]
+      tags:
+        - Webhooks
       operationId: deleteWebhookEndpoint
       summary: Remove a webhook endpoint
       responses:
@@ -1758,160 +1137,12 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
-
-  /v1/projects/{projectId}/webhook-endpoints/{endpointId}/rotate-secret:
-    parameters:
-      - $ref: '#/components/parameters/ProjectId'
-      - name: endpointId
-        in: path
-        required: true
-        schema:
-          type: string
-          pattern: '^whe_[A-Za-z0-9]+$'
-    post:
-      tags: [Webhooks]
-      operationId: rotateWebhookEndpointSecret
-      summary: Rotate the signing secret of an endpoint
-      description: |
-        Makes a new signing secret for the endpoint and returns it once. The
-        endpoint, its URL and its event list do not change. The previous secret
-        stops working as soon as this call returns, so update your server first.
-      responses:
-        '200':
-          description: New secret. `signingSecret` is shown only in this response.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/WebhookEndpointWithSecret'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
-  /v1/projects/{projectId}/webhook-endpoints/{endpointId}/deliveries:
-    parameters:
-      - $ref: '#/components/parameters/ProjectId'
-      - name: endpointId
-        in: path
-        required: true
-        schema:
-          type: string
-          pattern: '^whe_[A-Za-z0-9]+$'
-    get:
-      tags: [Webhooks]
-      operationId: listWebhookDeliveries
-      summary: List delivery attempts for an endpoint
-      description: |
-        Newest first. A row has the event type, the time we created it, the
-        status (`pending`, `delivered` or `failed`), the number of attempts and
-        the last HTTP status the endpoint returned.
-      parameters:
-        - name: limit
-          in: query
-          required: false
-          description: Page size.
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 100
-            default: 20
-        - name: cursor
-          in: query
-          required: false
-          description: Pass the `nextCursor` from the previous page.
-          schema:
-            type: string
-      responses:
-        '200':
-          description: One page of deliveries.
-          content:
-            application/json:
-              schema:
-                type: object
-                required: [data, nextCursor]
-                properties:
-                  data:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/WebhookDelivery'
-                  nextCursor:
-                    type: [string, 'null']
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
-  /v1/projects/{projectId}/webhook-endpoints/{endpointId}/test:
-    parameters:
-      - $ref: '#/components/parameters/ProjectId'
-      - name: endpointId
-        in: path
-        required: true
-        schema:
-          type: string
-          pattern: '^whe_[A-Za-z0-9]+$'
-    post:
-      tags: [Webhooks]
-      operationId: sendWebhookTestEvent
-      summary: Send a test event to an endpoint
-      description: |
-        Queues one `webhook.test` event for this endpoint. We sign and retry it
-        exactly like a real event, whatever events the endpoint is subscribed
-        to. The result appears in the delivery log.
-
-        The body we POST to your endpoint is:
-
-        ```json
-        {
-          "id": "evt_1qA7zP",
-          "type": "webhook.test",
-          "createdAt": "2026-10-17T12:00:00.000Z",
-          "projectId": "prj_C4LqLAGX",
-          "data": { "test": true }
-        }
-        ```
-
-        It carries the same `Segmnt-Signature` header as every other event.
-      responses:
-        '202':
-          description: Test event queued for delivery.
-          content:
-            application/json:
-              schema:
-                type: object
-                required: [id, type, endpointId, url, createdAt]
-                properties:
-                  id:
-                    type: string
-                    description: The event id. Same for every retry of this test.
-                    examples: [evt_1qA7zP]
-                  type:
-                    type: string
-                    enum: [webhook.test]
-                  endpointId:
-                    type: string
-                    examples: [whe_5mJ8kV]
-                  url:
-                    type: string
-                    format: uri
-                  createdAt:
-                    $ref: '#/components/schemas/Timestamp'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
   /v1/projects/{projectId}/usage:
     parameters:
       - $ref: '#/components/parameters/ProjectId'
     get:
-      tags: [Usage]
+      tags:
+        - Usage
       operationId: getProjectUsage
       summary: Get project usage
       description: Project usage for a period, plus the account plan, its limits and the headroom left, so an API key can check them without a dashboard session.
@@ -1943,10 +1174,10 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
-
   /v1/billing/plan:
     get:
-      tags: [Billing]
+      tags:
+        - Billing
       operationId: getBillingPlan
       summary: Get the account's plan, limits and usage
       security:
@@ -1960,127 +1191,10 @@ paths:
                 $ref: '#/components/schemas/AccountPlan'
         '401':
           $ref: '#/components/responses/Unauthorized'
-
-  /v1/account/billing/pay-as-you-go:
-    get:
-      tags: [Billing]
-      operationId: getPayAsYouGo
-      summary: Get the account's Pay-As-You-Go switch
-      description: |
-        Whether the account may go past its included watch minutes and
-        processing hours (Pay-As-You-Go). `enabled` is false when the plan does
-        not support it. `cap` is what the account is actually allowed today.
-        The watch fields (`included.watchedMinutesPerPeriod` and
-        `cap.watchedMinutesPerPeriod`) come from the watching meter, so they
-        match what playback enforces. Use
-        `/v1/account/billing/pay-as-you-go/watching` to read or change that
-        meter on its own.
-      security:
-        - session: []
-      responses:
-        '200':
-          description: Current setting.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PayAsYouGoSetting'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-    patch:
-      tags: [Billing]
-      operationId: updatePayAsYouGo
-      summary: Turn Pay-As-You-Go on or off
-      description: |
-        `false` is a hard stop at the included limit with a clear
-        `plan_limit_reached` error. `true` allows overage up to 3 times the
-        included upload hours. Every change is audit-logged.
-      security:
-        - session: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              additionalProperties: false
-              required: [enabled]
-              properties:
-                enabled:
-                  type: boolean
-      responses:
-        '200':
-          description: New setting.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PayAsYouGoSetting'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '409':
-          $ref: '#/components/responses/Conflict'
-
-  /v1/account/billing/pay-as-you-go/upload:
-    get:
-      tags: [Billing]
-      operationId: getUploadPayAsYouGo
-      summary: Get the upload meter's Pay-As-You-Go switch
-      description: |
-        The upload allowance has its own switch, separate from watching and
-        processing. `enabled` is false when the plan does not support upload
-        overage. `cap` is what the account is actually allowed today: the
-        included hours when off, the 3x safety cap when on.
-      security:
-        - session: []
-      responses:
-        '200':
-          description: Current setting.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PayAsYouGoUploadSetting'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-    patch:
-      tags: [Billing]
-      operationId: updateUploadPayAsYouGo
-      summary: Turn the upload meter's Pay-As-You-Go on or off
-      description: |
-        `false` is a hard stop at the plan's included upload hours with a clear
-        `plan_limit_reached` error. `true` allows overage up to 3 times the
-        included upload hours. Only the upload meter changes; watching and
-        processing are untouched. Every change is audit-logged.
-      security:
-        - session: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              additionalProperties: false
-              required: [enabled]
-              properties:
-                enabled:
-                  type: boolean
-      responses:
-        '200':
-          description: New setting.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PayAsYouGoUploadSetting'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '409':
-          $ref: '#/components/responses/Conflict'
-
   /v1/usage/summary:
     get:
-      tags: [Billing]
+      tags:
+        - Billing
       operationId: getUsageSummary
       summary: Get the account's plan limits and usage, plus the last three closed months
       description: |
@@ -2100,177 +1214,10 @@ paths:
                 $ref: '#/components/schemas/UsageSummary'
         '401':
           $ref: '#/components/responses/Unauthorized'
-
-  /v1/account/billing/pay-as-you-go/processing:
-    get:
-      tags: [Billing]
-      operationId: getProcessingPayAsYouGo
-      summary: Get the processing meter's Pay-As-You-Go switch
-      description: |
-        Encoding has its own switch, separate from watching and upload.
-        `enabled` is false when the plan does not support processing overage.
-        `cap` is what the encoder is actually allowed today: the included
-        encoded seconds when off, the 3x safety cap when on.
-      security:
-        - session: []
-      responses:
-        '200':
-          description: Current setting.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PayAsYouGoProcessingSetting'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-    patch:
-      tags: [Billing]
-      operationId: updateProcessingPayAsYouGo
-      summary: Turn the processing meter's Pay-As-You-Go on or off
-      description: |
-        `false` is a hard stop at the plan's included encoded seconds with a
-        clear `plan_limit_reached` error. `true` allows overage up to 3 times
-        the included encoded seconds. Only the processing meter changes;
-        watching and upload are untouched. Every change is audit-logged.
-      security:
-        - session: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              additionalProperties: false
-              required: [enabled]
-              properties:
-                enabled:
-                  type: boolean
-      responses:
-        '200':
-          description: New setting.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PayAsYouGoProcessingSetting'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '409':
-          $ref: '#/components/responses/Conflict'
-
-  /v1/usage/breakdown:
-    get:
-      tags: [Billing]
-      operationId: getUsageBreakdown
-      summary: Explain what consumed one meter, by project, video and operation
-      description: |
-        Read-only. The same total `GET /v1/usage/summary` reports for that meter
-        (asserted in the tests), split three ways so a customer can see what
-        used it.
-
-        `byProject` and `byVideo` list the top 10 by quantity, largest first.
-        Everything past the top 10 is summed into `other` instead of being
-        dropped, so `byProject` shares plus `other.projectShare` add up to 100%.
-        `other.videoQuantity` is the same remainder for videos, which carry no
-        share.
-
-        `byOperation` names the operation that recorded the usage: `upload`,
-        `processing`, `storage` or `playback`. Each meter comes from one place
-        (the video rows, the upload ledger or the playback ledger), so a meter
-        has exactly one operation and a `100` share.
-
-        A month with no data returns `200` with `total: 0` and empty arrays, not
-        an error. Unknown `meter` or a `month` that is not `YYYY-MM` returns
-        `400`. `month` defaults to the current UTC month.
-      security:
-        - session: []
-      parameters:
-        - name: meter
-          in: query
-          required: true
-          description: The meter to explain.
-          schema:
-            type: string
-            enum: [upload_hours, processed_hours, stored_hours, watched_minutes]
-        - name: month
-          in: query
-          required: false
-          description: The UTC month, `YYYY-MM`. Defaults to the current month.
-          schema:
-            type: string
-            pattern: '^\d{4}-(0[1-9]|1[0-2])$'
-      responses:
-        '200':
-          description: The breakdown for that meter and month.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UsageBreakdown'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-
-  /v1/account/billing/pay-as-you-go/watching:
-    get:
-      tags: [Billing]
-      operationId: getWatchingPayAsYouGo
-      summary: Get the watch-time Pay-As-You-Go switch
-      description: |
-        The watching meter's own switch, independent of processing and upload.
-        `enabled` is false when the plan has no watch-time Pay-As-You-Go (Free,
-        Starter and Pilot). `cap` is where playback stops: the included watch
-        minutes when off, the meter's own safety cap when on (null = no cap).
-      security:
-        - session: []
-      responses:
-        '200':
-          description: Current state.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/WatchingPayAsYouGoSetting'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-    patch:
-      tags: [Billing]
-      operationId: updateWatchingPayAsYouGo
-      summary: Turn watch-time Pay-As-You-Go on or off
-      description: |
-        Changes only the watching meter; processing and upload are untouched.
-        `false` is a hard stop at the included watch minutes with a clear
-        `plan_limit_reached` error. `true` allows overage up to that meter's own
-        safety cap (never a shared 3x). Every change is audit-logged.
-      security:
-        - session: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              additionalProperties: false
-              required: [enabled]
-              properties:
-                enabled:
-                  type: boolean
-      responses:
-        '200':
-          description: New state.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/WatchingPayAsYouGoSetting'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '409':
-          $ref: '#/components/responses/Conflict'
-
   /v1/billing/plans:
     get:
-      tags: [Billing]
+      tags:
+        - Billing
       operationId: listBillingPlans
       summary: List plans you can buy
       security:
@@ -2282,7 +1229,8 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [data]
+                required:
+                  - data
                 properties:
                   data:
                     type: array
@@ -2290,22 +1238,19 @@ paths:
                       $ref: '#/components/schemas/Plan'
         '401':
           $ref: '#/components/responses/Unauthorized'
-
   /v1/billing/checkout:
     post:
-      tags: [Billing]
+      tags:
+        - Billing
       operationId: createCheckout
-      summary: Start a checkout (paused)
+      summary: Start a checkout
       description: |
-        **Paid billing is paused**: every payment
-        gateway is blocked, so no provider is active. This call cannot start a
-        payment and cannot change a plan; it answers `503 billing_paused` before it
-        reaches any provider. Ask the customer to join the paid-plan whitelist
-        (`POST /v1/billing/whitelist`) instead.
+        Paid plans are not open yet. This call returns `503 billing_paused`.
+        Nothing is charged and no plan changes. Join the paid-plan whitelist with
+        `POST /v1/billing/whitelist` and we contact you when paid plans open.
 
-        When billing is turned on (`BILLING_PROVIDER=moyasar|polar`), this
-        returns the provider's hosted checkout page, and the plan changes only when
-        the provider's payment webhook confirms the payment.
+        Once paid plans open, this call returns a checkout page, and the plan
+        changes only after the payment is confirmed.
       security:
         - session: []
       parameters:
@@ -2316,28 +1261,11 @@ paths:
           application/json:
             schema:
               type: object
-              required: [planId]
+              required:
+                - planId
               properties:
                 planId:
                   $ref: '#/components/schemas/PlanId'
-                discountCode:
-                  type: string
-                  maxLength: 64
-                  description: |
-                    An optional discount code. A founding code gives 30% off and
-                    a referral code 10% off; the total discount is capped at 40%.
-                    Codes are case-insensitive. The code is validated before the
-                    provider is called: an unknown, expired, or out-of-uses code
-                    answers `400 invalid_request` with a clear message and never
-                    charges the full price by accident. An empty or blank string
-                    is treated as no code.
-
-                    A code applied to a subscription is re-applied on each renewal
-                    for the promised number of months (founding and referral
-                    referrer 12, referral new customer 3). Send no `discountCode`
-                    on a renewal and the promise stored on the subscription is
-                    applied automatically; once the window is used up the renewal
-                    is at the full price.
       responses:
         '201':
           description: Checkout created.
@@ -2353,10 +1281,10 @@ paths:
           $ref: '#/components/responses/Conflict'
         '503':
           $ref: '#/components/responses/BillingPaused'
-
   /v1/billing/whitelist:
     get:
-      tags: [Billing]
+      tags:
+        - Billing
       operationId: listPlanWhitelist
       summary: List the account's paid-plan whitelist entries
       description: |
@@ -2371,7 +1299,8 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [data]
+                required:
+                  - data
                 properties:
                   data:
                     type: array
@@ -2380,7 +1309,8 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
     post:
-      tags: [Billing]
+      tags:
+        - Billing
       operationId: joinPlanWhitelist
       summary: Join the paid-plan whitelist
       description: |
@@ -2403,7 +1333,8 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [data]
+                required:
+                  - data
                 properties:
                   data:
                     $ref: '#/components/schemas/WhitelistEntry'
@@ -2411,69 +1342,22 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
-
-  /v1/billing/providers/{provider}/webhook:
-    parameters:
-      - name: provider
-        in: path
-        required: true
-        schema:
-          type: string
-          enum: [moyasar, polar]
-    post:
-      tags: [Billing]
-      operationId: receivePaymentWebhook
-      summary: Payment provider callback (internal)
-      description: |
-        Called only by the payment provider. Not for customers. The request is
-        checked with the provider's own signature or secret token, so it has no
-        segmnt authentication. The body is the provider's own format.
-
-        While paid billing is paused, a valid event is acknowledged with `204`
-        and no plan changes. The signature is still checked.
-
-        The webhook body is never trusted. A verified event is used only to find
-        the provider invoice; the invoice is then read back from the provider API,
-        and its amount and currency are checked against the plan's fixed
-        price. Only then is the plan applied: the payment, the VAT invoice, the
-        subscription and the account plan are written in one batch, so the same
-        event can be replayed safely (a provider retries). A refunded invoice
-        reverses an applied payment: the subscription is set to `canceled` and the
-        account returns to the free plan. A verified event that does not match
-        what was ordered answers 400 and changes no plan.
-      security: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              additionalProperties: true
-      responses:
-        '204':
-          description: Event accepted (also when it was already processed, or was not a paid payment).
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '502':
-          description: The provider API could not be read. The provider will retry.
-
   /v1/projects/{projectId}/videos/{videoId}/reports:
     parameters:
       - $ref: '#/components/parameters/ProjectId'
       - $ref: '#/components/parameters/VideoId'
       - $ref: '#/components/parameters/IdempotencyKey'
     post:
-      tags: [Videos]
+      tags:
+        - Videos
       operationId: createVideoReport
       summary: File a viewer report on a video
       description: |
         The customer's server files a report (for example a viewer pressed a
-        "report" button in the player). Every report raises an internal alert at
-        once. The customer sees nothing back except the stored report.
+        "report" button in the player). Every report is saved at once. The
+        customer sees nothing back except the stored report.
         With an `Idempotency-Key`, a retried POST returns the first report and
-        raises no second alert; without it, a report is at-least-once.
+        saves no second one; without it, a report is at-least-once.
       requestBody:
         required: true
         content:
@@ -2499,903 +1383,11 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
-
-  /v1/internal/block:
-    get:
-      tags: [Admin]
-      x-excluded: true
-      x-internal: true
-      operationId: getBlock
-      summary: Is this video or project blocked (internal)
-      description: |
-        Called by the playback Worker (best effort, cached ~60 s) so a held or
-        deleted video, or a banned / over-limit account, stops playing within
-        about a minute. Guarded by `USAGE_REPORT_SECRET`, never by a session.
-      security:
-        - internalSecret: []
-      parameters:
-        - name: id
-          in: query
-          required: true
-          description: A video id (`vid_...`) or a project id (`prj_...`).
-          schema:
-            type: string
-            pattern: '^(vid_|prj_)[A-Za-z0-9]+$'
-      responses:
-        '200':
-          description: The block state.
-          content:
-            application/json:
-              schema:
-                type: object
-                required: [blocked]
-                properties:
-                  blocked:
-                    type: boolean
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '405':
-          description: Method not allowed.
-        '503':
-          description: Internal routes are not configured.
-
-  /v1/internal/security-events:
-    post:
-      tags: [Admin]
-      x-excluded: true
-      x-internal: true
-      operationId: reportSecurityEvents
-      summary: Report failed playback-token checks (internal)
-      description: |
-        Called by the playback Worker. `eventId` dedupes a retried report, so a
-        repeated POST cannot inflate the "possible leak" count.
-      security:
-        - internalSecret: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [events]
-              properties:
-                events:
-                  type: array
-                  minItems: 1
-                  maxItems: 100
-                  items:
-                    $ref: '#/components/schemas/SecurityEventInput'
-      responses:
-        '202':
-          description: Events accepted.
-          content:
-            application/json:
-              schema:
-                type: object
-                required: [accepted, duplicates]
-                properties:
-                  accepted:
-                    type: integer
-                  duplicates:
-                    type: integer
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '405':
-          description: Method not allowed.
-        '503':
-          description: Internal routes are not configured.
-
-  /v1/internal/billing/overage:
-    post:
-      tags: [Admin]
-      x-excluded: true
-      x-internal: true
-      operationId: runOverageBilling
-      summary: Bill one account's watched-minute overage (internal)
-      description: |
-        Records the watched-minute overage for one whole, CLOSED UTC calendar
-        month at the plan's overage rate plus VAT, in SAR. The published rate is
-        5 SAR per 1,000 watched minutes before VAT, on Pro and Agency only.
-        Bills every STARTED minute past the plan's included minutes (`ceil`),
-        built from the raw watched seconds, so a partial minute is not lost. A
-        month that has not closed yet is refused, and an early run cannot lock
-        it. No payment provider is charged. Idempotent: one overage invoice per
-        account per month, so a retried run records nothing new. A `null` rate
-        means nothing is billed (`reason: no_price`). Free, Starter and Pilot are
-        never billed.
-      security:
-        - internalSecret: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [accountId, periodStart, periodEnd]
-              properties:
-                accountId:
-                  type: string
-                  pattern: '^acc_[A-Za-z0-9]+$'
-                periodStart:
-                  type: string
-                  format: date
-                  description: First day of the month, inclusive (YYYY-MM-DD, the 1st).
-                periodEnd:
-                  type: string
-                  format: date
-                  description: First day of the next month, exclusive (YYYY-MM-DD). The month must already have ended.
-      responses:
-        '201':
-          description: An overage invoice was recorded.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/OverageInvoiceResult'
-        '200':
-          description: Nothing was recorded (no overage, no price, already billed, or not a pay-as-you-go plan (Pro or Agency)).
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/OverageInvoiceResult'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '405':
-          description: Method not allowed.
-        '503':
-          description: Internal routes are not configured.
-
-  /v1/admin/overview:
-    get:
-      tags: [Admin]
-      x-excluded: true
-      x-internal: true
-      operationId: getAdminOverview
-      summary: Review queue counts
-      security:
-        - adminAccess: []
-      responses:
-        '200':
-          description: Counts for the admin home.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AdminOverview'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '503':
-          description: Admin access is not configured.
-
-  /v1/admin/stats:
-    get:
-      tags: [Admin]
-      x-excluded: true
-      x-internal: true
-      operationId: getAdminStats
-      summary: Read-only growth aggregates
-      description: |
-        Signups per week, active accounts, watched minutes and plan mix. Counts
-        and totals only: no account id, name, e-mail, project name or video
-        title. This is the only route the read-only `STATS_READ_TOKEN` may call;
-        full admin credentials can also read it.
-      security:
-        - adminAccess: []
-      parameters:
-        - name: weeks
-          in: query
-          required: false
-          description: Number of Monday-to-Sunday UTC weeks, ending with the current week.
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 26
-            default: 12
-      responses:
-        '200':
-          description: Aggregates for the window.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GrowthStats'
-        '400':
-          description: weeks is not a whole number from 1 to 26.
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          description: The credential may not read this route.
-        '503':
-          description: Admin access is not configured.
-
-  /v1/admin/scan:
-    post:
-      tags: [Admin]
-      x-excluded: true
-      x-internal: true
-      operationId: runAdminScan
-      summary: Run the abuse alert scan now
-      description: The same scan the cron runs every 15 minutes. Idempotent per window.
-      security:
-        - adminAccess: []
-      responses:
-        '200':
-          description: How many alerts the scan created.
-          content:
-            application/json:
-              schema:
-                type: object
-                required: [created, alerts]
-                properties:
-                  created:
-                    type: integer
-                  alerts:
-                    type: array
-                    description: The alerts this run created (empty when every rule already fired in this window).
-                    items:
-                      type: object
-                      required: [kind, subject, summary]
-                      properties:
-                        kind:
-                          type: string
-                        subject:
-                          type: string
-                        summary:
-                          type: string
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '503':
-          description: Admin access is not configured.
-
-  /v1/admin/alerts:
-    get:
-      tags: [Admin]
-      x-excluded: true
-      x-internal: true
-      operationId: listAdminAlerts
-      summary: List abuse alerts
-      security:
-        - adminAccess: []
-      parameters:
-        - name: status
-          in: query
-          required: false
-          schema:
-            type: string
-            enum: [open, acked, all]
-            default: open
-        - $ref: '#/components/parameters/Limit'
-        - $ref: '#/components/parameters/Cursor'
-      responses:
-        '200':
-          description: Alerts, newest first.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AlertList'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-
-  /v1/admin/alerts/{alertId}/ack:
-    parameters:
-      - $ref: '#/components/parameters/AlertId'
-    post:
-      tags: [Admin]
-      x-excluded: true
-      x-internal: true
-      operationId: ackAdminAlert
-      summary: Acknowledge an alert
-      security:
-        - adminAccess: []
-      responses:
-        '200':
-          description: The alert is acknowledged (idempotent).
-          content:
-            application/json:
-              schema:
-                type: object
-                required: [id, status]
-                properties:
-                  id:
-                    type: string
-                  status:
-                    type: string
-                    const: acked
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
-  /v1/admin/accounts:
-    get:
-      tags: [Admin]
-      x-excluded: true
-      x-internal: true
-      operationId: listAdminAccounts
-      summary: List accounts (review list)
-      security:
-        - adminAccess: []
-      parameters:
-        - name: reviewFlag
-          in: query
-          required: false
-          schema:
-            type: string
-            enum: [new, ok, watch]
-        - $ref: '#/components/parameters/Limit'
-        - $ref: '#/components/parameters/Cursor'
-      responses:
-        '200':
-          description: Accounts, newest first.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AdminAccountList'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-
-  /v1/admin/accounts/{accountId}:
-    parameters:
-      - $ref: '#/components/parameters/AccountId'
-    get:
-      tags: [Admin]
-      x-excluded: true
-      x-internal: true
-      operationId: getAdminAccount
-      summary: Account detail (projects and usage)
-      security:
-        - adminAccess: []
-      responses:
-        '200':
-          description: The account, its projects and its usage.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AdminAccountDetail'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
-  /v1/admin/accounts/{accountId}/review:
-    parameters:
-      - $ref: '#/components/parameters/AccountId'
-    post:
-      tags: [Admin]
-      x-excluded: true
-      x-internal: true
-      operationId: reviewAdminAccount
-      summary: Set the hidden review flag
-      description: The flag is never shown to the customer. `ok` clears the account from the review list.
-      security:
-        - adminAccess: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [flag]
-              properties:
-                flag:
-                  type: string
-                  enum: [ok, watch]
-      responses:
-        '200':
-          description: The updated account.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AdminAccount'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
-  /v1/admin/accounts/{accountId}/ban-proposal:
-    parameters:
-      - $ref: '#/components/parameters/AccountId'
-    post:
-      tags: [Admin]
-      x-excluded: true
-      x-internal: true
-      operationId: proposeAdminBan
-      summary: Propose a ban (needs approval)
-      description: Records the proposal and raises an alert. It never bans an account; a ban runs only after an approval reference is supplied.
-      security:
-        - adminAccess: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [reason]
-              properties:
-                reason:
-                  type: string
-                  minLength: 1
-                  maxLength: 500
-      responses:
-        '200':
-          description: The account with the proposal recorded.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AdminAccount'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
-  /v1/admin/billing/summary:
-    get:
-      tags: [Admin]
-      x-excluded: true
-      x-internal: true
-      operationId: getAdminBillingSummary
-      summary: Monthly billing summary and closing report
-      description: |
-        Read-only. Per account: plan, subscription amount, overage per meter
-        (upload seconds, encoded seconds, stored seconds, watched minutes), VAT,
-        total and invoice status, plus month totals across accounts. Amounts are
-        halalas. A meter with no catalog price has a `null` rate and amount and
-        the note `price not set`; prices are never invented.
-
-        A recorded invoice row is authoritative for its own month: its net, VAT,
-        total, rate and billable minutes are echoed, not recomputed. Only when no
-        row exists are amounts computed from the catalog, and then VAT follows
-        the board switch (`BILLING_VAT_MODE`), which is off today. Totals report
-        both `expectedTotalHalalas` (every account) and `recordedTotalHalalas`
-        (accounts with an invoice row). Both are sums of priced meters only and
-        exclude encoded seconds and stored overage, which have no catalog price.
-      security:
-        - adminAccess: []
-      parameters:
-        - name: month
-          in: query
-          required: true
-          description: Calendar month, `YYYY-MM`.
-          schema:
-            type: string
-            pattern: '^\d{4}-(0[1-9]|1[0-2])$'
-            example: '2026-10'
-      responses:
-        '200':
-          description: The month billing summary and closing report.
-          content:
-            application/json:
-              schema:
-                type: object
-                required: [month, period, currency, vatRatePercent, accounts, totals]
-                properties:
-                  month:
-                    type: string
-                  period:
-                    type: object
-                    required: [start, end]
-                    properties:
-                      start:
-                        type: string
-                      end:
-                        type: string
-                  currency:
-                    type: string
-                  vatRatePercent:
-                    type: integer
-                  accounts:
-                    type: array
-                    items:
-                      type: object
-                      required: [accountId, accountName, plan, planStatus, usage, overage, subscription, vatHalalas, totalHalalas, invoiceStatus]
-                      properties:
-                        accountId:
-                          type: string
-                        accountName:
-                          type: string
-                        plan:
-                          type: string
-                        planStatus:
-                          type: string
-                        usage:
-                          type: object
-                          required: [uploadSeconds, encodedSeconds, storedSeconds, storedSecondsAsOf, watchedSeconds, watchedMinutes]
-                          properties:
-                            uploadSeconds:
-                              type: integer
-                            encodedSeconds:
-                              type: integer
-                            storedSeconds:
-                              type: integer
-                            storedSecondsAsOf:
-                              type: string
-                              enum: [now]
-                              description: Stored seconds are read live at request time, not at month end.
-                            watchedSeconds:
-                              type: integer
-                            watchedMinutes:
-                              type: integer
-                        overage:
-                          type: object
-                          required: [uploadSeconds, encodedSeconds, storedSeconds, watchedMinutes]
-                          properties:
-                            uploadSeconds:
-                              $ref: '#/components/schemas/AdminBillingMeter'
-                            encodedSeconds:
-                              $ref: '#/components/schemas/AdminBillingMeter'
-                            storedSeconds:
-                              $ref: '#/components/schemas/AdminBillingMeter'
-                            watchedMinutes:
-                              $ref: '#/components/schemas/AdminBillingMeter'
-                        subscription:
-                          type: object
-                          required: [amountHalalas, net, vat, total, status]
-                          properties:
-                            amountHalalas:
-                              type: integer
-                            net:
-                              type: integer
-                            vat:
-                              type: integer
-                            total:
-                              type: integer
-                            status:
-                              type: string
-                        vatHalalas:
-                          type: integer
-                        totalHalalas:
-                          type: integer
-                        invoiceStatus:
-                          type: object
-                          required: [subscription, subscriptionInvoiceId, overage, overageInvoiceId, overall]
-                          properties:
-                            subscription:
-                              type: [string, 'null']
-                            subscriptionInvoiceId:
-                              type: [string, 'null']
-                            overage:
-                              type: [string, 'null']
-                            overageInvoiceId:
-                              type: [string, 'null']
-                            overall:
-                              type: string
-                              enum: [not_issued, recorded, invoiced]
-                  totals:
-                    type: object
-                    required: [accountCount, subscription, overage, vatHalalas, expectedTotalHalalas, recordedAccounts, recordedTotalHalalas, uploadOverageSeconds, watchedOverageMinutes]
-                    properties:
-                      accountCount:
-                        type: integer
-                      subscription:
-                        type: object
-                        properties:
-                          net:
-                            type: integer
-                          vat:
-                            type: integer
-                          total:
-                            type: integer
-                      overage:
-                        type: object
-                        properties:
-                          net:
-                            type: integer
-                          vat:
-                            type: integer
-                          total:
-                            type: integer
-                      vatHalalas:
-                        type: integer
-                      expectedTotalHalalas:
-                        type: integer
-                        description: Every account, priced from the catalog where nothing is invoiced yet. This is not billed money.
-                      recordedAccounts:
-                        type: integer
-                        description: Accounts that have at least one invoice row for the month.
-                      recordedTotalHalalas:
-                        type: integer
-                        description: Sum of priced meters only (subscription plus upload and watched overage) for the accounts that have at least one invoice row for the month. It includes overage priced from the catalog that has no invoice row yet, so it is not only money already invoiced. It excludes encoded seconds and stored overage, which have no catalog price, so it is not a full computed total.
-                      uploadOverageSeconds:
-                        type: integer
-                      watchedOverageMinutes:
-                        type: integer
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-
-  /v1/admin/billing/summary.csv:
-    get:
-      tags: [Admin]
-      x-excluded: true
-      x-internal: true
-      operationId: getAdminBillingSummaryCsv
-      summary: Monthly billing summary and closing report as CSV
-      description: |
-        The same numbers as `GET /v1/admin/billing/summary`, as a downloadable
-        CSV for the month closing. Header row plus one row per account, then a
-        final `TOTALS` row.
-
-        Columns: the account, its plan and subscription (amount, net, VAT,
-        total, status), then for each meter its used, included, overage, rate
-        and amount, then `overage_vat_halalas`, `overage_total_halalas`,
-        `vat_halalas`, `total_halalas`, the invoice status, and
-        `accounts_with_invoice_total_halalas`. Amount columns are net (before
-        VAT); `overage_vat_halalas`, `overage_total_halalas`, `vat_halalas` and
-        `total_halalas` include VAT. `accounts_with_invoice_total_halalas` is
-        filled in the `TOTALS` row only. It is the sum of priced meters only
-        (subscription plus upload and watched overage) for the accounts that
-        have at least one invoice row for the month. It includes overage priced
-        from the catalog that has no invoice row yet, so it is not the same as
-        money already invoiced. It excludes encoded seconds and stored overage,
-        which have no catalog price, so it is not a full computed total. It is
-        the same value as `recordedTotalHalalas` in the JSON summary, so it can
-        be checked against the expected total. `expectedTotalHalalas` and
-        `recordedAccounts` stay JSON-only. All amounts are halalas.
-
-        A meter with no catalog price leaves its rate and amount cells empty;
-        prices are never invented. In the `TOTALS` row a meter amount cell is
-        left empty when any account row has that meter unpriced, and the VAT and
-        total cells are left empty when any account row has any meter unpriced,
-        because a partial sum would look like the real month total. For the same
-        reason the `*_included` allowance cells are always empty in `TOTALS`.
-        On account rows, `vat_halalas` and `total_halalas` are also sums of
-        priced meters only: a row can show a number while it still has unpriced
-        usage (encoded seconds or stored overage).
-        The file is UTF-8 with a BOM and CRLF line endings.
-      security:
-        - adminAccess: []
-      parameters:
-        - name: month
-          in: query
-          required: true
-          description: Calendar month, `YYYY-MM`.
-          schema:
-            type: string
-            pattern: '^\d{4}-(0[1-9]|1[0-2])$'
-            example: '2026-10'
-      responses:
-        '200':
-          description: The month billing summary as a UTF-8 CSV attachment.
-          headers:
-            Content-Disposition:
-              description: '`attachment; filename="billing-2026-10.csv"`.'
-              schema:
-                type: string
-          content:
-            text/csv:
-              schema:
-                type: string
-                description: Header row, one row per account, then a `TOTALS` row.
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-
-  /v1/admin/videos:
-    get:
-      tags: [Admin]
-      x-excluded: true
-      x-internal: true
-      operationId: listAdminVideos
-      summary: List videos (held, ready, failed)
-      security:
-        - adminAccess: []
-      parameters:
-        - name: status
-          in: query
-          required: false
-          schema:
-            $ref: '#/components/schemas/VideoStatus'
-        - name: projectId
-          in: query
-          required: false
-          schema:
-            type: string
-            pattern: '^prj_[A-Za-z0-9]+$'
-        - name: accountId
-          in: query
-          required: false
-          schema:
-            type: string
-            pattern: '^acc_[A-Za-z0-9]+$'
-        - name: moderationState
-          in: query
-          required: false
-          schema:
-            $ref: '#/components/schemas/ModerationState'
-        - $ref: '#/components/parameters/Limit'
-        - $ref: '#/components/parameters/Cursor'
-      responses:
-        '200':
-          description: Videos, newest first.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AdminVideoList'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-
-  /v1/admin/videos/{videoId}:
-    parameters:
-      - $ref: '#/components/parameters/VideoId'
-    get:
-      tags: [Admin]
-      x-excluded: true
-      x-internal: true
-      operationId: getAdminVideo
-      summary: Video detail with review frames
-      security:
-        - adminAccess: []
-      responses:
-        '200':
-          description: The video, its account and the names of its review frames.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AdminVideo'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
-    delete:
-      tags: [Admin]
-      x-excluded: true
-      x-internal: true
-      operationId: removeAdminVideo
-      summary: Remove a video
-      description: Soft delete. The video stops playing within about a minute.
-      security:
-        - adminAccess: []
-      responses:
-        '204':
-          description: The video is removed.
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
-  /v1/admin/videos/{videoId}/hold:
-    parameters:
-      - $ref: '#/components/parameters/VideoId'
-    post:
-      tags: [Admin]
-      x-excluded: true
-      x-internal: true
-      operationId: holdAdminVideo
-      summary: Hold a video (it stops playing)
-      description: Sets `held` and sends the `video.held` webhook. Idempotent.
-      security:
-        - adminAccess: []
-      responses:
-        '200':
-          description: The held video.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Video'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
-  /v1/admin/videos/{videoId}/unhold:
-    parameters:
-      - $ref: '#/components/parameters/VideoId'
-    post:
-      tags: [Admin]
-      x-excluded: true
-      x-internal: true
-      operationId: unholdAdminVideo
-      summary: Release a hold (back to ready)
-      security:
-        - adminAccess: []
-      responses:
-        '200':
-          description: The ready video.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Video'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
-  /v1/admin/videos/{videoId}/frames/{name}:
-    parameters:
-      - $ref: '#/components/parameters/VideoId'
-      - $ref: '#/components/parameters/FrameName'
-    get:
-      tags: [Admin]
-      x-excluded: true
-      x-internal: true
-      operationId: getAdminVideoFrame
-      summary: Fetch one review frame (JPEG)
-      description: The frame is private; the admin page fetches it with the admin credential and shows it as a blob.
-      security:
-        - adminAccess: []
-      responses:
-        '200':
-          description: The JPEG frame.
-          content:
-            image/jpeg:
-              schema:
-                type: string
-                format: binary
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
-  /v1/admin/moderation:
-    get:
-      tags: [Admin]
-      x-excluded: true
-      x-internal: true
-      operationId: listAdminModerationQueue
-      summary: Human review queue (held and awaiting a check)
-      description: |
-        Videos that are held or still waiting for a moderation check: a free
-        account's first videos (`pending`) and anything the check flagged
-        (`flagged`). Oldest first, so nothing sits unlooked-at.
-      security:
-        - adminAccess: []
-      parameters:
-        - $ref: '#/components/parameters/Limit'
-        - $ref: '#/components/parameters/Cursor'
-      responses:
-        '200':
-          description: Videos to review, oldest first.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AdminVideoList'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-
-  /v1/admin/moderation/scan:
-    post:
-      tags: [Admin]
-      x-excluded: true
-      x-internal: true
-      operationId: runModerationScan
-      summary: Run the moderation check now
-      description: |
-        Runs the AI check over the review frames of the videos that still need
-        it. Safe to call any time: a video is only checked once. The same scan
-        runs on the Worker cron when `MODERATION_PROVIDER` is set.
-      security:
-        - adminAccess: []
-      responses:
-        '200':
-          description: What the scan did.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ModerationScanResult'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-
 webhooks:
   video.ready:
     post:
-      tags: [Webhooks]
+      tags:
+        - Webhooks
       operationId: onVideoReady
       summary: All qualities are ready and the video can play
       parameters:
@@ -3411,14 +1403,11 @@ webhooks:
           $ref: '#/components/responses/WebhookReceived'
   video.failed:
     post:
-      tags: [Webhooks]
+      tags:
+        - Webhooks
       operationId: onVideoFailed
       summary: Encoding failed
-      description: >-
-        `data.video.failure` says why. Sent once for every video that moves to
-        `failed`, including an upload that was cancelled (`upload_cancelled`)
-        or expired before complete-upload (`upload_expired`). Read
-        `failure.code` to tell them apart.
+      description: '`data.video.failure` says why. Sent once for every video that moves to `failed`, including an upload that was cancelled (`upload_cancelled`) or expired before complete-upload (`upload_expired`). Read `failure.code` to tell them apart.'
       parameters:
         - $ref: '#/components/parameters/WebhookSignature'
       requestBody:
@@ -3432,7 +1421,8 @@ webhooks:
           $ref: '#/components/responses/WebhookReceived'
   video.held:
     post:
-      tags: [Webhooks]
+      tags:
+        - Webhooks
       operationId: onVideoHeld
       summary: Our team held the video and it does not play
       description: |
@@ -3451,7 +1441,8 @@ webhooks:
           $ref: '#/components/responses/WebhookReceived'
   video.removed:
     post:
-      tags: [Webhooks]
+      tags:
+        - Webhooks
       operationId: onVideoRemoved
       summary: The video was removed and it no longer plays
       description: |
@@ -3472,7 +1463,6 @@ webhooks:
       responses:
         '200':
           $ref: '#/components/responses/WebhookReceived'
-
 components:
   securitySchemes:
     apiKey:
@@ -3491,20 +1481,6 @@ components:
         Browser upload token from `POST /v1/projects/{projectId}/upload-tokens`.
         Short-lived and single-use. Accepted only on the upload create and
         complete routes, and only from the token's verified domain.
-    adminAccess:
-      type: http
-      scheme: bearer
-      description: |
-        Admin credential (task A12). Either a Cloudflare Access JWT (sent as the
-        `Cf-Access-Jwt-Assertion` header when the request passed the Access
-        policy) or a shared admin token as a bearer token. Never a customer key.
-        `GET /v1/admin/stats` also accepts the separate read-only
-        `STATS_READ_TOKEN`, which no other admin route accepts.
-    internalSecret:
-      type: http
-      scheme: bearer
-      description: Shared `USAGE_REPORT_SECRET`. Used only by our own Workers (playback, api).
-
   parameters:
     AuthProviderId:
       name: provider
@@ -3513,64 +1489,35 @@ components:
       description: Sign-in provider id, from `GET /auth/providers` (for example `google`).
       schema:
         type: string
-        pattern: '^[a-z0-9_-]+$'
+        pattern: ^[a-z0-9_-]+$
     ProjectId:
       name: projectId
       in: path
       required: true
       schema:
         type: string
-        pattern: '^prj_[A-Za-z0-9]+$'
-    AccountId:
-      name: accountId
-      in: path
-      required: true
-      schema:
-        type: string
-        pattern: '^acc_[A-Za-z0-9]+$'
-    AlertId:
-      name: alertId
-      in: path
-      required: true
-      schema:
-        type: string
-        pattern: '^alt_[A-Za-z0-9]+$'
-    FrameName:
-      name: name
-      in: path
-      required: true
-      description: A review frame file name from the video detail (`NNNN.jpg`).
-      schema:
-        type: string
-        pattern: '^[0-9]{4}\.jpg$'
+        pattern: ^prj_[A-Za-z0-9]+$
     VideoId:
       name: videoId
       in: path
       required: true
       schema:
         type: string
-        pattern: '^vid_[A-Za-z0-9]+$'
+        pattern: ^vid_[A-Za-z0-9]+$
     UploadId:
       name: uploadId
       in: path
       required: true
       schema:
         type: string
-        pattern: '^upl_[A-Za-z0-9]+$'
+        pattern: ^upl_[A-Za-z0-9]+$
     DomainId:
       name: domainId
       in: path
       required: true
       schema:
         type: string
-        pattern: '^dom_[A-Za-z0-9]+$'
-    BanId:
-      name: banId
-      in: path
-      required: true
-      schema:
-        type: string
-        pattern: '^ban_[A-Za-z0-9]+$'
+        pattern: ^dom_[A-Za-z0-9]+$
     Limit:
       name: limit
       in: query
@@ -3605,8 +1552,8 @@ components:
         attempt (each retry is signed again), so refuse a `t` older than 5 minutes.
       schema:
         type: string
-        examples: ['t=1791648000,v1=5f2b...']
-
+        examples:
+          - t=1791648000,v1=5f2b...
   responses:
     AuthNotConfigured:
       description: Sign-in is not configured in this environment (`code` is `not_configured`).
@@ -3628,9 +1575,14 @@ components:
             $ref: '#/components/schemas/Problem'
     Forbidden:
       description: |
-        Not allowed. `code` says why: `insufficient_scope` (a playback-only API
-        key called a route it may not use), or a plan limit
-        (`plan_limit_reached`).
+        Not allowed. `code` says why. Two common codes: `insufficient_scope` (a
+        playback-only API key called a route it may not use), and
+        `plan_limit_reached` (the account has hit a plan limit).
+
+        For `plan_limit_reached`, the `limit` field names the limit that was hit:
+        `stored_hours`, `monthly_uploads`, `monthly_uploads_cap`, `file_size`,
+        `video_duration`, `watched_minutes`, `quality`, `projects`, `white_label`
+        or `verified_domains`. The `code` does not change.
       content:
         application/problem+json:
           schema:
@@ -3658,13 +1610,13 @@ components:
           schema:
             $ref: '#/components/schemas/Problem'
     ServiceUnavailable:
-      description: 'Temporary storage failure (`code` is `storage_unavailable`). The request did not finish and is safe to retry unchanged.'
+      description: Temporary storage failure (`code` is `storage_unavailable`). The request did not finish and is safe to retry unchanged.
       content:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/Problem'
     BillingPaused:
-      description: 'Paid plans are not on sale yet (`code` is `billing_paused`). Nothing was charged and no plan changed.'
+      description: Paid plans are not on sale yet (`code` is `billing_paused`). Nothing was charged and no plan changed.
       content:
         application/problem+json:
           schema:
@@ -3677,36 +1629,14 @@ components:
         use `id` to skip duplicates, and ignore an event whose
         `data.video.updatedAt` is older than the one you have (or call
         `GET` video for the current state).
-
   schemas:
-    AuthMailLanguage:
-      type: string
-      enum: [en, ar]
-      default: en
-      description: The language of the mailed link (Arabic is right to left).
-    AuthMailRequest:
-      type: object
-      required: [email, turnstileToken]
-      properties:
-        email:
-          type: string
-          format: email
-          maxLength: 254
-        turnstileToken:
-          type: string
-          description: The bot-gate answer. Always required.
-        language:
-          $ref: '#/components/schemas/AuthMailLanguage'
-    AuthMailAccepted:
-      type: object
-      required: [status]
-      properties:
-        status:
-          type: string
-          enum: [accepted]
     Problem:
       type: object
-      required: [type, title, status, code]
+      required:
+        - type
+        - title
+        - status
+        - code
       properties:
         type:
           type: string
@@ -3718,233 +1648,108 @@ components:
         code:
           type: string
           description: Stable error code for programs.
-          examples: [plan_limit_reached]
+          examples:
+            - plan_limit_reached
         detail:
           type: string
-
+        limit:
+          type: string
+          description: |
+            From the API. On `403 plan_limit_reached`, the plan limit that was hit,
+            for example `monthly_uploads_cap`. The playback CDN does not send this
+            field for a blocked or over-limit project. It does send it for `quality`
+            and `white_label` refusals.
     Timestamp:
       type: string
       format: date-time
-
     AuthProvider:
       type: object
-      required: [id, label]
+      required:
+        - id
+        - label
       properties:
         id:
           type: string
           description: Provider id, used in the `/auth/{provider}/...` routes.
-          examples: [google]
+          examples:
+            - google
         label:
           type: string
           description: Human-readable name for the sign-in button.
-          examples: [Google]
-
+          examples:
+            - Google
     Me:
       type: object
-      required: [user, account]
+      required:
+        - user
+        - account
       properties:
         user:
           type: object
-          required: [id, role]
+          required:
+            - id
+            - role
           properties:
             id:
               type: string
-              examples: [usr_9fK2mQ]
+              examples:
+                - usr_9fK2mQ
             email:
-              type: [string, 'null']
+              type:
+                - string
+                - 'null'
               description: Only set when a provider verified it.
             displayName:
-              type: [string, 'null']
+              type:
+                - string
+                - 'null'
             role:
               type: string
-              description: The user's role in the account. The MVP has `owner`.
-              examples: [owner]
+              description: The user's role in the account, for example `owner`.
+              examples:
+                - owner
         account:
           type: object
-          required: [id, name, planId, planStatus, createdAt]
+          required:
+            - id
+            - name
+            - planId
+            - planStatus
+            - createdAt
           properties:
             id:
               type: string
-              examples: [acc_5bT8qL]
+              examples:
+                - acc_5bT8qL
             name:
               type: string
             planId:
               type: string
-              description: Current plan. The MVP has `free`; billing (A9) adds paid plans.
-              examples: [free]
+              description: Current plan, for example `free`.
+              examples:
+                - free
             planStatus:
               type: string
-              enum: [active, pilot, past_due, canceled]
+              enum:
+                - active
+                - pilot
+                - past_due
+                - canceled
             createdAt:
               $ref: '#/components/schemas/Timestamp'
-            phoneVerified:
-              type: boolean
-              description: |
-                True once a phone number is verified (task A13). Not required to
-                upload in this version: phone verification is deferred.
-            phoneVerificationRequired:
-              type: boolean
-              description: |
-                True when this account must verify a phone before it can upload.
-                Always `false` in this version: phone verification is off, so no
-                account is gated (task A13 is deferred).
-
-    PhoneStartInput:
-      type: object
-      required: [phone]
-      properties:
-        phone:
-          type: string
-          description: A Saudi or GCC mobile number. Stored only as a salted hash.
-          examples: ['0512345678', '+966512345678', '+971501234567']
-        country:
-          type: string
-          enum: [sa, ae, kw, qa, bh, om]
-          description: |
-            Country of a local `phone` (for example `ae` for `0501234567`).
-            Ignored when `phone` starts with a country code. Defaults to `sa`.
-
-    PhoneChallenge:
-      type: object
-      required: [challengeId, phone, expiresAt]
-      properties:
-        challengeId:
-          type: string
-          examples: [phc_8fK2mQ]
-        phone:
-          type: string
-          description: The number with its middle digits masked.
-          examples: ['+96651****678']
-        expiresAt:
-          $ref: '#/components/schemas/Timestamp'
-        testCode:
-          type: string
-          description: |
-            Present only when the `test` provider is configured, so an
-            automated end-to-end test can finish the flow without a real SMS.
-            Never present in production.
-
-    DeviceLinkInput:
-      type: object
-      required: [fp]
-      properties:
-        fp:
-          type: string
-          minLength: 1
-          maxLength: 256
-          description: A stable identifier for the browser/device, stored only as a salted hash. The raw value is never kept.
-          examples: [b1f0c7d2-3a4e-4f56-9a0b-1c2d3e4f5a6b]
-
-    DeviceLink:
-      type: object
-      required: [linked, firstSeenAt, deviceCount]
-      properties:
-        linked:
-          type: boolean
-          description: Always true on a `200`; the same device linked twice keeps its original `firstSeenAt`.
-          examples: [true]
-        firstSeenAt:
-          type: string
-          format: date-time
-          description: When this device was first linked to the account.
-        deviceCount:
-          type: integer
-          description: How many devices the account has linked now (at most 20).
-          examples: [2]
-
-    PhoneVerifyInput:
-      type: object
-      required: [challengeId, code, fingerprint]
-      properties:
-        challengeId:
-          type: string
-          examples: [phc_8fK2mQ]
-        code:
-          type: string
-          pattern: '^\d{6}$'
-          examples: ['123456']
-        fingerprint:
-          type: string
-          maxLength: 256
-          description: A stable identifier for the browser/device, stored only as a salted hash.
-
-    PhoneVerified:
-      type: object
-      required: [phoneVerified, phoneVerifiedAt]
-      properties:
-        phoneVerified:
-          type: boolean
-        phoneVerifiedAt:
-          $ref: '#/components/schemas/Timestamp'
-
-    BanInput:
-      type: object
-      required: [reason, boardApprovalRef]
-      properties:
-        reason:
-          type: string
-          minLength: 1
-          maxLength: 500
-        boardApprovalRef:
-          type: string
-          minLength: 1
-          description: Reference to the approval. A ban cannot be written without it.
-          examples: ['APPR-42']
-        accountId:
-          type: string
-          examples: [acc_5bT8qL]
-        phone:
-          type: string
-          description: Saudi or GCC mobile number, stored only as a salted hash (use a country code for a non-Saudi number).
-        fingerprint:
-          type: string
-          maxLength: 256
-          description: Device fingerprint, stored only as a salted hash.
-
-    Ban:
-      type: object
-      required: [id, reason, boardApprovalRef, status, createdAt]
-      properties:
-        id:
-          type: string
-          examples: [ban_3kQ8mZ]
-        accountId:
-          type: [string, 'null']
-        hasPhone:
-          type: boolean
-          description: True when the ban names a phone number (the value itself is never returned).
-        hasFingerprint:
-          type: boolean
-          description: True when the ban names a device fingerprint (the value itself is never returned).
-        reason:
-          type: string
-        boardApprovalRef:
-          type: string
-        status:
-          type: string
-          enum: [active, lifted]
-        createdAt:
-          $ref: '#/components/schemas/Timestamp'
-        liftedAt:
-          type: [string, 'null']
-          format: date-time
-
-    BanList:
-      type: object
-      required: [data]
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/Ban'
-
     Project:
       type: object
-      required: [id, name, createdAt, whiteLabel, branding, ipBinding]
+      required:
+        - id
+        - name
+        - createdAt
+        - whiteLabel
+        - branding
       properties:
         id:
           type: string
-          examples: [prj_8fK2mQ]
+          examples:
+            - prj_8fK2mQ
         name:
           type: string
         createdAt:
@@ -3957,20 +1762,12 @@ components:
             (Pro and Agency; Free and Starter always keep our logo and brand colour).
         branding:
           $ref: '#/components/schemas/ProjectBranding'
-        ipBinding:
-          type: boolean
-          default: false
-          description: |
-            Coming soon. When true, new playback tokens for this project are
-            bound to the viewer's network (IPv4 `/24`, IPv6 `/64`): create
-            tokens with `viewerIp`, and the CDN refuses another network with
-            `403 ip_mismatch`. Off by default. Tokens created before the change
-            keep working (or stay bound) until they expire. Not DRM: two
-            viewers on the same `/24`, or behind one mobile-carrier NAT, can
-            still share.
     ProjectBranding:
       type: object
-      required: [hideLogo, primaryColor, logoUrl]
+      required:
+        - hideLogo
+        - primaryColor
+        - logoUrl
       description: White-label player branding. Pro and Agency only (Free and Starter always keep our logo and brand colour).
       properties:
         hideLogo:
@@ -3979,41 +1776,42 @@ components:
           description: Hide the segmnt badge on the player.
         primaryColor:
           type: string
-          pattern: '^#[0-9a-fA-F]{6}$'
+          pattern: ^#[0-9a-fA-F]{6}$
           default: '#0B5D42'
-          examples: ['#0B5D42']
+          examples:
+            - '#0B5D42'
           description: Player primary colour (accent).
         logoUrl:
-          type: [string, 'null']
+          type:
+            - string
+            - 'null'
           description: |
             Customer logo shown instead of ours, or null. Must be an
             `https://` URL (up to 2048 characters); an `http://` URL is
             rejected and reads back as null.
     ProjectInput:
       type: object
-      required: [name]
+      required:
+        - name
       properties:
         name:
           type: string
           minLength: 1
           maxLength: 100
-          examples: [Client A courses]
+          examples:
+            - Client A courses
     ProjectUpdateInput:
       type: object
       minProperties: 1
-      description: Rename a project, update its white-label branding and/or turn playback network binding on or off. At least one field is required.
+      description: |
+        Rename a project and/or update its white-label branding. At least one field is required.
       properties:
         name:
           type: string
           minLength: 1
           maxLength: 100
-          examples: [Client A courses]
-        ipBinding:
-          type: boolean
-          description: |
-            Turn playback network binding on or off (default off).
-            Available on every plan. The change applies to tokens you create
-            after you change it.
+          examples:
+            - Client A courses
         branding:
           type: object
           minProperties: 1
@@ -4025,49 +1823,67 @@ components:
               type: boolean
             primaryColor:
               type: string
-              pattern: '^#[0-9a-fA-F]{6}$'
+              pattern: ^#[0-9a-fA-F]{6}$
             logoUrl:
-              type: [string, 'null']
+              type:
+                - string
+                - 'null'
               description: |
                 Customer logo URL. Must be an `https://` URL (up to 2048
                 characters), or null to clear it. An `http://` URL is
                 rejected with `400 invalid_request`.
     ProjectList:
       type: object
-      required: [data, nextCursor, total]
+      required:
+        - data
+        - nextCursor
       properties:
         data:
           type: array
           items:
             $ref: '#/components/schemas/Project'
         nextCursor:
-          type: [string, 'null']
+          type:
+            - string
+            - 'null'
         total:
           type: integer
-          description: Count of all matching rows, not just this page.
-
+          description: |
+            Coming soon. Count of all matching projects, not just this page.
+            Not returned yet, so do not rely on it today.
     ApiKey:
       type: object
-      required: [id, name, prefix, scope, createdAt, lastUsedAt]
+      required:
+        - id
+        - name
+        - prefix
+        - scope
+        - createdAt
+        - lastUsedAt
       properties:
         id:
           type: string
-          examples: [key_3hT9aZ]
+          examples:
+            - key_3hT9aZ
         name:
           type: string
         prefix:
           type: string
           description: First characters of the key, to recognise it.
-          examples: [Abcd1234]
+          examples:
+            - Abcd1234
         scope:
           type: string
-          enum: [full, playback]
+          enum:
+            - full
+            - playback
           description: |
             `full` (default): the key can call every `/v1` route of its project.
             `playback`: the key can call ONLY the playback-token mint route, so a
             key that sits on a customer's server (for example a WordPress site)
             cannot upload, encode, delete, read account data, or spend money.
-          examples: [full]
+          examples:
+            - full
         createdAt:
           $ref: '#/components/schemas/Timestamp'
         lastUsedAt:
@@ -4081,87 +1897,120 @@ components:
       allOf:
         - $ref: '#/components/schemas/ApiKey'
         - type: object
-          required: [secret]
+          required:
+            - secret
           properties:
             secret:
               type: string
               description: |
                 The full key: `sk_{prefix}_{secret}` (docs/architecture.md section 9).
                 Shown only in this response; we store only the SHA-256 of the secret.
-
     Domain:
       type: object
-      required: [id, hostname, status, verification, createdAt, verifiedAt]
+      required:
+        - id
+        - hostname
+        - status
+        - verification
+        - createdAt
+        - verifiedAt
       properties:
         id:
           type: string
-          examples: [dom_7pW1cX]
+          examples:
+            - dom_7pW1cX
         hostname:
           type: string
           description: |
             Lowercase hostname. Playback matches this exact host only (see
             Playback in the API description); a subdomain needs its own domain.
-          examples: [courses.example.com]
+          examples:
+            - courses.example.com
         status:
           type: string
-          enum: [pending, verified]
+          enum:
+            - pending
+            - verified
         verification:
           type: object
           description: Create this DNS record to prove you own the domain.
-          required: [type, name, value]
+          required:
+            - type
+            - name
+            - value
           properties:
             type:
               type: string
               const: TXT
             name:
               type: string
-              examples: [_segmnt-verify.courses.example.com]
+              examples:
+                - _segmnt-verify.courses.example.com
             value:
               type: string
-              examples: [segmnt-verify=b41c09e2f7a3d6c1]
+              examples:
+                - segmnt-verify=b41c09e2f7a3d6c1
         createdAt:
           $ref: '#/components/schemas/Timestamp'
         verifiedAt:
           oneOf:
             - $ref: '#/components/schemas/Timestamp'
             - type: 'null'
-
     UploadInput:
       type: object
-      required: [title, fileName, sizeBytes, contentType]
+      required:
+        - title
+        - fileName
+        - sizeBytes
+        - contentType
       properties:
         title:
           $ref: '#/components/schemas/VideoTitle'
         fileName:
           type: string
           maxLength: 255
-          examples: [lesson-01.mp4]
+          examples:
+            - lesson-01.mp4
         sizeBytes:
           type: integer
           minimum: 1
           description: File size. The plan sets the maximum.
-          examples: [2147483648]
+          examples:
+            - 2147483648
         contentType:
           type: string
-          enum: [video/mp4, video/quicktime, video/webm, video/x-matroska]
+          enum:
+            - video/mp4
+            - video/quicktime
+            - video/webm
+            - video/x-matroska
     Upload:
       type: object
-      required: [id, video, partSizeBytes, parts, expiresAt]
+      required:
+        - id
+        - video
+        - partSizeBytes
+        - parts
+        - expiresAt
       properties:
         id:
           type: string
-          examples: [upl_2bN6rD]
+          examples:
+            - upl_2bN6rD
         video:
           $ref: '#/components/schemas/Video'
         partSizeBytes:
           type: integer
           description: Size of every part except the last one.
-          examples: [104857600]
+          examples:
+            - 104857600
         parts:
           type: array
           items:
             type: object
-            required: [partNumber, url]
+            required:
+              - partNumber
+              - url
             properties:
               partNumber:
                 type: integer
@@ -4172,26 +2021,32 @@ components:
                 description: Pre-signed `PUT` URL for this part. Do not log it.
         expiresAt:
           $ref: '#/components/schemas/Timestamp'
-
     UploadTokenInput:
       type: object
-      required: [domain]
+      required:
+        - domain
       properties:
         domain:
           type: string
           format: hostname
           description: A verified domain of the project, where the browser runs.
-          examples: [courses.example.com]
+          examples:
+            - courses.example.com
         maxSizeBytes:
           type: integer
           minimum: 1
           description: |
             Hard cap on the uploaded file size, in bytes. Defaults to the plan
             maximum and is never allowed above it.
-          examples: [2147483648]
+          examples:
+            - 2147483648
         contentType:
           type: string
-          enum: [video/mp4, video/quicktime, video/webm, video/x-matroska]
+          enum:
+            - video/mp4
+            - video/quicktime
+            - video/webm
+            - video/x-matroska
           description: |
             The one content type the upload may declare. Omit it to allow any
             supported type.
@@ -4205,7 +2060,13 @@ components:
           description: How long the token lives. Keep it short; it is single-use.
     UploadToken:
       type: object
-      required: [token, expiresAt, projectId, domain, maxSizeBytes, contentTypes]
+      required:
+        - token
+        - expiresAt
+        - projectId
+        - domain
+        - maxSizeBytes
+        - contentTypes
       properties:
         token:
           type: string
@@ -4218,11 +2079,13 @@ components:
         projectId:
           type: string
           description: The project the token may upload to.
-          examples: [prj_2bN6rD]
+          examples:
+            - prj_2bN6rD
         domain:
           type: string
           description: The verified domain the token is bound to.
-          examples: [courses.example.com]
+          examples:
+            - courses.example.com
         maxSizeBytes:
           type: integer
           description: Hard cap on the uploaded file size, in bytes.
@@ -4233,15 +2096,20 @@ components:
           description: The content types the upload may declare.
         title:
           $ref: '#/components/schemas/VideoTitle'
-
     VideoTitle:
       type: string
       minLength: 1
       maxLength: 200
-      examples: [Lesson 1 - Introduction]
+      examples:
+        - Lesson 1 - Introduction
     VideoStatus:
       type: string
-      enum: [uploading, processing, ready, failed, held]
+      enum:
+        - uploading
+        - processing
+        - ready
+        - failed
+        - held
       description: |
         - `uploading`: waiting for the parts and the complete call.
         - `processing`: encoding to HLS.
@@ -4250,37 +2118,40 @@ components:
         - `held`: held by our team; does not play.
     Quality:
       type: string
-      enum: ['360p', '720p', '1080p', '1440p', '2160p']
-      description: 1440p and 2160p are only on the Pro and Agency plans, and never above the source.
-    VideoAccessMode:
-      type: string
-      enum: [protected, public]
-      default: protected
-      description: |
-        How the video can play (YAH-796):
-        - `protected` (default): the player needs a signed, video-specific token
-          from `POST .../playback-tokens`. A token for one video never plays
-          another video.
-        - `public`: no token is needed. Any site may embed it, and the media is
-          served from our CDN with the same moderation and plan-limit checks.
-          Use it only for content that is really meant to be public.
+      enum:
+        - 360p
+        - 720p
+        - 1080p
+      description: The quality is never above the source video.
     Video:
       type: object
-      required: [id, projectId, title, status, accessMode, durationSeconds, qualities, sizeBytes, failure, createdAt, updatedAt, readyAt]
+      required:
+        - id
+        - projectId
+        - title
+        - status
+        - durationSeconds
+        - qualities
+        - sizeBytes
+        - failure
+        - createdAt
+        - updatedAt
+        - readyAt
       properties:
         id:
           type: string
-          examples: [vid_9xR4tL]
+          examples:
+            - vid_9xR4tL
         projectId:
           type: string
         title:
           $ref: '#/components/schemas/VideoTitle'
         status:
           $ref: '#/components/schemas/VideoStatus'
-        accessMode:
-          $ref: '#/components/schemas/VideoAccessMode'
         durationSeconds:
-          type: [number, 'null']
+          type:
+            - number
+            - 'null'
           description: Known after encoding.
         qualities:
           type: array
@@ -4294,11 +2165,15 @@ components:
           description: Set only when `status` is `failed`.
           oneOf:
             - type: object
-              required: [code, message, retryable]
+              required:
+                - code
+                - message
+                - retryable
               properties:
                 code:
                   type: string
-                  examples: [unsupported_codec]
+                  examples:
+                    - unsupported_codec
                 message:
                   type: string
                 retryable:
@@ -4320,27 +2195,37 @@ components:
             - type: 'null'
     VideoList:
       type: object
-      required: [data, nextCursor, total]
+      required:
+        - data
+        - nextCursor
       properties:
         data:
           type: array
           items:
             $ref: '#/components/schemas/Video'
         nextCursor:
-          type: [string, 'null']
+          type:
+            - string
+            - 'null'
         total:
           type: integer
-          description: Count of all matching rows, not just this page.
-
+          description: |
+            Coming soon. Count of all matching videos, not just this page.
+            Not returned yet, so do not rely on it today.
     DemoPlayback:
       type: object
-      required: [cdnUrl, videoId, token, expiresAt]
+      required:
+        - cdnUrl
+        - videoId
+        - token
+        - expiresAt
       properties:
         cdnUrl:
           type: string
           format: uri
           description: Base media URL. Append `/v/{videoId}/master.m3u8` for the HLS playlist.
-          examples: ['https://cdn.segmnt.cloud']
+          examples:
+            - https://cdn.segmnt.cloud
         videoId:
           type: string
         token:
@@ -4348,25 +2233,17 @@ components:
           description: Opaque. Do not parse it; the format can change.
         expiresAt:
           $ref: '#/components/schemas/Timestamp'
-
     PlaybackTokenInput:
       type: object
-      required: [domain]
+      required:
+        - domain
       properties:
         domain:
           type: string
           format: hostname
           description: A verified domain of the project, where the player runs.
-          examples: [courses.example.com]
-        viewerIp:
-          type: string
-          description: |
-            The viewer's IP address. Required when the
-            project has `ipBinding` on; ignored otherwise. Send the viewer's IP,
-            not your server's: our API only sees your server. The token is bound
-            to the viewer's network (IPv4 `/24`, IPv6 `/64`), so the CDN refuses
-            another network with `403 ip_mismatch`.
-          examples: [203.0.113.7]
+          examples:
+            - courses.example.com
         expiresInSeconds:
           type: integer
           minimum: 60
@@ -4375,7 +2252,11 @@ components:
           description: Make it longer than the video so playback does not stop.
     PlaybackToken:
       type: object
-      required: [token, expiresAt, embedUrl, thumbnailUrl]
+      required:
+        - token
+        - expiresAt
+        - embedUrl
+        - thumbnailUrl
       properties:
         token:
           type: string
@@ -4389,7 +2270,8 @@ components:
             HLS master playlist for your own player (hls.js or Safari). Only on
             plans with `whiteLabel`; other plans must use `embedUrl`, which shows
             our logo. The CDN adds the token to every link inside the playlists.
-          examples: ['https://cdn.segmnt.cloud/v/vid_9xR4tL/master.m3u8?token=...']
+          examples:
+            - https://cdn.segmnt.cloud/v/vid_9xR4tL/master.m3u8?token=...
         embedUrl:
           type: string
           format: uri
@@ -4397,10 +2279,13 @@ components:
         thumbnailUrl:
           type: string
           format: uri
-
     PreviewToken:
       type: object
-      required: [token, expiresAt, embedUrl, thumbnailUrl]
+      required:
+        - token
+        - expiresAt
+        - embedUrl
+        - thumbnailUrl
       properties:
         token:
           type: string
@@ -4417,22 +2302,31 @@ components:
             dashboard appends the real token for the live preview and the
             visible `YOUR_PLAYBACK_TOKEN` placeholder in the copyable embed
             snippet, so a preview token never leaks into what a customer copies.
-          examples: ['https://cdn.segmnt.cloud/e/vid_9xR4tL']
+          examples:
+            - https://cdn.segmnt.cloud/e/vid_9xR4tL
         thumbnailUrl:
           type: string
           format: uri
           description: Signed poster/thumbnail URL for the video detail page.
-
     WebhookEventType:
       type: string
-      enum: [video.ready, video.failed, video.held, video.removed]
+      enum:
+        - video.ready
+        - video.failed
+        - video.held
+        - video.removed
     WebhookEndpoint:
       type: object
-      required: [id, url, events, createdAt]
+      required:
+        - id
+        - url
+        - events
+        - createdAt
       properties:
         id:
           type: string
-          examples: [whe_5mJ8kV]
+          examples:
+            - whe_5mJ8kV
         url:
           type: string
           format: uri
@@ -4446,19 +2340,26 @@ components:
       allOf:
         - $ref: '#/components/schemas/WebhookEndpoint'
         - type: object
-          required: [signingSecret]
+          required:
+            - signingSecret
           properties:
             signingSecret:
               type: string
               description: Use it to check `Segmnt-Signature`.
     WebhookEvent:
       type: object
-      required: [id, type, createdAt, projectId, data]
+      required:
+        - id
+        - type
+        - createdAt
+        - projectId
+        - data
       properties:
         id:
           type: string
           description: Same for every retry of this event.
-          examples: [evt_1qA7zP]
+          examples:
+            - evt_1qA7zP
         type:
           $ref: '#/components/schemas/WebhookEventType'
         createdAt:
@@ -4467,7 +2368,8 @@ components:
           type: string
         data:
           type: object
-          required: [video]
+          required:
+            - video
           properties:
             video:
               $ref: '#/components/schemas/Video'
@@ -4479,43 +2381,14 @@ components:
                 On `video.removed` it is `deleted_by_customer` (the customer
                 deleted the video) or `plan_ended` (the video was removed 30
                 days after a paid plan stopped). A legal matter never sends it.
-
-    WebhookDelivery:
-      type: object
-      required: [id, eventId, eventType, status, attempts, lastHttpStatus, nextAttemptAt, createdAt]
-      properties:
-        id:
-          type: string
-          examples: [whd_7Qp2Xr]
-        eventId:
-          type: string
-          description: The id of the event this attempt belongs to.
-          examples: [evt_1qA7zP]
-        eventType:
-          type: string
-          description: The event type, for example `video.ready` or `webhook.test`.
-        status:
-          type: string
-          enum: [pending, delivered, failed]
-          description: |
-            `pending` while we still retry, `delivered` on a 2xx reply, and
-            `failed` when we stop.
-        attempts:
-          type: integer
-          description: How many times we have called the endpoint for this event.
-        lastHttpStatus:
-          type: [integer, 'null']
-          description: The last HTTP status the endpoint returned, or null on a connection error.
-        nextAttemptAt:
-          type: [string, 'null']
-          format: date-time
-          description: When the next retry is due, or null when there is none.
-        createdAt:
-          $ref: '#/components/schemas/Timestamp'
-
     ProjectUsage:
       type: object
-      required: [projectId, from, to, storedSeconds, watchedMinutes]
+      required:
+        - projectId
+        - from
+        - to
+        - storedSeconds
+        - watchedMinutes
       properties:
         projectId:
           type: string
@@ -4528,9 +2401,8 @@ components:
         storedSeconds:
           type: integer
           description: |
-            Total stored length of the project's videos, weighted by quality
-            (1 h of 1440p counts as 2 h, 1 h of 4K counts as 4 h), which is what
-            counts against the plan's stored-hours limit.
+            Total stored length of the project's videos. This is what counts against
+            the plan's stored-hours limit.
         watchedMinutes:
           type: integer
           description: Minutes watched by viewers in the period.
@@ -4538,12 +2410,18 @@ components:
           $ref: '#/components/schemas/PlanId'
         planStatus:
           type: string
-          enum: [active, pilot, past_due, canceled]
+          enum:
+            - active
+            - pilot
+            - past_due
+            - canceled
         limits:
           $ref: '#/components/schemas/PlanLimits'
         currentPeriod:
           type: object
-          required: [start, end]
+          required:
+            - start
+            - end
           description: The billing month that `accountUsage` and `remaining` count.
           properties:
             start:
@@ -4552,7 +2430,9 @@ components:
               $ref: '#/components/schemas/Timestamp'
         accountUsage:
           type: object
-          required: [storedSeconds, watchedMinutes]
+          required:
+            - storedSeconds
+            - watchedMinutes
           description: Totals for all projects of the account (plan limits are per account).
           properties:
             storedSeconds:
@@ -4561,39 +2441,62 @@ components:
               type: integer
         remaining:
           type: object
-          required: [storedSeconds, watchedMinutes]
+          required:
+            - storedSeconds
+            - watchedMinutes
           description: Headroom left under the plan limits. `null` means the plan has no limit. Never below `0`.
           properties:
             storedSeconds:
-              type: [integer, 'null']
+              type:
+                - integer
+                - 'null'
             watchedMinutes:
-              type: [integer, 'null']
-
+              type:
+                - integer
+                - 'null'
     PlanId:
       type: string
       description: Plan names and prices are subject to change. Examples are not real plans.
-      examples: [free]
+      examples:
+        - free
     PlanLimits:
       type: object
-      required: [storedSeconds, uploadSecondsPerPeriod, watchedMinutesPerPeriod, verifiedDomains, projects, maxQuality, whiteLabel]
+      required:
+        - storedSeconds
+        - uploadSecondsPerPeriod
+        - watchedMinutesPerPeriod
+        - verifiedDomains
+        - projects
+        - maxQuality
+        - whiteLabel
       description: '`null` means no limit.'
       properties:
         storedSeconds:
-          type: [integer, 'null']
+          type:
+            - integer
+            - 'null'
         uploadSecondsPerPeriod:
-          type: [integer, 'null']
-          description: New seconds uploaded per period (per month; over the whole window for a pilot).
+          type:
+            - integer
+            - 'null'
+          description: New seconds uploaded per period (per month; over the whole window for the Pilot (by invitation) plan).
         watchedMinutesPerPeriod:
-          type: [integer, 'null']
+          type:
+            - integer
+            - 'null'
           description: |
-            Included watched minutes per period. Free, Starter and Pilot
+            Included watched minutes per period. Free, Starter and Pilot (by invitation)
             playback stops at this limit; Pro and Agency continue past it and
             the extra time is billed at 5 SAR per 1,000 watched minutes before
             VAT on the next invoice.
         verifiedDomains:
-          type: [integer, 'null']
+          type:
+            - integer
+            - 'null'
         projects:
-          type: [integer, 'null']
+          type:
+            - integer
+            - 'null'
           description: Projects the account may have.
         maxQuality:
           $ref: '#/components/schemas/Quality'
@@ -4602,7 +2505,11 @@ components:
           description: Can hide our logo and brand the player.
     Plan:
       type: object
-      required: [id, name, price, limits]
+      required:
+        - id
+        - name
+        - price
+        - limits
       properties:
         id:
           $ref: '#/components/schemas/PlanId'
@@ -4610,7 +2517,10 @@ components:
           type: string
         price:
           type: object
-          required: [amount, currency, interval]
+          required:
+            - amount
+            - currency
+            - interval
           description: Before VAT. VAT (15% in Saudi Arabia) is added at checkout when billing VAT mode is on.
           properties:
             amount:
@@ -4619,174 +2529,29 @@ components:
               description: Smallest currency unit (halalas for SAR).
             currency:
               type: string
-              examples: [SAR]
+              examples:
+                - SAR
             interval:
               type: string
-              enum: [month, year]
+              enum:
+                - month
+                - year
         limits:
           $ref: '#/components/schemas/PlanLimits'
-    PayAsYouGoSetting:
-      type: object
-      required: [enabled, supported, plan, included, cap]
-      properties:
-        enabled:
-          type: boolean
-          description: |
-            False means a hard stop at the included limit. Each meter has its own
-            switch (`/v1/account/billing/pay-as-you-go/upload` and
-            `/v1/account/billing/pay-as-you-go/watching`), and the per-meter
-            switch decides enforcement; this account-wide value is only the
-            default for a meter that has no setting of its own.
-        supported:
-          type: boolean
-          description: False when the plan has no Pay-As-You-Go (Free and Pilot).
-        plan:
-          type: object
-          required: [id, name]
-          properties:
-            id:
-              type: string
-            name:
-              type: string
-        included:
-          type: object
-          required: [uploadSecondsPerPeriod, watchedMinutesPerPeriod]
-          properties:
-            uploadSecondsPerPeriod:
-              type: [integer, 'null']
-            watchedMinutesPerPeriod:
-              type: [integer, 'null']
-        cap:
-          type: object
-          required: [uploadSecondsPerPeriod, watchedMinutesPerPeriod]
-          properties:
-            uploadSecondsPerPeriod:
-              type: [integer, 'null']
-              description: The upload limit in force (3x included when on, included when off).
-            watchedMinutesPerPeriod:
-              type: [integer, 'null']
-              description: From the watching meter row. Null means no watch cap (overage is billed).
-    PayAsYouGoProcessingSetting:
-      type: object
-      required: [meter, enabled, supported, plan, included, cap, safetyCapMultiplier]
-      properties:
-        meter:
-          type: string
-          enum: [processing]
-        enabled:
-          type: boolean
-          description: False means a hard stop at the included encoded seconds.
-        supported:
-          type: boolean
-          description: False when the plan has no processing Pay-As-You-Go (Free and Pilot).
-        plan:
-          type: object
-          required: [id, name]
-          properties:
-            id:
-              type: string
-            name:
-              type: string
-        included:
-          type: object
-          required: [encodedSeconds]
-          properties:
-            encodedSeconds:
-              type: [integer, 'null']
-        cap:
-          type: object
-          required: [encodedSeconds]
-          properties:
-            encodedSeconds:
-              type: [integer, 'null']
-              description: Where encoding stops; the included seconds when off, the safety cap when on.
-        safetyCapMultiplier:
-          type: integer
-          description: The cap is this multiple of the included encoded seconds.
-
-    PayAsYouGoUploadSetting:
-      type: object
-      required: [meter, enabled, supported, plan, included, cap]
-      properties:
-        meter:
-          type: string
-          enum: [upload]
-        enabled:
-          type: boolean
-          description: False means a hard stop at the included upload hours.
-        supported:
-          type: boolean
-          description: False when the plan has no upload Pay-As-You-Go (Free and Pilot).
-        plan:
-          type: object
-          required: [id, name]
-          properties:
-            id:
-              type: string
-            name:
-              type: string
-        included:
-          type: object
-          required: [uploadSecondsPerPeriod]
-          properties:
-            uploadSecondsPerPeriod:
-              type: [integer, 'null']
-        cap:
-          type: object
-          required: [uploadSecondsPerPeriod]
-          properties:
-            uploadSecondsPerPeriod:
-              type: [integer, 'null']
-              description: The upload limit in force (3x included when on, included when off).
-    WatchingPayAsYouGoSetting:
-      type: object
-      required: [meter, enabled, supported, plan, included, cap, safetyCap]
-      properties:
-        meter:
-          type: string
-          enum: [watching]
-        enabled:
-          type: boolean
-          description: False means a hard stop at the included watch minutes.
-        supported:
-          type: boolean
-          description: False when the plan has no watch-time Pay-As-You-Go (Free, Starter and Pilot).
-        plan:
-          type: object
-          required: [id, name]
-          properties:
-            id:
-              type: string
-            name:
-              type: string
-        included:
-          type: object
-          required: [watchedMinutesPerPeriod]
-          properties:
-            watchedMinutesPerPeriod:
-              type: [integer, 'null']
-              description: From the meter row when set, else the plan catalog.
-        cap:
-          type: object
-          required: [watchedMinutesPerPeriod]
-          properties:
-            watchedMinutesPerPeriod:
-              type: [integer, 'null']
-              description: Where playback stops. Null means no cap (overage continues to be billed).
-        safetyCap:
-          type: object
-          required: [watchedMinutesPerPeriod]
-          properties:
-            watchedMinutesPerPeriod:
-              type: [integer, 'null']
-              description: The meter row's own safety cap; never a shared 3x.
     AccountPlan:
       type: object
-      required: [plan, status, currentPeriod, limits, usage]
+      required:
+        - plan
+        - status
+        - currentPeriod
+        - limits
+        - usage
       properties:
         plan:
           type: object
-          required: [id, name]
+          required:
+            - id
+            - name
           properties:
             id:
               $ref: '#/components/schemas/PlanId'
@@ -4794,10 +2559,16 @@ components:
               type: string
         status:
           type: string
-          enum: [active, pilot, past_due, canceled]
+          enum:
+            - active
+            - pilot
+            - past_due
+            - canceled
         currentPeriod:
           type: object
-          required: [start, end]
+          required:
+            - start
+            - end
           properties:
             start:
               $ref: '#/components/schemas/Timestamp'
@@ -4808,7 +2579,11 @@ components:
         usage:
           type: object
           description: Totals for all projects in the account in the current period.
-          required: [storedSeconds, watchedMinutes, verifiedDomains, overageMinutes]
+          required:
+            - storedSeconds
+            - watchedMinutes
+            - verifiedDomains
+            - overageMinutes
           properties:
             storedSeconds:
               type: integer
@@ -4823,16 +2598,24 @@ components:
                 period, billed at 5 SAR per 1,000 watched minutes before VAT on
                 the next invoice (Pro and Agency only). `0` when under the
                 limit, when the plan has no limit, or when the plan is not
-                billed overage: Free, Starter and Pilot stop playback at the
+                billed overage: Free, Starter and Pilot (by invitation) stop playback at the
                 limit, so they always report `0`. Pro and Agency never stop
                 playback at this point.
     UsageSummary:
       type: object
-      required: [plan, period, meters, payAsYouGo, history]
+      required:
+        - plan
+        - period
+        - meters
+        - payAsYouGo
+        - history
       properties:
         plan:
           type: object
-          required: [id, name, status]
+          required:
+            - id
+            - name
+            - status
           properties:
             id:
               $ref: '#/components/schemas/PlanId'
@@ -4840,10 +2623,16 @@ components:
               type: string
             status:
               type: string
-              enum: [active, pilot, past_due, canceled]
+              enum:
+                - active
+                - pilot
+                - past_due
+                - canceled
         period:
           type: object
-          required: [start, end]
+          required:
+            - start
+            - end
           properties:
             start:
               $ref: '#/components/schemas/Timestamp'
@@ -4856,7 +2645,10 @@ components:
             $ref: '#/components/schemas/UsageMeter'
         payAsYouGo:
           type: object
-          required: [enabled, cap, planSupportsIt]
+          required:
+            - enabled
+            - cap
+            - planSupportsIt
           properties:
             enabled:
               type: boolean
@@ -4864,7 +2656,9 @@ components:
                 True when watch time past the included minutes is billed
                 pay-as-you-go (Pro and Agency, when no pilot is active).
             cap:
-              type: [integer, 'null']
+              type:
+                - integer
+                - 'null'
               description: |
                 Watched minutes at which playback stops. `null` when
                 pay-as-you-go is active (no hard stop), otherwise the plan's
@@ -4881,11 +2675,15 @@ components:
           maxItems: 3
           items:
             type: object
-            required: [period, used]
+            required:
+              - period
+              - used
             properties:
               period:
                 type: object
-                required: [start, end]
+                required:
+                  - start
+                  - end
                 properties:
                   start:
                     $ref: '#/components/schemas/Timestamp'
@@ -4893,7 +2691,11 @@ components:
                     $ref: '#/components/schemas/Timestamp'
               used:
                 type: object
-                required: [upload_hours, processed_hours, stored_hours, watched_minutes]
+                required:
+                  - upload_hours
+                  - processed_hours
+                  - stored_hours
+                  - watched_minutes
                 properties:
                   upload_hours:
                     type: number
@@ -4906,168 +2708,100 @@ components:
                     type: number
     UsageMeter:
       type: object
-      required: [meter, unit, used, included, remaining, percent]
+      required:
+        - meter
+        - unit
+        - used
+        - included
+        - remaining
+        - percent
       properties:
         meter:
           type: string
-          enum: [upload_hours, processed_hours, stored_hours, watched_minutes]
+          enum:
+            - upload_hours
+            - processed_hours
+            - stored_hours
+            - watched_minutes
         unit:
           type: string
-          enum: [hours, minutes]
+          enum:
+            - hours
+            - minutes
         used:
           type: number
         included:
-          type: [number, 'null']
+          type:
+            - number
+            - 'null'
           description: The plan's allowance for this meter, or `null` when there is no limit.
         remaining:
-          type: [number, 'null']
+          type:
+            - number
+            - 'null'
           description: Never negative; `0` once the meter is at or over its limit. `null` when there is no limit.
         percent:
-          type: [number, 'null']
+          type:
+            - number
+            - 'null'
           description: |
             `used / included * 100`, rounded to two decimals. Can exceed `100`
             on pay-as-you-go overage. `null` when there is no limit.
-    UsageBreakdown:
-      type: object
-      required: [meter, month, unit, total, byProject, byVideo, byOperation, other]
-      properties:
-        meter:
-          type: string
-          enum: [upload_hours, processed_hours, stored_hours, watched_minutes]
-        month:
-          type: string
-          description: The UTC month, `YYYY-MM`.
-          example: '2026-11'
-        unit:
-          type: string
-          enum: [hours, minutes]
-        total:
-          type: number
-          description: Same number as the summary's `used` for this meter.
-        byProject:
-          type: array
-          description: Top 10 projects by quantity, largest first.
-          maxItems: 10
-          items:
-            type: object
-            required: [projectId, name, quantity, share]
-            properties:
-              projectId:
-                type: string
-              name:
-                type: [string, 'null']
-              quantity:
-                type: number
-              share:
-                type: number
-                description: Percent of `total`, rounded to two decimals.
-        byVideo:
-          type: array
-          description: Top 10 videos by quantity, largest first.
-          maxItems: 10
-          items:
-            type: object
-            required: [videoId, title, quantity]
-            properties:
-              videoId:
-                type: string
-              title:
-                type: [string, 'null']
-              quantity:
-                type: number
-        byOperation:
-          type: array
-          description: The operation that recorded this meter's usage.
-          items:
-            type: object
-            required: [operation, quantity, share]
-            properties:
-              operation:
-                type: string
-                enum: [upload, processing, storage, playback]
-              quantity:
-                type: number
-              share:
-                type: number
-        other:
-          type: object
-          description: Everything past the top 10, so nothing is silently dropped.
-          required: [projectQuantity, projectShare, videoQuantity]
-          properties:
-            projectQuantity:
-              type: number
-            projectShare:
-              type: number
-              description: |
-                `byProject` shares plus this share add up to 100%.
-            videoQuantity:
-              type: number
-
     Checkout:
       type: object
-      required: [id, checkoutUrl, expiresAt]
+      required:
+        - id
+        - checkoutUrl
+        - expiresAt
       properties:
         id:
           type: string
         checkoutUrl:
           type: string
           format: uri
-          description: Hosted checkout page of the payment provider.
+          description: Checkout page of the payment provider.
         expiresAt:
-          type: [string, 'null']
+          type:
+            - string
+            - 'null'
           format: date-time
-          description: When the hosted page stops working. `null` when the provider sets no expiry (Moyasar invoices do not expire by default).
-
+          description: |
+            When the checkout page stops working. `null` when the page does not
+            expire.
     WhitelistJoinRequest:
       type: object
-      required: [planId]
+      required:
+        - planId
       properties:
         planId:
           $ref: '#/components/schemas/PlanId'
         email:
-          type: [string, 'null']
+          type:
+            - string
+            - 'null'
           maxLength: 254
           description: Optional contact address for the launch. Defaults to the account owner's e-mail when omitted.
     WhitelistEntry:
       type: object
-      required: [planId, email, createdAt]
+      required:
+        - planId
+        - email
+        - createdAt
       properties:
         planId:
           $ref: '#/components/schemas/PlanId'
         email:
-          type: [string, 'null']
+          type:
+            - string
+            - 'null'
         createdAt:
           type: string
           format: date-time
           description: When the account first joined the whitelist for this plan. An idempotent re-join keeps this value.
-
-    OverageInvoiceResult:
-      type: object
-      required: [recorded]
-      properties:
-        recorded:
-          type: boolean
-          description: True when a new overage invoice row was written.
-        reason:
-          type: string
-          description: |
-            Why nothing was recorded: `no_price` (no overage rate set),
-            `no_overage`, `duplicate`, `unknown_account`, `not_paid`, or
-            `not_closed` (the month has not ended).
-        planId:
-          type: string
-        overageSeconds:
-          type: integer
-        billableMinutes:
-          type: integer
-          description: Started minutes billed (ceil of the overage seconds).
-        total:
-          type: integer
-          description: Total billed in halalas, VAT included.
-
     VideoReportInput:
       type: object
-      required: [reason]
+      required:
+        - reason
       properties:
         reason:
           type: string
@@ -5078,10 +2812,12 @@ components:
           type: string
           maxLength: 1000
           description: Optional free text from the reporter.
-
     VideoReport:
       type: object
-      required: [id, videoId, reason]
+      required:
+        - id
+        - videoId
+        - reason
       properties:
         id:
           type: string
@@ -5089,345 +2825,3 @@ components:
           type: string
         reason:
           type: string
-
-    SecurityEventInput:
-      type: object
-      required: [eventId, kind]
-      properties:
-        eventId:
-          type: string
-          maxLength: 128
-          description: Dedupe key. A retried report with the same id is counted once.
-        kind:
-          type: string
-          description: Event type, for example `token_failure`.
-        projectId:
-          type: [string, 'null']
-        videoId:
-          type: [string, 'null']
-        detail:
-          type: [string, 'null']
-          maxLength: 500
-
-    Alert:
-      type: object
-      required: [id, kind, severity, status, summary, createdAt]
-      properties:
-        id:
-          type: string
-        kind:
-          type: string
-          enum: [high_watch_minutes, upload_burst, domain_burst, token_failures, token_expiry_surge, token_sharing, encode_failures, viewer_report, ban_proposed, plan_warning_undelivered]
-        severity:
-          type: string
-          enum: [info, warning, critical]
-        status:
-          type: string
-          enum: [open, acked]
-        accountId:
-          type: [string, 'null']
-        projectId:
-          type: [string, 'null']
-        videoId:
-          type: [string, 'null']
-        summary:
-          type: string
-        detail:
-          type: object
-          additionalProperties: true
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
-        ackedAt:
-          type: [string, 'null']
-          format: date-time
-
-    AlertList:
-      type: object
-      required: [data, nextCursor]
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/Alert'
-        nextCursor:
-          type: [string, 'null']
-
-    AdminOverview:
-      type: object
-      required: [openAlerts, accountsNew, accountsWatch, videosHeld, videosReady, videosProcessing, videosFailed, reports7d]
-      properties:
-        openAlerts:
-          type: integer
-        accountsNew:
-          type: integer
-        accountsWatch:
-          type: integer
-        videosHeld:
-          type: integer
-        videosReady:
-          type: integer
-        videosProcessing:
-          type: integer
-        videosFailed:
-          type: integer
-        reports7d:
-          type: integer
-
-    AdminBillingMeter:
-      type: object
-      required: [used, included, overage, rate, rateUnit, amountHalalas, priceSet, note]
-      description: One billing meter for one account and month. A `null` rate means no catalog price applies, so the amount is `null` and `note` is `price not set`.
-      properties:
-        used:
-          type: integer
-          description: Measured units this month (seconds, or minutes for watchedMinutes).
-        included:
-          type: [integer, 'null']
-          description: The plan's included units, or null when the plan has no limit for this meter.
-        overage:
-          type: integer
-          description: Units past the included amount (started minutes for watchedMinutes).
-        rate:
-          type: [integer, 'null']
-          description: Catalog rate in halalas, or null when no price is set.
-        rateUnit:
-          type: [string, 'null']
-          description: What `rate` is priced per, e.g. `halalas per upload hour`.
-        amountHalalas:
-          type: [integer, 'null']
-          description: The overage amount in halalas before VAT, or null when no price is set.
-        priceSet:
-          type: boolean
-        note:
-          type: [string, 'null']
-
-    GrowthStats:
-      type: object
-      required: [generatedAt, window, totals, planMix, weeks, videos]
-      properties:
-        generatedAt:
-          type: string
-          format: date-time
-        window:
-          type: object
-          required: [weeks, since, until]
-          properties:
-            weeks:
-              type: integer
-            since:
-              type: string
-              format: date
-            until:
-              type: string
-              format: date
-        totals:
-          type: object
-          required: [accounts, bannedAccounts, newAccounts, activeAccounts, watchSeconds, watchMinutes]
-          properties:
-            accounts:
-              type: integer
-            bannedAccounts:
-              type: integer
-            newAccounts:
-              type: integer
-            activeAccounts:
-              type: integer
-            watchSeconds:
-              type: integer
-            watchMinutes:
-              type: number
-        planMix:
-          type: array
-          items:
-            type: object
-            required: [planId, accounts]
-            properties:
-              planId:
-                type: string
-              accounts:
-                type: integer
-        weeks:
-          type: array
-          items:
-            type: object
-            required: [weekStart, signups, activeAccounts, watchMinutes]
-            properties:
-              weekStart:
-                type: string
-                format: date
-                description: Monday of the UTC week.
-              signups:
-                type: integer
-              activeAccounts:
-                type: integer
-                description: Accounts with at least one watched second in the week.
-              watchMinutes:
-                type: number
-        videos:
-          type: object
-          required: [total, ready, processing, held, storedMinutes]
-          properties:
-            total:
-              type: integer
-            ready:
-              type: integer
-            processing:
-              type: integer
-            held:
-              type: integer
-            storedMinutes:
-              type: number
-
-    AdminAccount:
-      type: object
-      required: [id, name, planId, planStatus, reviewFlag, createdAt]
-      properties:
-        id:
-          type: string
-        name:
-          type: string
-        planId:
-          type: string
-        planStatus:
-          type: string
-        reviewFlag:
-          type: string
-          enum: [new, ok, watch]
-          description: Internal only. Never shown to the customer.
-        bannedAt:
-          type: [string, 'null']
-          format: date-time
-        banProposedAt:
-          type: [string, 'null']
-          format: date-time
-        banProposedReason:
-          type: [string, 'null']
-        createdAt:
-          type: string
-          format: date-time
-
-    AdminAccountList:
-      type: object
-      required: [data, nextCursor, total]
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/AdminAccount'
-        nextCursor:
-          type: [string, 'null']
-        total:
-          type: integer
-          description: Count of all matching rows, not just this page.
-
-    AdminAccountDetail:
-      type: object
-      required: [account, projects, usage]
-      properties:
-        account:
-          $ref: '#/components/schemas/AdminAccount'
-        projects:
-          type: array
-          items:
-            type: object
-            required: [id, name, createdAt]
-            properties:
-              id:
-                type: string
-              name:
-                type: string
-              createdAt:
-                type: string
-                format: date-time
-              deletedAt:
-                type: [string, 'null']
-                format: date-time
-        usage:
-          type: object
-          required: [storedSeconds, watchedMinutes]
-          properties:
-            storedSeconds:
-              type: integer
-            watchedMinutes:
-              type: integer
-
-    AdminVideo:
-      allOf:
-        - $ref: '#/components/schemas/Video'
-        - type: object
-          required: [frames, moderationState]
-          properties:
-            deletedAt:
-              type: [string, 'null']
-              format: date-time
-            accountId:
-              type: [string, 'null']
-            accountName:
-              type: [string, 'null']
-            projectName:
-              type: [string, 'null']
-            moderationState:
-              $ref: '#/components/schemas/ModerationState'
-            frames:
-              type: array
-              items:
-                type: string
-              description: Review frame file names under `frames/{videoId}/`.
-
-    AdminVideoList:
-      type: object
-      required: [data, nextCursor, total]
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/AdminVideoSummary'
-        nextCursor:
-          type: [string, 'null']
-        total:
-          type: integer
-          description: Count of all matching rows, not just this page.
-
-    AdminVideoSummary:
-      allOf:
-        - $ref: '#/components/schemas/Video'
-        - type: object
-          required: [accountId, accountName, moderationState]
-          properties:
-            accountId:
-              type: [string, 'null']
-              description: The account that owns the video's project.
-            accountName:
-              type: [string, 'null']
-              description: The owning account's name, for the admin list.
-            moderationState:
-              $ref: '#/components/schemas/ModerationState'
-
-    ModerationState:
-      type: string
-      enum: [none, pending, cleared, flagged]
-      description: |
-        Moderation state of a video. `none`: playable as soon as it is
-        `ready` (no check pending). `pending`: held until checked - every one of
-        a free account's first videos starts here. `cleared`: checked and
-        allowed. `flagged`: the check flagged it; held until a human decides.
-
-    ModerationScanResult:
-      type: object
-      required: [provider, considered, cleared, flagged, failed]
-      properties:
-        provider:
-          type: [string, 'null']
-          description: The provider that ran, or `null` when none is configured.
-        considered:
-          type: integer
-        cleared:
-          type: integer
-        flagged:
-          type: integer
-        failed:
-          type: integer

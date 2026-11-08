@@ -110,9 +110,16 @@ One short paragraph: what this page does and who it is for.
 4. **Account & billing** — accounts, phone, usage, billing.
 5. **Trust & safety** — moderation, reports and review.
 
-The **API reference** tab is generated from `api/openapi.yaml`. Keep the
-documentation copy byte-identical to `api/openapi.yaml`; CI checks this with
-`diff`.
+The **API reference** tab is generated from `api/openapi.yaml`. The docs folder
+holds `mintlify-docs/api/openapi.yaml`, the file the site serves as a download, and it is the
+**public projection** — the source contract with `api/public-overlay.yaml`
+applied. Never edit it by hand and never publish the raw contract: it carries
+every `/v1/admin/**` and `/v1/internal/**` route. Regenerate it after any change
+to the contract or the overlay; CI fails when the two drift apart.
+
+```bash
+npm run openapi:public   # regenerate mintlify-docs/api/openapi.yaml
+```
 
 ## Truth check before you open a pull request
 
@@ -147,6 +154,8 @@ keeps the docs from drifting away from the product again.
    # API spec, when you touched openapi.yaml or the overlay:
    npm run openapi:lint
    npm run openapi:overlay   # must build without errors
+   npm run openapi:public    # regenerate the published projection
+   npm run openapi:public:check   # must report no difference
    ```
 
 7. **Say how you verified it in the pull request.** One line per fact: where
@@ -157,7 +166,9 @@ keeps the docs from drifting away from the product again.
 
 1. Open an issue for the change. Say the page, the gap and the reader's job.
 2. Branch from `main`. One branch, one page group.
-3. Edit `mintlify-docs/` only.
+3. Edit `mintlify-docs/` only, except the API contract: change
+   `api/openapi.yaml` (the source) or `api/public-overlay.yaml` (what the public
+   reference hides or rewrites), then run `npm run openapi:public`.
 4. Run `npx mintlify@4.2.1072 validate` and `npx mintlify@4.2.1072 broken-links`.
    Both must pass.
 5. Open a pull request. Put in the description:

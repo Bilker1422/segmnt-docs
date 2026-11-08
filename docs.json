@@ -99,8 +99,7 @@
           {
             "group": "Endpoints",
             "openapi": {
-              "source": "api/openapi.yaml",
-              "overlays": ["api/public-overlay.yaml"]
+              "source": "api/openapi.yaml"
             }
           }
         ]

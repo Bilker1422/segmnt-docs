@@ -33,7 +33,7 @@ page that ships must land here, or CI fails.
 |---|---|
 | `logo/` | segmnt logos (`segmnt-logo.svg` light, `segmnt-logo-dark.svg` dark). |
 | `favicon.svg` | segmnt symbol mark. |
-| `api/openapi.yaml` | Copy of the segmnt API contract (`api/openapi.yaml` in the private repo). |
+| `api/openapi.yaml` | Public projection of the segmnt API contract: the private contract with `api/public-overlay.yaml` applied. Generated, never edited by hand. |
 
 English only. There is no Arabic docs site, so the English pages do not link to
 one. Arabic is supported in the product (UI and player), but Arabic is a
