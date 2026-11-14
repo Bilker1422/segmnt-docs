@@ -36,7 +36,7 @@
         "groups": [
           {
             "group": "Get started",
-            "pages": ["index", "quickstart", "authentication", "getting-started", "faq", "status"]
+            "pages": ["index", "what-is-segmnt", "quickstart", "authentication", "getting-started", "faq", "status"]
           },
           {
             "group": "Integrate",
