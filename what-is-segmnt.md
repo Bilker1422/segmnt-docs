@@ -47,7 +47,7 @@ Do not use segmnt when:
 
 The full steps are in the [quickstart](/quickstart).
 
-Every call uses the same base URL and header:
+Every API key call uses the same base URL and header:
 
 ```bash
 curl -sS "https://api.segmnt.cloud/v1/projects/$PROJECT_ID/videos" \
