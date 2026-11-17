@@ -162,7 +162,7 @@ Notes:
 | Verified domains | 1 | 3 | Per plan |
 | Projects | 1 | 3 | Per plan |
 | Highest quality | 720p | 1080p | Per plan (4K is Coming soon) |
-| Our logo on the player | Shown | Hidden | Per plan |
+| Our logo on the player | Shown | — | Per plan |
 
 - The monthly counters (new uploads and watched minutes) reset at the start of
   each UTC month. Stored hours do not reset; they fall when you delete a video.

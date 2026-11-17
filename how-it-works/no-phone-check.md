@@ -10,8 +10,8 @@ SMS code, at sign-up or at upload.
 ## What we decided
 
 - Sign-up asks for no phone number and sends no SMS code.
-- A video does not play until you verify a domain. The verified domain is the
-  gate.
+- A protected video does not play until you verify a domain. The verified
+  domain is the gate.
 
 ## Why
 

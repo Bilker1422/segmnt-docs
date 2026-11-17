@@ -14,11 +14,10 @@ higher limits than the Free plan, and it needs no card.
 | Length | 30 days |
 | Stored video | 10 hours |
 | New uploads | 10 hours in total |
-| Watched minutes | 20,000 |
+| Watched minutes | 20,000 a month |
 | Highest quality | 1080p |
 | Verified domains | 3 |
 | Projects | 3 |
-| Our logo on the player | Hidden |
 
 - When the 30 days end, the account returns to its plan, usually Free.
 - Our team sets up each pilot by hand. The 30 days count from the day the

@@ -11,11 +11,13 @@ delete a video or when a plan stops. The full policy is on the
 ## What we decided
 
 - **Deleting a video** removes its files, and playback stops. The review frames
-  are removed too, within **30 days**, unless a review, an abuse report or a legal
-  matter about that video is still open.
+  are removed when the video is deleted, unless a review or an abuse report
+  about it is still open. In every case they are removed no later than **30 days**
+  after the delete, unless a legal matter about that video is open.
 - **Your original file** stays until you delete the video.
-- **Removed or held videos.** When we hold or remove a video, we tell the
-  account owner and give the reason.
+- **Removed or held videos.** When we hold or remove a video, we send a
+  `video.held` or `video.removed` webhook and e-mail the account owner. When we
+  can, we include the reason.
 - **If a paid plan stops**, we delete the stored videos 30 days after the paid
   plan stops, and never earlier than 7 days after we e-mail the account owner a
   notice. Until then you can renew your plan or export your videos.
@@ -31,8 +33,10 @@ today.
 - The warning gives you time to renew, or to export your videos. We do not want
   a delete without notice, so the rule waits for the warning.
 - Review frames exist to check content. We keep review frames while the video
-  exists. After you delete the video, they are gone within 30 days, unless a
-  review, an abuse report or a legal matter about that video is still open.
+  exists. After you delete the video, the review frames are removed when the
+  video is deleted, unless a review or an abuse report about it is still open. In
+  every case they are removed no later than 30 days after the delete, unless a
+  legal matter about that video is open.
 
 ## What it means for you
 
