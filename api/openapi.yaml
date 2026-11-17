@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: segmnt API
-  version: 0.19.21
+  version: 0.20.0
   summary: Video infrastructure. Upload through one API and we encode, store, secure and stream it on your own domain.
   description: |
     The segmnt API contract. It can change while we build it.
