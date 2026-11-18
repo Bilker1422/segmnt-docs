@@ -121,8 +121,7 @@ CDN are marked **CDN**.
 | 409 | `payg_not_available` | **Coming soon:** Pay-As-You-Go for uploads is not on this plan. | Change the plan, or leave the upload setting off. | No |
 | 409 | `conflict` | We could not get a unique key prefix (a rare race). **Coming soon:** the member changed while you were working. | Send the request again. For a member change, reload the member and try again. | Key-prefix race: yes, once. Member change: after you reload |
 | 429 | `rate_limited` | You sent too many requests in one minute. See [Rate limits](#rate-limits). | Wait the number of seconds in `Retry-After`, then retry. | Yes, after `Retry-After` |
-| 429 | `encode_concurrency_limit` | Too many videos are being processed. The upload is still open. | Wait the number of seconds in `Retry-After` (60), then call complete again. The upload is not lost. | Yes, after `Retry-After` |
-| 429 | `too_many_open_uploads` | **Coming soon:** this project already has 10 uploads open. | Finish or cancel one upload, then try again. An expired upload frees its slot. | Not until an upload is finished, cancelled or expired. It has no `Retry-After` |
+| 429 | `too_many_open_uploads` | **Coming soon:** this account already has 10 uploads open. | Finish or cancel one upload, then try again. An expired upload frees its slot. | Not until an upload is finished, cancelled or expired. It has no `Retry-After` |
 | 500 | `internal_error` | We could not finish the request. | Try again later. | Yes, with backoff |
 | 502 | `provider_error` | The sign-in provider returned an error. | Try again later. | Yes, with backoff |
 | 502 | `billing_provider_error` | The payment provider did not answer. | Try again later. | Yes, with backoff |
@@ -155,7 +154,7 @@ Rate limits protect the API. Limits are counted per minute.
 | Server upload create and complete, with an API key | API key | `429 rate_limited` |
 | Public demo playback | Client IP | `429 rate_limited` |
 
-`rate_limited` and `encode_concurrency_limit` send a `Retry-After` header. Its
+`rate_limited` sends a `Retry-After` header. Its
 value is a number of seconds. Wait that long, then retry. The `/health` route and
 CORS preflight requests are never counted.
 
@@ -186,12 +185,6 @@ It does not include a `Retry-After` header.
 
 Retry with backoff: wait longer after each try. If it still fails after several
 tries, stop and try again later.
-
-### `encode_concurrency_limit` (429)
-
-Too many videos are processing. Your upload stays open. The response sends
-`Retry-After: 60`. Wait 60 seconds, then call complete again with the same
-parts. If it fails again, use backoff, the same as for `storage_unavailable`.
 
 ### `video_not_ready` (409) and `video_unavailable` (403, CDN)
 

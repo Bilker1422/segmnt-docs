@@ -33,9 +33,9 @@ parts.
 The flow has three calls: **create** the upload, **PUT** the bytes to the part URL,
 and **complete** the upload. The part URL is pre-signed. Do not send your API key to it.
 
-If **complete** returns `429` with the code `encode_concurrency_limit`, another of
-your videos is still processing. Wait until it is ready, then try again. The
-samples stop with an error on any failed call.
+If another of your videos is still processing, **complete** still returns `202`.
+Your new video waits and starts when a slot is free. Its status stays
+`processing` until it is ready. The samples stop with an error on any failed call.
 
 ### cURL
 
